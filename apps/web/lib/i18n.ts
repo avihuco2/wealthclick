@@ -59,6 +59,7 @@ const dictionaries = {
         name ? `Good to see you, ${name}` : "Good to see you",
       overviewSubtitle: "Your financial overview is ready. More features coming soon.",
       signOut: "Sign out",
+      userManagement: "User Management",
       // Metric cards
       totalBalance: "Total Balance",
       totalBalanceSub: "Connect accounts to get started",
@@ -130,6 +131,7 @@ const dictionaries = {
         name ? `שמחים לראות אותך, ${name}` : "שמחים לראות אותך",
       overviewSubtitle: "הסקירה הפיננסית שלך מוכנה. פיצ׳רים נוספים בקרוב.",
       signOut: "התנתקות",
+      userManagement: "ניהול משתמשים",
       // Metric cards
       totalBalance: "יתרה כוללת",
       totalBalanceSub: "חבר חשבונות כדי להתחיל",

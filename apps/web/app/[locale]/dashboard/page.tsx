@@ -46,6 +46,15 @@ export default async function DashboardPage({
 
           {/* Right: avatar + language switcher + sign out */}
           <div className="flex items-center gap-3">
+            {session.user.role === "admin" && (
+              <a
+                href={`/${locale}/admin`}
+                className="hidden rounded-xl border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[13px] text-white/60 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 sm:block"
+              >
+                {t.userManagement}
+              </a>
+            )}
+
             <div className="hidden items-center gap-2.5 sm:flex">
               {session.user.image ? (
                 // eslint-disable-next-line @next/next/no-img-element

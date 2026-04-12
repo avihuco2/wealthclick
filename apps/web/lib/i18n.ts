@@ -15,6 +15,31 @@ export function isValidLocale(value: string): value is Locale {
 
 const dictionaries = {
   en: {
+    unauthorized: {
+      title: "Access Denied",
+      message: "Your account isn't authorised to use WealthClick. Contact the admin to request access.",
+      signOut: "Sign out",
+    },
+    admin: {
+      title: "User Management",
+      subtitle: "Control who can access WealthClick.",
+      addUser: "Add user",
+      emailPlaceholder: "Email address",
+      role: "Role",
+      roleUser: "User",
+      roleAdmin: "Admin",
+      nameCol: "Name",
+      emailCol: "Email",
+      roleCol: "Role",
+      statusCol: "Status",
+      actionsCol: "Actions",
+      active: "Active",
+      inactive: "Inactive",
+      deactivate: "Deactivate",
+      activate: "Activate",
+      remove: "Remove",
+      you: "you",
+    },
     login: {
       subtitle: "Your personal finance, beautifully managed.",
       signInHeading: "Sign in to continue",
@@ -61,6 +86,31 @@ const dictionaries = {
     },
   },
   he: {
+    unauthorized: {
+      title: "אין גישה",
+      message: "החשבון שלך אינו מורשה להשתמש ב-WealthClick. פנה למנהל לבקשת גישה.",
+      signOut: "התנתקות",
+    },
+    admin: {
+      title: "ניהול משתמשים",
+      subtitle: "שלוט במי שיכול לגשת ל-WealthClick.",
+      addUser: "הוסף משתמש",
+      emailPlaceholder: "כתובת אימייל",
+      role: "תפקיד",
+      roleUser: "משתמש",
+      roleAdmin: "מנהל",
+      nameCol: "שם",
+      emailCol: "אימייל",
+      roleCol: "תפקיד",
+      statusCol: "סטטוס",
+      actionsCol: "פעולות",
+      active: "פעיל",
+      inactive: "לא פעיל",
+      deactivate: "השבת",
+      activate: "הפעל",
+      remove: "הסר",
+      you: "אתה",
+    },
     login: {
       subtitle: "הניהול הפיננסי שלך, בצורה יפה ופשוטה.",
       signInHeading: "כניסה לחשבון",

@@ -1,0 +1,17 @@
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfplan
+terraform/.terraform.lock.hcl
+
+# Node
+node_modules/
+apps/web/node_modules/
+apps/web/.next/
+apps/web/.env
+apps/web/.env.local
+
+# Misc
+.DS_Store
+*.log

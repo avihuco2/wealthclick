@@ -34,6 +34,7 @@ jobs:
             --region il-central-1 \
             --comment "Deploy from GitHub Actions ${{ github.sha }}" \
             --parameters 'commands=[
+              "#!/bin/bash",
               "set -euo pipefail",
               "echo '\''--- Deploy started at $(date) ---'\''",
               "swapon /swapfile 2>/dev/null || true",

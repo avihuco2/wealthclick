@@ -1,0 +1,6 @@
+{
+  "awsAuthRefresh": "aws sso login --profile Sanbox_NIM",
+  "env": {
+    "AWS_PROFILE": "Sanbox_NIM"
+  }
+}

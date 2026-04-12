@@ -13,9 +13,14 @@ This agent provides specialized guidance for AWS infrastructure for WealthClick.
 - **Monitoring & Logging** — CloudWatch, X-Ray, application performance monitoring
 - **Disaster Recovery** — Backups, failover, multi-region strategies
 
-## Phase 1: Simple ALB + EC2 Architecture
+## Phase 1: Simple ALB + EC2 Architecture (No Containers)
 
 **Goal:** Minimal, hobby-friendly infrastructure that auto-deploys on git push.
+
+**Deployment:** Direct Node.js via PM2 (no Docker overhead)
+**Cost:** ~$20-25/month
+**Complexity:** Low (simpler debugging, fewer moving parts)
+**Can migrate to containers:** Yes (Phase 2+)
 
 ### Components
 
@@ -99,6 +104,8 @@ This agent provides specialized guidance for AWS infrastructure for WealthClick.
 ```
 
 ### Step 2: EC2 Bootstrap (First-time Setup)
+
+**Note:** This is for Phase 1 direct Node.js deployment. Phase 2 will use Docker.
 
 ```bash
 #!/bin/bash
@@ -573,25 +580,97 @@ Or mention AWS needs in conversation:
 "Configure IAM roles for ECS tasks"
 ```
 
-## AWS Certifications & Learning
+---
 
-- **AWS Certified Solutions Architect** — Core architecture knowledge
-- **AWS Certified Developer** — Application development
-- **AWS Well-Architected Framework** — Best practices guide
-- **AWS Training** — Free tier and paid courses
+## Phase 2: Container Migration (When Ready to Scale)
+
+When MVP is stable and you're ready to add multiple EC2s or improve deployment reliability:
+
+### Step 1: Create Dockerfile
+
+```dockerfile
+# Dockerfile (add to project root)
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm ci --production
+
+# Copy source
+COPY . .
+
+# Build application
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start"]
+```
+
+### Step 2: Create ECR Repository
+
+```bash
+aws ecr create-repository --repository-name wealthclick --region us-east-1
+```
+
+### Step 3: Update GitHub Actions Deployment
+
+Replace SSM SendCommand with Docker pull/run:
+
+```yaml
+- name: Build and push Docker image
+  run: |
+    aws ecr get-login-password --region us-east-1 | \
+      docker login --username AWS --password-stdin $ECR_REGISTRY
+    docker build -t $ECR_REGISTRY/wealthclick:latest .
+    docker push $ECR_REGISTRY/wealthclick:latest
+
+- name: Deploy to EC2 via SSM
+  run: |
+    aws ssm send-command \
+      --instance-ids ${{ env.EC2_INSTANCE_ID }} \
+      --document-name "AWS-RunShellScript" \
+      --parameters 'commands=[
+        "docker pull $ECR_REGISTRY/wealthclick:latest",
+        "docker stop wealthclick || true",
+        "docker rm wealthclick || true",
+        "docker run -d --name wealthclick -p 3000:3000 \
+          -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+          -e NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
+          $ECR_REGISTRY/wealthclick:latest"
+      ]'
+```
+
+### Phase 1 → Phase 2 Migration (Seamless)
+
+- ✅ **No app code changes** — Same Node.js app
+- ✅ **Gradual migration** — Add Docker when ready
+- ✅ **Rollback support** — Pull old image if needed
+- ✅ **Multi-instance ready** — Can duplicate EC2s behind ALB
+
+### Why Phase 1 Skips Containers
+
+- ✅ MVP simplicity (no Docker overhead)
+- ✅ Faster deployment and iteration
+- ✅ Easier debugging (direct file access)
+- ✅ Same application code (no refactoring needed)
+
+---
 
 ## Related Agents
 
-- **Backend Agent** (`.claude/agents/backend.md`) — API development on AWS
-- **Database Agent** (`.claude/agents/database.md`) — RDS Postgres optimization
-- **Security Agent** (`.claude/agents/security.md`) — AWS security best practices
+- **Backend Agent** (`.claude/agents/backend.md`) — API development
+- **Database Agent** (`.claude/agents/database.md`) — Postgres optimization
+- **Security Agent** (`.claude/agents/security.md`) — AWS security
+- **Git & GitHub Actions Agent** (`.claude/agents/git.md`) — Deployment workflows
 - **Webapp Testing Agent** (`.claude/agents/webapp-testing.md`) — Testing on AWS
-- See CLAUDE.md for current architecture
 
 ## References
 
 - [AWS Architecture Center](https://aws.amazon.com/architecture/)
 - [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
-- [AWS Pricing Calculator](https://calculator.aws/)
-- [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/)
-- [AWS RDS Documentation](https://docs.aws.amazon.com/rds/)
+- [AWS ECR Documentation](https://docs.aws.amazon.com/ecr/)
+- [Docker Documentation](https://docs.docker.com/)
+- [PM2 Documentation](https://pm2.keymetrics.io/)

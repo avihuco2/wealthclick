@@ -58,34 +58,44 @@ jobs:
 
 ---
 
-## WealthClick Deployment Flow (Phase 1)
+## WealthClick Deployment Flow (Phase 1 — No Containers)
 
 **Trigger:** Push to `main` branch
-**Destination:** EC2 instance in private subnet
-**Credentials:** AWS OIDC (no secrets stored)
+**Destination:** EC2 instance in private subnet (direct Node.js via PM2)
+**Credentials:** AWS OIDC (no long-lived tokens)
+**Duration:** ~3-5 minutes
+**Complexity:** Low (can migrate to Docker in Phase 2)
 
 ```
 Push to main
   ↓
 GitHub Actions workflow starts
   ↓
-OIDC token obtained (no credentials)
+OIDC token obtained (no secrets stored)
   ↓
 Lint & test (fail-fast)
   ↓
-Build Docker image (optional)
-  ↓
-SSM SendCommand to EC2:
-  - git pull (latest code)
-  - npm ci (install)
+SSM SendCommand to EC2 (direct Node.js deployment):
+  - git pull origin main
+  - npm ci (clean install)
   - npm run build (compile)
-  - npm run db:migrate (apply migrations)
+  - npm run db:migrate (apply schema changes)
   - pm2 restart wealthclick (zero-downtime reload)
   ↓
-Application running with new code
+Application running with latest code
   ↓
-ALB routes traffic to EC2 (HTTPS)
+ALB routes traffic to EC2 (HTTPS via custom domain)
 ```
+
+**Why direct Node.js (no containers) in Phase 1?**
+- ✅ Simpler deployment (fewer moving parts)
+- ✅ Faster iteration (direct file changes)
+- ✅ Easier debugging (access to files/logs)
+- ✅ Seamless Phase 2 migration to Docker
+
+**Phase 2: Container Migration**
+When ready to scale or add multiple EC2s, add Docker without changing app code.
+See AWS Agent (`.claude/agents/aws.md`) → "Phase 2: Container Migration" for details.
 
 ---
 

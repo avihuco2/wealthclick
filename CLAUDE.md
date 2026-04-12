@@ -583,15 +583,47 @@ Writes Playwright E2E tests, component testing, visual regression. Use when test
 
 ---
 
+## Deployment Approach
+
+### Phase 1: Direct Node.js (Current)
+- ✅ Applications run directly on EC2 via PM2
+- ✅ No Docker overhead
+- ✅ Fast deployment (3-5 minutes)
+- ✅ Easy debugging and monitoring
+- ✅ Simple SSM SendCommand approach
+
+### Phase 2: Containers (When Ready to Scale)
+- Migrate to Docker containers on EC2
+- ECR (Elastic Container Registry) for image storage
+- Multi-instance EC2 with load balancing
+- Easier rollbacks and environment consistency
+
+**Why Phase 1 skips containers:**
+- MVP simplicity (fewer moving parts)
+- Faster iteration and debugging
+- Direct file access when needed
+- Can migrate without changing core application code
+
+**Migration to Phase 2 (Container):**
+- Add Dockerfile (minimal changes to app)
+- Configure ECR repository
+- Update GitHub Actions to build/push images
+- Switch EC2 deployment to pull/run Docker
+- Everything else stays the same
+
+---
+
 ## Next Steps (Phase 2+)
 
 When MVP is stable:
-- Auto-scaling EC2 instances
-- Separate database server (AWS RDS)
-- CDN for static assets (CloudFront)
-- Real-time data sync (WebSockets/Server-Sent Events)
-- Mobile app (React Native)
-- Advanced analytics & reporting
+- **Containerization** — Docker + ECR for multi-instance support
+- **Auto-scaling** — Multiple EC2 instances behind ALB
+- **Separate database** — AWS RDS PostgreSQL
+- **CDN** — CloudFront for static assets
+- **Real-time sync** — WebSockets or Server-Sent Events
+- **Monitoring** — CloudWatch dashboards and alerts
+- **Mobile app** — React Native client
+- **Advanced analytics** — Spending trends, forecasting
 
 ---
 

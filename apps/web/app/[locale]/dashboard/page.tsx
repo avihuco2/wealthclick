@@ -41,7 +41,7 @@ export default async function DashboardPage({
                 <circle cx="26" cy="10" r="2.5" fill="white" />
               </svg>
             </div>
-            <span className="text-[15px] font-semibold text-white">WealthClick</span>
+            <span className="text-[15px] font-semibold text-white">Wealth<span className="text-[oklch(0.72_0.18_258.71)]">Click</span></span>
           </div>
 
           {/* Right: avatar + language switcher + sign out */}

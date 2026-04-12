@@ -78,7 +78,7 @@ export default async function AdminPage({
                   <circle cx="26" cy="10" r="2.5" fill="white" />
                 </svg>
               </div>
-              <span className="text-[15px] font-semibold text-white">WealthClick</span>
+              <span className="text-[15px] font-semibold text-white">Wealth<span className="text-[oklch(0.72_0.18_258.71)]">Click</span></span>
             </a>
             <span className="text-white/20">/</span>
             <span className="text-[13px] text-white/50">{t.title}</span>

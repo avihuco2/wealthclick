@@ -45,7 +45,7 @@ export default async function LoginPage({
             </div>
             <div className="text-center">
               <h1 className="text-[28px] font-semibold tracking-tight text-white">
-                WealthClick
+                Wealth<span className="text-[oklch(0.72_0.18_258.71)]">Click</span>
               </h1>
               <p className="mt-1 text-[15px] text-white/45">{t.subtitle}</p>
             </div>

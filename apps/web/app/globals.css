@@ -108,7 +108,11 @@
   body {
     @apply bg-background text-foreground;
   }
-  html {
-    @apply font-sans;
+  /* LTR: Geist, RTL: Heebo */
+  html[dir="ltr"] {
+    font-family: var(--font-geist, var(--font-sans));
+  }
+  html[dir="rtl"] {
+    font-family: var(--font-heebo, var(--font-sans));
   }
 }

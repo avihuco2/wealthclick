@@ -37,6 +37,7 @@ jobs:
             --parameters 'commands=[
               "set -euo pipefail",
               "echo '\''--- Deploy started at $(date) ---'\''",
+              "swapon /swapfile 2>/dev/null || true",
               "cd /opt/wealthclick",
               "sudo -u ubuntu git pull origin main",
               "cd apps/web",

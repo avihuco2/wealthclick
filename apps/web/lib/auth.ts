@@ -7,6 +7,7 @@ import { getDb } from "./db";
 declare module "next-auth" {
   interface Session {
     user: DefaultSession["user"] & {
+      id: string;
       role: "admin" | "user";
     };
   }
@@ -48,22 +49,28 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       }
     },
 
-    // Embed role into the JWT token (cached for token lifetime)
+    // Embed DB id + role into the JWT (cached for token lifetime)
     async jwt({ token }) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (token.email && !(token as any).role) {
+      if (token.email && !(token as any).dbUserId) {
         try {
           const sql = getDb();
-          const rows = await sql`SELECT role FROM users WHERE email = ${token.email}`;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if (rows.length > 0) (token as any).role = rows[0].role;
+          const rows = await sql`SELECT id, role FROM users WHERE email = ${token.email}`;
+          if (rows.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (token as any).dbUserId = rows[0].id;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (token as any).role = rows[0].role;
+          }
         } catch { /* non-fatal */ }
       }
       return token;
     },
 
-    // Surface role on the session object
+    // Surface id + role on the session object
     async session({ session, token }) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      session.user.id   = (token as any).dbUserId ?? "";
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       session.user.role = (token as any).role ?? "user";
       return session;

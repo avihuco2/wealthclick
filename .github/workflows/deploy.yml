@@ -43,6 +43,7 @@ jobs:
               "cd apps/web",
               "sudo -u ubuntu npm ci",
               "sudo -u ubuntu npm run build",
+              "sudo -u ubuntu npm run db:migrate",
               "sudo -u ubuntu pm2 restart wealthclick",
               "echo '\''--- Deploy complete ---'\''"
             ]' \

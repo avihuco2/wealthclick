@@ -2,6 +2,7 @@ import { auth, signOut } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { getTransactionStats } from "@/lib/transactions";
 
 export default async function DashboardPage({
   params,
@@ -18,6 +19,32 @@ export default async function DashboardPage({
   if (!session?.user) redirect(`/${locale}/login`);
 
   const firstName = session.user.name?.split(" ")[0] ?? null;
+
+  const userId = session.user.id;
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const [allTimeStats, monthStats] = userId
+    ? await Promise.all([
+        getTransactionStats(userId),
+        getTransactionStats(userId, currentMonth),
+      ])
+    : [null, null];
+
+  const fmt = (val: string | null | undefined) =>
+    val == null
+      ? "—"
+      : new Intl.NumberFormat("he-IL", {
+          style: "currency",
+          currency: "ILS",
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(Math.abs(parseFloat(val)));
+
+  const balanceValue = allTimeStats ? fmt(allTimeStats.net) : "—";
+  const spendingValue = monthStats ? fmt(monthStats.total_expenses) : "—";
+  const savingsRate =
+    monthStats && parseFloat(monthStats.total_income) > 0
+      ? `${Math.round((parseFloat(monthStats.net) / parseFloat(monthStats.total_income)) * 100)}%`
+      : "—";
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
@@ -46,6 +73,12 @@ export default async function DashboardPage({
 
           {/* Right: avatar + language switcher + sign out */}
           <div className="flex items-center gap-3">
+            <a
+              href={`/${locale}/transactions`}
+              className="hidden rounded-xl border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[13px] text-white/60 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 sm:block"
+            >
+              {t.transactions}
+            </a>
             {session.user.role === "admin" && (
               <a
                 href={`/${locale}/admin`}
@@ -107,21 +140,21 @@ export default async function DashboardPage({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <MetricCard
             label={t.totalBalance}
-            value="—"
+            value={balanceValue}
             sub={t.totalBalanceSub}
             accentColor="oklch(0.5706 0.2236 258.71)"
             icon={<BalanceIcon />}
           />
           <MetricCard
             label={t.thisMonth}
-            value="—"
+            value={spendingValue}
             sub={t.thisMonthSub}
             accentColor="oklch(0.72 0.17 142)"
             icon={<SpendingIcon />}
           />
           <MetricCard
             label={t.savingsRate}
-            value="—"
+            value={savingsRate}
             sub={t.savingsRateSub}
             accentColor="oklch(0.72 0.18 54)"
             icon={<SavingsIcon />}

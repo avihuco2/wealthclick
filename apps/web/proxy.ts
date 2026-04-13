@@ -9,7 +9,7 @@ function detectLocale(req: NextRequest): string {
   return locales.includes(preferred as "en" | "he") ? preferred : defaultLocale;
 }
 
-const protectedPaths = ["/dashboard", "/admin"];
+const protectedPaths = ["/dashboard", "/admin", "/transactions"];
 const publicPaths = ["/login", "/", "/unauthorized"];
 
 export default async function proxy(req: NextRequest) {

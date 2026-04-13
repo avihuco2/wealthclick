@@ -240,8 +240,8 @@ export default function TransactionsClient({
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/[0.06] bg-white/[0.03]">
-                  {[t.date, t.description, t.category, t.account, t.amount, ""].map((h, i) => (
-                    <th key={i} className={cn("px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-white/30", i >= 4 ? "text-end" : "text-start")}>
+                  {["", t.date, t.description, t.category, t.account, t.amount, ""].map((h, i) => (
+                    <th key={i} className={cn("px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-white/30", i === 0 ? "w-10 px-3" : i >= 5 ? "text-end" : "text-start")}>
                       {h}
                     </th>
                   ))}
@@ -250,6 +250,19 @@ export default function TransactionsClient({
               <tbody>
                 {filtered.map((tx, i) => (
                   <tr key={tx.id} className={cn("border-b border-white/[0.04] transition-colors hover:bg-white/[0.03]", i === filtered.length - 1 && "border-none")}>
+                    {/* Emoji avatar */}
+                    <td className="px-3 py-3">
+                      <div
+                        className="flex h-9 w-9 items-center justify-center rounded-2xl text-[18px] leading-none"
+                        style={tx.category_color
+                          ? { background: `${tx.category_color}22`, border: `1px solid ${tx.category_color}35` }
+                          : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }
+                        }
+                      >
+                        {tx.category_emoji || (tx.type === "income" ? "💰" : "💸")}
+                      </div>
+                    </td>
+
                     {/* Date */}
                     <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-white/40">{fmtDate(tx.date)}</td>
 

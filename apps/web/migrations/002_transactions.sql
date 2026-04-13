@@ -15,6 +15,20 @@ CREATE INDEX IF NOT EXISTS categories_user_id_idx ON categories (user_id);
 -- Add emoji column to existing tables (idempotent)
 ALTER TABLE categories ADD COLUMN IF NOT EXISTS emoji TEXT NOT NULL DEFAULT '';
 
+-- Backfill emoji for default categories seeded before this column existed
+UPDATE categories SET emoji = '🍔' WHERE name_en = 'Food & Dining'     AND emoji = '';
+UPDATE categories SET emoji = '🚗' WHERE name_en = 'Transportation'    AND emoji = '';
+UPDATE categories SET emoji = '🛍️' WHERE name_en = 'Shopping'          AND emoji = '';
+UPDATE categories SET emoji = '🎮' WHERE name_en = 'Entertainment'     AND emoji = '';
+UPDATE categories SET emoji = '💊' WHERE name_en = 'Health & Medical'  AND emoji = '';
+UPDATE categories SET emoji = '🏠' WHERE name_en = 'Housing & Rent'    AND emoji = '';
+UPDATE categories SET emoji = '📚' WHERE name_en = 'Education'         AND emoji = '';
+UPDATE categories SET emoji = '✈️' WHERE name_en = 'Travel'            AND emoji = '';
+UPDATE categories SET emoji = '⚡' WHERE name_en = 'Utilities & Bills' AND emoji = '';
+UPDATE categories SET emoji = '💼' WHERE name_en = 'Salary'            AND emoji = '';
+UPDATE categories SET emoji = '📈' WHERE name_en = 'Other Income'      AND emoji = '';
+UPDATE categories SET emoji = '📌' WHERE name_en = 'Other'             AND emoji = '';
+
 -- ─── transactions ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS transactions (
   id          UUID           PRIMARY KEY DEFAULT gen_random_uuid(),

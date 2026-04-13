@@ -39,7 +39,7 @@ jobs:
               "echo '\''--- Deploy started at $(date) ---'\''",
               "swapon /swapfile 2>/dev/null || true",
               "echo '\''--- Writing .env from Secrets Manager ---'\''",
-              "aws secretsmanager get-secret-value --region il-central-1 --secret-id wealthclick/app --query SecretString --output text | python3 -c '\''import json,sys; d=json.load(sys.stdin); [print(f\"{k}={v}\") for k,v in d.items()]'\'' > /opt/wealthclick/apps/web/.env",
+              "/usr/local/bin/aws secretsmanager get-secret-value --region il-central-1 --secret-id wealthclick/app --query SecretString --output text | python3 -c '\''import json,sys; d=json.load(sys.stdin); [print(f\"{k}={v}\") for k,v in d.items()]'\'' > /opt/wealthclick/apps/web/.env",
               "chmod 600 /opt/wealthclick/apps/web/.env",
               "cd /opt/wealthclick",
               "sudo -u ubuntu git pull origin main",

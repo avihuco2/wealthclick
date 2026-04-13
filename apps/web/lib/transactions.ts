@@ -15,7 +15,7 @@ export type DbTransaction = {
   category_name_en: string | null;
   category_name_he: string | null;
   category_color: string | null;
-  category_icon: string | null;
+  category_emoji: string | null;
 };
 
 export type TransactionStats = {
@@ -35,7 +35,7 @@ export async function getTransactions(
       c.name_en AS category_name_en,
       c.name_he AS category_name_he,
       c.color   AS category_color,
-      c.icon    AS category_icon
+      c.emoji   AS category_emoji
     FROM transactions t
     LEFT JOIN categories c ON c.id = t.category_id
     WHERE t.user_id = ${userId}

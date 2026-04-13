@@ -111,6 +111,11 @@ const dictionaries = {
       filterExpense: "Expenses",
       noCategory: "Uncategorized",
       accountPlaceholder: "e.g. Visa, Checking",
+      categories: "Categories",
+      addCategory: "Add Category",
+      categoryName: "Name",
+      categoryEmoji: "Emoji",
+      categoryColor: "Color",
     },
   },
   he: {
@@ -210,6 +215,11 @@ const dictionaries = {
       filterExpense: "הוצאות",
       noCategory: "ללא קטגוריה",
       accountPlaceholder: "לדוגמה: ויזה, עו\"ש",
+      categories: "קטגוריות",
+      addCategory: "הוסף קטגוריה",
+      categoryName: "שם",
+      categoryEmoji: "אמוג'י",
+      categoryColor: "צבע",
     },
   },
 } as const;

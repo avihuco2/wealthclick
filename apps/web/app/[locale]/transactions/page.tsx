@@ -111,6 +111,25 @@ export default async function TransactionsPage({
     revalidatePath(`/${locale}/dashboard`);
   }
 
+  async function createCategory(formData: FormData) {
+    "use server";
+    const session = await auth();
+    if (!session?.user?.id) return;
+
+    const name  = (formData.get("name")  as string)?.trim();
+    const emoji = (formData.get("emoji") as string)?.trim() || "🏷️";
+    const color = (formData.get("color") as string) || "#8E8E93";
+
+    if (!name) return;
+
+    const sql = getDb();
+    await sql`
+      INSERT INTO categories (user_id, name_en, name_he, color, icon, emoji)
+      VALUES (${session.user.id}, ${name}, ${name}, ${color}, 'custom', ${emoji})
+    `;
+    revalidatePath(`/${locale}/transactions`);
+  }
+
   return (
     <div className="relative min-h-screen overflow-x-hidden">
       {/* Background glows */}
@@ -153,6 +172,7 @@ export default async function TransactionsPage({
           createAction={createTransaction}
           updateAction={updateTransaction}
           deleteAction={deleteTransaction}
+          createCategoryAction={createCategory}
         />
       </main>
     </div>

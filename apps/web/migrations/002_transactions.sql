@@ -1,7 +1,7 @@
 -- ─── categories ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS categories (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    TEXT        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name_en    TEXT        NOT NULL,
   name_he    TEXT        NOT NULL,
   color      TEXT        NOT NULL,
@@ -14,7 +14,7 @@ CREATE INDEX IF NOT EXISTS categories_user_id_idx ON categories (user_id);
 -- ─── transactions ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS transactions (
   id          UUID           PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     TEXT           NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id     UUID           NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   category_id UUID           REFERENCES categories(id) ON DELETE SET NULL,
   account     TEXT,
   date        DATE           NOT NULL,

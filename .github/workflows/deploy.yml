@@ -47,7 +47,7 @@ jobs:
               "sudo -u ubuntu npm ci",
               "sudo -u ubuntu npm run build",
               "sudo -u ubuntu npm run db:migrate",
-              "sudo -u ubuntu pm2 restart wealthclick",
+              "sudo -u ubuntu bash -c 'HOME=/home/ubuntu pm2 restart wealthclick --update-env'",
               "rm -f /opt/wealthclick/apps/web/.env",
               "echo '\''--- Deploy complete ---'\''"
             ]' \

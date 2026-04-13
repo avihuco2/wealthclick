@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS categories (
 
 CREATE INDEX IF NOT EXISTS categories_user_id_idx ON categories (user_id);
 
+-- Add emoji column to existing tables (idempotent)
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS emoji TEXT NOT NULL DEFAULT '';
+
 -- ─── transactions ────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS transactions (
   id          UUID           PRIMARY KEY DEFAULT gen_random_uuid(),

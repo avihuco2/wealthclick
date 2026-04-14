@@ -58,17 +58,21 @@ type ScrapeState = Record<
   { jobId: string; status: string; importedCount: number | null; error: string | null }
 >;
 
+const INTERVAL_OPTIONS = [1, 3, 6, 12, 24, 48];
+
 export default function BankAccountsClient({
   initialAccounts,
   bankConfigs,
   locale,
-  scrapeIntervalHours,
+  scrapeIntervalHours: initialInterval,
   t,
 }: Props) {
   const [accounts, setAccounts] = useState<SafeBankAccount[]>(initialAccounts);
   const [showModal, setShowModal] = useState(false);
   const [scrapeState, setScrapeState] = useState<ScrapeState>({});
   const [syncingAll, setSyncingAll] = useState(false);
+  const [interval, setIntervalHours] = useState(initialInterval);
+  const [savingInterval, setSavingInterval] = useState(false);
 
   const refreshAccounts = useCallback(async () => {
     const res = await fetch("/api/bank-accounts");
@@ -109,6 +113,17 @@ export default function BankAccountsClient({
       ...prev,
       [account.id]: { jobId, status: "running", importedCount: null, error: null },
     }));
+  }
+
+  async function handleIntervalChange(hours: number) {
+    setSavingInterval(true);
+    const res = await fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scrapeIntervalHours: hours }),
+    });
+    if (res.ok) setIntervalHours(hours);
+    setSavingInterval(false);
   }
 
   async function handleSyncAll() {
@@ -174,7 +189,7 @@ export default function BankAccountsClient({
   const fmtNextSync = (lastSyncedAt: Date | null, enabled: boolean) => {
     if (!enabled) return null;
     if (!lastSyncedAt) return t.overdue;
-    const next = new Date(lastSyncedAt).getTime() + scrapeIntervalHours * 3600 * 1000;
+    const next = new Date(lastSyncedAt).getTime() + interval * 3600 * 1000;
     const hoursLeft = Math.round((next - Date.now()) / 3600000);
     if (hoursLeft <= 0) return t.overdue;
     return `${t.inLabel} ${hoursLeft}${t.hours}`;
@@ -211,12 +226,27 @@ export default function BankAccountsClient({
         </div>
       </div>
 
-      {/* Auto-sync banner */}
-      <div className="mb-5 flex items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
+      {/* Auto-sync banner with interval selector */}
+      <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
         <ClockIcon />
-        <span className="text-[13px] text-white/50">
-          {t.autoSync} · {t.every} {scrapeIntervalHours}{t.hours}
-        </span>
+        <span className="text-[13px] text-white/50">{t.autoSync}</span>
+        <div className="flex items-center gap-1">
+          {INTERVAL_OPTIONS.map((h) => (
+            <button
+              key={h}
+              onClick={() => handleIntervalChange(h)}
+              disabled={savingInterval}
+              className={`rounded-lg px-2.5 py-1 text-[12px] font-medium transition-all ${
+                interval === h
+                  ? "bg-[oklch(0.5706_0.2236_258.71)] text-white shadow-[0_1px_8px_oklch(0.5706_0.2236_258.71/0.4)]"
+                  : "text-white/40 hover:bg-white/[0.07] hover:text-white/70"
+              } disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              {h}{t.hours}
+            </button>
+          ))}
+          {savingInterval && <SpinnerIcon />}
+        </div>
         <span className="ms-auto text-[12px] text-white/30">
           {enabledCount}/{accounts.length} enabled
         </span>

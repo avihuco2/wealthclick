@@ -1,7 +1,9 @@
 import { getDb } from "./db";
 import { createScrapeJob } from "./bankAccounts";
 import { startScrapeJob } from "./scraper";
+import { getScrapeIntervalHours } from "./settings";
 
+// Fallback used before DB is reachable (e.g. during startup)
 export const SCRAPE_INTERVAL_HOURS = Math.max(
   1,
   parseInt(process.env.SCRAPE_INTERVAL_HOURS ?? "6", 10),
@@ -13,14 +15,18 @@ export function initScraperCron(): void {
   if (cronStarted) return;
   cronStarted = true;
 
-  const intervalMs = SCRAPE_INTERVAL_HOURS * 60 * 60 * 1000;
-  console.log(`[scraperCron] Auto-sync initialized — every ${SCRAPE_INTERVAL_HOURS}h`);
+  console.log(`[scraperCron] Auto-sync initialized — default interval ${SCRAPE_INTERVAL_HOURS}h`);
 
-  // Delay first run by the full interval (not immediately on startup)
-  setTimeout(() => {
-    runScheduledScrapes();
-    setInterval(runScheduledScrapes, intervalMs);
-  }, intervalMs);
+  // Re-reads interval from DB on every tick so changes take effect without restart
+  async function tick() {
+    const intervalHours = await getScrapeIntervalHours();
+    await runScheduledScrapes();
+    console.log(`[scraperCron] Next run in ${intervalHours}h`);
+    setTimeout(tick, intervalHours * 3600 * 1000);
+  }
+
+  // First tick after one full default interval
+  setTimeout(tick, SCRAPE_INTERVAL_HOURS * 3600 * 1000);
 }
 
 export async function runScheduledScrapes(): Promise<{ started: number }> {

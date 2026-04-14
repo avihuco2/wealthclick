@@ -188,10 +188,10 @@ export default function BankAccountsClient({
 
   const fmtNextSync = (lastSyncedAt: Date | null, enabled: boolean) => {
     if (!enabled) return null;
-    if (!lastSyncedAt) return t.overdue;
+    if (!lastSyncedAt) return null; // never synced — no next sync estimate yet
     const next = new Date(lastSyncedAt).getTime() + interval * 3600 * 1000;
     const hoursLeft = Math.round((next - Date.now()) / 3600000);
-    if (hoursLeft <= 0) return t.overdue;
+    if (hoursLeft <= 0) return t.overdue; // scheduled time passed, cron will pick it up
     return `${t.inLabel} ${hoursLeft}${t.hours}`;
   };
 

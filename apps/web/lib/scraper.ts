@@ -12,6 +12,9 @@ const PUPPETEER_ARGS = [
   "--disable-gpu",
 ];
 
+// Set DEBUG=israeli-bank-scrapers:* in the environment to enable verbose library logs
+const SCRAPER_DEBUG = process.env.SCRAPER_DEBUG === "true";
+
 /** Deterministic external ID for deduplication */
 function makeExternalId(
   companyId: string,
@@ -35,6 +38,7 @@ export function startScrapeJob(
   companyId: string,
   credentialsEncrypted: string,
 ): void {
+  console.log(`[scraper] job ${jobId} queued — account=${bankAccountId} company=${companyId}`);
   // Intentionally not awaited — runs in background on EC2 Node.js process
   runScrape(jobId, userId, bankAccountId, companyId, credentialsEncrypted).catch(
     (err) => {
@@ -50,6 +54,7 @@ async function runScrape(
   companyId: string,
   credentialsEncrypted: string,
 ): Promise<void> {
+  console.log(`[scraper] job ${jobId} started`);
   await setBankAccountStatus(bankAccountId, "scraping");
 
   try {
@@ -63,18 +68,24 @@ async function runScrape(
 
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 3); // last 3 months
+    console.log(`[scraper] job ${jobId} — scraping ${companyId} from ${startDate.toISOString().slice(0, 10)}`);
 
     const scraper = createScraper({
       companyId: companyType,
       startDate,
+      verbose: SCRAPER_DEBUG,
       browserLaunchOptions: { args: PUPPETEER_ARGS },
     } as Parameters<typeof createScraper>[0]);
 
+    console.log(`[scraper] job ${jobId} — browser launched, logging in…`);
     const result = await scraper.scrape(credentials);
 
     if (!result.success) {
       throw new Error(`${result.errorType}: ${result.errorMessage}`);
     }
+
+    const totalTxns = (result.accounts ?? []).reduce((s, a) => s + a.txns.length, 0);
+    console.log(`[scraper] job ${jobId} — scrape succeeded: ${result.accounts?.length ?? 0} account(s), ${totalTxns} transaction(s) fetched`);
 
     const sql = getDb();
     let importedCount = 0;
@@ -87,7 +98,7 @@ async function runScrape(
         const date = txn.date.slice(0, 10); // YYYY-MM-DD
 
         try {
-          await sql`
+          const rows = await sql`
             INSERT INTO transactions
               (user_id, date, amount, description, type, account, external_id)
             VALUES
@@ -95,14 +106,16 @@ async function runScrape(
                ${account.accountNumber}, ${externalId})
             ON CONFLICT (user_id, external_id) WHERE external_id IS NOT NULL
             DO NOTHING
+            RETURNING id
           `;
-          importedCount++;
-        } catch {
-          // Skip individual insert errors (e.g. constraint violations)
+          if (rows.length > 0) importedCount++;
+        } catch (insertErr) {
+          console.warn(`[scraper] job ${jobId} — insert skipped:`, insertErr instanceof Error ? insertErr.message : insertErr);
         }
       }
     }
 
+    console.log(`[scraper] job ${jobId} — done: ${importedCount} new transaction(s) inserted`);
     await setBankAccountStatus(bankAccountId, "active");
     await finishScrapeJob(jobId, "done", importedCount);
   } catch (err) {

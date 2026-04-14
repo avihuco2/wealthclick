@@ -9,6 +9,7 @@ export type DbBankAccount = {
   last_scraped_at: Date | null;
   last_error: string | null;
   status: "active" | "error" | "scraping";
+  scrape_enabled: boolean;
   created_at: Date;
 };
 
@@ -109,6 +110,19 @@ export async function finishScrapeJob(
         error          = ${error ?? null},
         finished_at    = now()
     WHERE id = ${jobId}
+  `;
+}
+
+export async function toggleBankAccountEnabled(
+  userId: string,
+  accountId: string,
+  enabled: boolean,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE bank_accounts
+    SET scrape_enabled = ${enabled}
+    WHERE id = ${accountId} AND user_id = ${userId}
   `;
 }
 

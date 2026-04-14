@@ -139,12 +139,13 @@ export default async function DashboardPage({
 
         {/* Quick actions */}
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <QuickAction
-            icon={<BankIcon />}
-            title={t.connectBankTitle}
-            description={t.connectBankDescription}
-            badge={t.comingSoon}
-          />
+          <a href={`/${locale}/bank-accounts`} className="block">
+            <QuickAction
+              icon={<BankIcon />}
+              title={t.connectBankTitle}
+              description={t.connectBankDescription}
+            />
+          </a>
           <QuickAction
             icon={<TargetIcon />}
             title={t.budgetGoalTitle}

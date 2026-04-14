@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { getBankAccounts, getLatestScrapeJob } from "@/lib/bankAccounts";
 import { BANK_CONFIGS } from "@/lib/scraperConfig";
+import { SCRAPE_INTERVAL_HOURS } from "@/lib/scraperCron";
 import { NavBar } from "@/components/NavBar";
 import BankAccountsClient from "@/components/BankAccountsClient";
 
@@ -63,6 +64,7 @@ export default async function BankAccountsPage({
           initialAccounts={accountsWithJobs}
           bankConfigs={Object.values(BANK_CONFIGS)}
           locale={typedLocale}
+          scrapeIntervalHours={SCRAPE_INTERVAL_HOURS}
           t={t.bankAccounts}
         />
       </main>

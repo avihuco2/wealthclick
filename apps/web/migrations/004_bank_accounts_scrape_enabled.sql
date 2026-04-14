@@ -1,0 +1,2 @@
+ALTER TABLE bank_accounts
+  ADD COLUMN IF NOT EXISTS scrape_enabled BOOLEAN NOT NULL DEFAULT true;

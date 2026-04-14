@@ -64,42 +64,8 @@ export function NavBar({
           </span>
         </a>
 
-        {/* Desktop nav */}
-        <div className="hidden items-center gap-3 sm:flex">
-          {navLinks.map((link) => (
-            <a key={link.key} href={link.href} className={linkClass(link.key)}>
-              {link.label}
-            </a>
-          ))}
-
-          {/* Avatar */}
-          {(userImage || userEmail) && (
-            <div className="flex items-center gap-2">
-              {userImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={userImage} alt={userName ?? "avatar"} width={28} height={28} className="rounded-full ring-1 ring-white/20" />
-              ) : (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold uppercase text-white/70">
-                  {(userName ?? userEmail ?? "U")[0]}
-                </div>
-              )}
-              <span className="text-[13px] text-white/50">{userEmail}</span>
-            </div>
-          )}
-
-          <LanguageSwitcher currentLocale={locale} />
-
-          {signOutAction && (
-            <form action={signOutAction}>
-              <button type="submit" className={linkClass("__signout")}>
-                {t.signOut}
-              </button>
-            </form>
-          )}
-        </div>
-
-        {/* Mobile: lang switcher + hamburger */}
-        <div className="flex items-center gap-2 sm:hidden">
+        {/* Right: lang switcher + hamburger (all screen sizes) */}
+        <div className="flex items-center gap-2">
           <LanguageSwitcher currentLocale={locale} />
           <button
             onClick={() => setOpen((v) => !v)}
@@ -111,9 +77,9 @@ export function NavBar({
         </div>
       </div>
 
-      {/* Mobile dropdown */}
+      {/* Dropdown menu */}
       {open && (
-        <div className="border-t border-white/[0.06] bg-[oklch(0.08_0.02_260/0.95)] px-6 py-4 backdrop-blur-xl sm:hidden">
+        <div className="border-t border-white/[0.06] bg-[oklch(0.08_0.02_260/0.95)] px-6 py-4 backdrop-blur-xl">
 
           {/* User info */}
           {(userImage || userEmail) && (

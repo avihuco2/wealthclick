@@ -1,7 +1,7 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { NavBar } from "@/components/NavBar";
 import { getTransactionStats } from "@/lib/transactions";
 
 export default async function DashboardPage({
@@ -57,73 +57,24 @@ export default async function DashboardPage({
         <div className="absolute top-1/2 right-[-100px] h-[350px] w-[350px] rounded-full bg-[oklch(0.72_0.18_54)] opacity-8 blur-[100px]" />
       </div>
 
-      {/* ── Glass Navbar ── */}
-      <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-white/[0.04] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[oklch(0.5706_0.2236_258.71)] shadow-[0_2px_12px_oklch(0.5706_0.2236_258.71/0.5)]">
-              <svg width="16" height="16" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                <path d="M6 22L11 13L16 18L21 10L26 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="26" cy="10" r="2.5" fill="white" />
-              </svg>
-            </div>
-            <span className="text-[15px] font-semibold text-white">Wealth<span className="text-[oklch(0.72_0.18_258.71)]">Click</span></span>
-          </div>
-
-          {/* Right: avatar + language switcher + sign out */}
-          <div className="flex items-center gap-3">
-            <a
-              href={`/${locale}/transactions`}
-              className="hidden rounded-xl border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[13px] text-white/60 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 sm:block"
-            >
-              {t.transactions}
-            </a>
-            {session.user.role === "admin" && (
-              <a
-                href={`/${locale}/admin`}
-                className="hidden rounded-xl border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[13px] text-white/60 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 sm:block"
-              >
-                {t.userManagement}
-              </a>
-            )}
-
-            <div className="hidden items-center gap-2.5 sm:flex">
-              {session.user.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={session.user.image}
-                  alt={session.user.name ?? "User avatar"}
-                  width={28}
-                  height={28}
-                  className="rounded-full ring-1 ring-white/20"
-                />
-              ) : (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold uppercase text-white/70">
-                  {(session.user.name ?? session.user.email ?? "U")[0]}
-                </div>
-              )}
-              <span className="text-[13px] text-white/50">{session.user.email}</span>
-            </div>
-
-            <LanguageSwitcher currentLocale={typedLocale} />
-
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: `/${locale}/login` });
-              }}
-            >
-              <button
-                type="submit"
-                className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[13px] text-white/60 backdrop-blur-md transition-all duration-200 hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90"
-              >
-                {t.signOut}
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <NavBar
+        locale={typedLocale}
+        userName={session.user.name}
+        userEmail={session.user.email}
+        userImage={session.user.image}
+        isAdmin={session.user.role === "admin"}
+        activePage="dashboard"
+        t={{
+          dashboard: t.dashboardNav,
+          transactions: t.transactions,
+          userManagement: t.userManagement,
+          signOut: t.signOut,
+        }}
+        signOutAction={async () => {
+          "use server";
+          await signOut({ redirectTo: `/${locale}/login` });
+        }}
+      />
 
       {/* ── Main content ── */}
       <main className="mx-auto max-w-5xl px-6 py-12">

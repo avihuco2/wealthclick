@@ -85,6 +85,7 @@ const dictionaries = {
       budgetGoalDescription: "Define monthly limits for each category",
       comingSoon: "Coming soon",
       transactions: "Transactions",
+      dashboardNav: "Dashboard",
     },
     transactions: {
       title: "Transactions",
@@ -189,6 +190,7 @@ const dictionaries = {
       budgetGoalDescription: "הגדר מגבלות חודשיות לכל קטגוריה",
       comingSoon: "בקרוב",
       transactions: "עסקאות",
+      dashboardNav: "לוח בקרה",
     },
     transactions: {
       title: "עסקאות",

@@ -5,7 +5,7 @@ import { getDb } from "@/lib/db";
 import { getOrSeedCategories } from "@/lib/categories";
 import { getTransactions, getTransactionStats } from "@/lib/transactions";
 import { revalidatePath } from "next/cache";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { NavBar } from "@/components/NavBar";
 import TransactionsClient from "./TransactionsClient";
 
 export default async function TransactionsPage({
@@ -139,27 +139,20 @@ export default async function TransactionsPage({
         <div className="absolute bottom-0 left-1/2 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-[oklch(0.60_0.18_200)] opacity-10 blur-[140px]" />
       </div>
 
-      {/* Navbar */}
-      <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-white/[0.04] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <a href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[oklch(0.5706_0.2236_258.71)] shadow-[0_2px_12px_oklch(0.5706_0.2236_258.71/0.5)]">
-                <svg width="16" height="16" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                  <path d="M6 22L11 13L16 18L21 10L26 16" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="26" cy="10" r="2.5" fill="white" />
-                </svg>
-              </div>
-              <span className="text-[15px] font-semibold text-white">
-                Wealth<span className="text-[oklch(0.72_0.18_258.71)]">Click</span>
-              </span>
-            </a>
-            <span className="text-white/20">/</span>
-            <span className="text-[13px] text-white/50">{t.title}</span>
-          </div>
-          <LanguageSwitcher currentLocale={typedLocale} />
-        </div>
-      </header>
+      <NavBar
+        locale={typedLocale}
+        userName={session.user.name}
+        userEmail={session.user.email}
+        userImage={session.user.image}
+        isAdmin={session.user.role === "admin"}
+        activePage="transactions"
+        t={{
+          dashboard: getDictionary(typedLocale).dashboard.dashboardNav,
+          transactions: getDictionary(typedLocale).dashboard.transactions,
+          userManagement: getDictionary(typedLocale).dashboard.userManagement,
+          signOut: getDictionary(typedLocale).dashboard.signOut,
+        }}
+      />
 
       <main className="mx-auto max-w-5xl px-6 py-10">
         <TransactionsClient

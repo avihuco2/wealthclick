@@ -24,10 +24,10 @@ type T = {
   statusError: string;
   statusScraping: string;
   importing: string;
-  importDone: (n: number) => string;
+  importDone: string;
   importFailed: string;
   selectBank: string;
-  credentialsTitle: (bank: string) => string;
+  credentialsTitle: string;
   nicknameLabel: string;
   nicknamePlaceholder: string;
   connect: string;
@@ -189,7 +189,7 @@ export default function BankAccountsClient({ initialAccounts, bankConfigs, local
                       }`}
                     >
                       {scrape.status === "done"
-                        ? t.importDone(scrape.importedCount ?? 0)
+                        ? `${scrape.importedCount ?? 0} ${t.importDone}`
                         : `${t.importFailed}${scrape.error ? `: ${scrape.error}` : ""}`}
                     </p>
                   )}
@@ -383,7 +383,7 @@ function ConnectBankModal({
                 ‹
               </button>
               <h2 className="text-[18px] font-semibold text-white">
-                {t.credentialsTitle(selectedConfig!.label)}
+                {t.credentialsTitle} {selectedConfig!.label}
               </h2>
             </div>
 

@@ -592,7 +592,7 @@ function StatCard({ label, value, color }: { label: string; value: string; color
     <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5 backdrop-blur-xl">
       <div className="absolute -bottom-4 end-[-1rem] h-20 w-20 rounded-full opacity-20 blur-[30px]" style={{ background: color }} />
       <p className="text-[11px] font-medium uppercase tracking-wider text-white/35">{label}</p>
-      <p className="mt-2 text-[22px] font-semibold text-white">{value}</p>
+      <p className="mt-2 text-[22px] font-semibold" style={{ color }}>{value}</p>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import {
   finishScrapeJob,
 } from "./bankAccounts";
 import { getScrapeHistoryMonths } from "./settings";
-import { applyRulesToUncategorized } from "./categoryRules";
+import { loadCategoryRules, applyRulesToUncategorized } from "./categoryRules";
 
 const PUPPETEER_ARGS = [
   "--no-sandbox",
@@ -93,20 +93,24 @@ async function runScrape(
     const sql = getDb();
     let importedCount = 0;
 
+    // Preload category rules so each insert can be auto-categorized inline
+    const categoryRules = await loadCategoryRules(userId);
+
     for (const account of result.accounts ?? []) {
       for (const txn of account.txns) {
         const externalId = makeExternalId(companyId, account.accountNumber, txn);
         const amount = Math.abs(txn.chargedAmount);
         const type = txn.chargedAmount < 0 ? "expense" : "income";
         const date = txn.date.slice(0, 10); // YYYY-MM-DD
+        const categoryId = categoryRules.get(txn.description.trim()) ?? null;
 
         try {
           const rows = await sql`
             INSERT INTO transactions
-              (user_id, date, amount, description, type, account, external_id)
+              (user_id, date, amount, description, type, account, external_id, category_id)
             VALUES
               (${userId}, ${date}, ${amount}, ${txn.description}, ${type},
-               ${account.accountNumber}, ${externalId})
+               ${account.accountNumber}, ${externalId}, ${categoryId})
             ON CONFLICT (user_id, external_id) WHERE external_id IS NOT NULL
             DO NOTHING
             RETURNING id
@@ -118,7 +122,7 @@ async function runScrape(
       }
     }
 
-    // Auto-categorize newly inserted transactions using learned rules
+    // Catch any remaining uncategorized rows (e.g. ON CONFLICT updates) using learned rules
     const autoCatCount = await applyRulesToUncategorized(userId);
     if (autoCatCount > 0) {
       console.log(`[scraper] job ${jobId} — auto-categorized ${autoCatCount} transaction(s)`);

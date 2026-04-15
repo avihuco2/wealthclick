@@ -1,6 +1,18 @@
 import { getDb } from "./db";
 
 /**
+ * Load all category rules for a user as a Map<description, categoryId>.
+ * Used to apply rules inline during transaction insert.
+ */
+export async function loadCategoryRules(userId: string): Promise<Map<string, string>> {
+  const sql = getDb();
+  const rows = await sql<{ description: string; category_id: string }[]>`
+    SELECT description, category_id FROM category_rules WHERE user_id = ${userId}
+  `;
+  return new Map(rows.map((r) => [r.description.trim(), r.category_id]));
+}
+
+/**
  * Learn a user's explicit category choice for a description.
  * Only call on deliberate user actions (not auto-applied rules).
  */
@@ -12,7 +24,7 @@ export async function upsertCategoryRule(
   const sql = getDb();
   await sql`
     INSERT INTO category_rules (user_id, description, category_id)
-    VALUES (${userId}, ${description}, ${categoryId})
+    VALUES (${userId}, ${description.trim()}, ${categoryId})
     ON CONFLICT (user_id, description)
     DO UPDATE SET category_id = ${categoryId}, updated_at = now()
   `;
@@ -30,7 +42,7 @@ export async function applyRulesToUncategorized(userId: string): Promise<number>
     FROM category_rules cr
     WHERE t.user_id   = ${userId}
       AND cr.user_id  = ${userId}
-      AND t.description = cr.description
+      AND TRIM(t.description) = TRIM(cr.description)
       AND t.category_id IS NULL
     RETURNING t.id
   `;

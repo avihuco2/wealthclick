@@ -5,6 +5,7 @@ import { getDb } from "@/lib/db";
 import { getOrSeedCategories } from "@/lib/categories";
 import { getTransactions, getTransactionStats } from "@/lib/transactions";
 import { revalidatePath } from "next/cache";
+import { upsertCategoryRule } from "@/lib/categoryRules";
 import { NavBar } from "@/components/NavBar";
 import TransactionsClient from "./TransactionsClient";
 
@@ -58,6 +59,10 @@ export default async function TransactionsPage({
       INSERT INTO transactions (user_id, category_id, account, date, amount, description, type)
       VALUES (${session.user.id}, ${categoryId}, ${account}, ${date}, ${amount}, ${description}, ${type})
     `;
+    // Learn rule for future auto-categorization
+    if (categoryId && description) {
+      await upsertCategoryRule(session.user.id, description, categoryId);
+    }
     revalidatePath(`/${locale}/transactions`);
     revalidatePath(`/${locale}/dashboard`);
   }
@@ -91,6 +96,10 @@ export default async function TransactionsPage({
           updated_at  = NOW()
       WHERE id = ${id} AND user_id = ${session.user.id}
     `;
+    // Learn rule for future auto-categorization
+    if (categoryId && description) {
+      await upsertCategoryRule(session.user.id, description, categoryId);
+    }
     revalidatePath(`/${locale}/transactions`);
     revalidatePath(`/${locale}/dashboard`);
   }

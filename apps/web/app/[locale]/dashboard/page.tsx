@@ -90,13 +90,15 @@ export default async function DashboardPage({
 
         {/* Metric cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <MetricCard
-            label={t.totalBalance}
-            value={balanceValue}
-            sub={t.totalBalanceSub}
-            accentColor="oklch(0.5706 0.2236 258.71)"
-            icon={<BalanceIcon />}
-          />
+          <a href={`/${typedLocale}/transactions`} className="block">
+            <MetricCard
+              label={t.totalBalance}
+              value={balanceValue}
+              sub={t.totalBalanceSub}
+              accentColor="oklch(0.5706 0.2236 258.71)"
+              icon={<BalanceIcon />}
+            />
+          </a>
           <MetricCard
             label={t.thisMonth}
             value={spendingValue}

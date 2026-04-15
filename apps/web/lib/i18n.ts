@@ -117,6 +117,9 @@ const dictionaries = {
       categoryName: "Name",
       categoryEmoji: "Emoji",
       categoryColor: "Color",
+      autoCategorize: "Auto-categorize",
+      autoCategorized: "transactions categorized",
+      autoCategorizeNone: "No matches found",
     },
     bankAccounts: {
       navLabel: "Bank Accounts",
@@ -261,6 +264,9 @@ const dictionaries = {
       categoryName: "שם",
       categoryEmoji: "אמוג'י",
       categoryColor: "צבע",
+      autoCategorize: "קטגוריזציה אוטומטית",
+      autoCategorized: "עסקאות קוטגרו",
+      autoCategorizeNone: "לא נמצאו התאמות",
     },
     bankAccounts: {
       navLabel: "חשבונות בנק",

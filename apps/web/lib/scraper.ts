@@ -5,6 +5,7 @@ import {
   finishScrapeJob,
 } from "./bankAccounts";
 import { getScrapeHistoryMonths } from "./settings";
+import { applyRulesToUncategorized } from "./categoryRules";
 
 const PUPPETEER_ARGS = [
   "--no-sandbox",
@@ -115,6 +116,12 @@ async function runScrape(
           console.warn(`[scraper] job ${jobId} — insert skipped:`, insertErr instanceof Error ? insertErr.message : insertErr);
         }
       }
+    }
+
+    // Auto-categorize newly inserted transactions using learned rules
+    const autoCatCount = await applyRulesToUncategorized(userId);
+    if (autoCatCount > 0) {
+      console.log(`[scraper] job ${jobId} — auto-categorized ${autoCatCount} transaction(s)`);
     }
 
     console.log(`[scraper] job ${jobId} — done: ${importedCount} new transaction(s) inserted`);

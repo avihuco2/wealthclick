@@ -53,6 +53,22 @@ export default function TransactionsClient({
   // Inline delete confirm
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Auto-categorize
+  const [autoCatting, setAutoCatting] = useState(false);
+  const [autoCatResult, setAutoCatResult] = useState<number | null>(null);
+
+  async function handleAutoCategorize() {
+    setAutoCatting(true);
+    setAutoCatResult(null);
+    const res = await fetch("/api/transactions/categorize-all", { method: "POST" });
+    if (res.ok) {
+      const { updated } = await res.json();
+      setAutoCatResult(updated);
+      router.refresh();
+    }
+    setAutoCatting(false);
+  }
+
   // Inline category overrides: undefined = unchanged, null = cleared, string = new id
   type CatOverride = { categoryId: string | null | undefined; saving: boolean };
   const [categoryOverrides, setCategoryOverrides] = useState<Record<string, CatOverride>>({});
@@ -198,15 +214,35 @@ export default function TransactionsClient({
   return (
     <div>
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-3">
         <h1 className="text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 rounded-xl bg-[oklch(0.5706_0.2236_258.71)] px-4 py-2.5 text-[14px] font-medium text-white shadow-[0_2px_12px_oklch(0.5706_0.2236_258.71/0.35)] transition-all hover:brightness-110"
-        >
-          <PlusIcon />
-          <span>{t.addTransaction}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Auto-categorize */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleAutoCategorize}
+              disabled={autoCatting}
+              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-[14px] font-medium text-white/60 transition-all hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {autoCatting ? <SpinnerIcon /> : <SparklesIcon />}
+              <span>{t.autoCategorize}</span>
+            </button>
+            {autoCatResult !== null && (
+              <span className="text-[12px] text-white/40">
+                {autoCatResult > 0
+                  ? `${autoCatResult} ${t.autoCategorized}`
+                  : t.autoCategorizeNone}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 rounded-xl bg-[oklch(0.5706_0.2236_258.71)] px-4 py-2.5 text-[14px] font-medium text-white shadow-[0_2px_12px_oklch(0.5706_0.2236_258.71/0.35)] transition-all hover:brightness-110"
+          >
+            <PlusIcon />
+            <span>{t.addTransaction}</span>
+          </button>
+        </div>
       </div>
 
       {/* Month navigation */}
@@ -571,6 +607,9 @@ function ReceiptIcon() {
 }
 function SpinnerIcon() {
   return <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>;
+}
+function SparklesIcon() {
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M19 3l.8 2.2L22 6l-2.2.8L19 9l-.8-2.2L16 6l2.2-.8z"/><path d="M5 15l.6 1.4L7 17l-1.4.6L5 19l-.6-1.4L3 17l1.4-.6z"/></svg>;
 }
 function ChevronDownIcon() {
   return <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-50" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>;

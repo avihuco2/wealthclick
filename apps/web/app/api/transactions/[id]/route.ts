@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { upsertCategoryRule } from "@/lib/categoryRules";
 
 export async function PATCH(
   req: Request,
@@ -19,15 +20,20 @@ export async function PATCH(
   const categoryId: string | null = body.category_id ?? null;
 
   const sql = getDb();
-  const rows = await sql`
+  const rows = await sql<{ id: string; description: string }[]>`
     UPDATE transactions
     SET category_id = ${categoryId}, updated_at = NOW()
     WHERE id = ${id} AND user_id = ${session.user.id}
-    RETURNING id
+    RETURNING id, description
   `;
 
   if (rows.length === 0)
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Learn the rule for future auto-categorization (only on explicit assignment)
+  if (categoryId !== null) {
+    await upsertCategoryRule(session.user.id, rows[0].description, categoryId);
+  }
 
   return NextResponse.json({ id });
 }

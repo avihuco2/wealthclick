@@ -29,7 +29,7 @@ export default async function DashboardPage({
       ])
     : [null, null];
 
-  const fmt = (val: string | null | undefined) =>
+  const fmt = (val: string | null | undefined, signed = false) =>
     val == null
       ? "—"
       : new Intl.NumberFormat("he-IL", {
@@ -37,9 +37,11 @@ export default async function DashboardPage({
           currency: "ILS",
           minimumFractionDigits: 0,
           maximumFractionDigits: 0,
-        }).format(Math.abs(parseFloat(val)));
+        }).format(signed ? parseFloat(val) : Math.abs(parseFloat(val)));
 
-  const balanceValue = allTimeStats ? fmt(allTimeStats.net) : "—";
+  const balanceNet = allTimeStats ? parseFloat(allTimeStats.net) : null;
+  const balanceValue = allTimeStats ? fmt(allTimeStats.net, true) : "—";
+  const balanceColor = balanceNet === null ? "text-white" : balanceNet >= 0 ? "oklch(0.80 0.14 142)" : "oklch(0.78 0.16 27)";
   const spendingValue = monthStats ? fmt(monthStats.total_expenses) : "—";
   const savingsRate =
     monthStats && parseFloat(monthStats.total_income) > 0
@@ -96,6 +98,7 @@ export default async function DashboardPage({
               value={balanceValue}
               sub={t.totalBalanceSub}
               accentColor="oklch(0.5706 0.2236 258.71)"
+              valueColor={balanceColor}
               icon={<BalanceIcon />}
             />
           </a>
@@ -162,8 +165,8 @@ export default async function DashboardPage({
 
 // ─── MetricCard ───────────────────────────────────────────────────────────────
 
-function MetricCard({ label, value, sub, accentColor, icon }: {
-  label: string; value: string; sub: string; accentColor: string; icon: React.ReactNode;
+function MetricCard({ label, value, sub, accentColor, valueColor, icon }: {
+  label: string; value: string; sub: string; accentColor: string; valueColor?: string; icon: React.ReactNode;
 }) {
   return (
     <div className="group relative overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.05] p-6 backdrop-blur-xl transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.08]">
@@ -173,7 +176,7 @@ function MetricCard({ label, value, sub, accentColor, icon }: {
           <span style={{ color: accentColor }}>{icon}</span>
         </div>
         <p className="text-[12px] font-medium uppercase tracking-wider text-white/40">{label}</p>
-        <p className="mt-2 text-[36px] font-semibold leading-none text-white">{value}</p>
+        <p className="mt-2 text-[36px] font-semibold leading-none" style={{ color: valueColor ?? "white" }}>{value}</p>
         <p className="mt-2 text-[12px] text-white/35">{sub}</p>
       </div>
     </div>

@@ -575,10 +575,6 @@ function SpinnerIcon() {
 function ChevronDownIcon() {
   return <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-50" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>;
 }
-function CheckIcon() {
-  return <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="ms-auto shrink-0 opacity-60" aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg>;
-}
-
 // ── Inline category dropdown ─────────────────────────────────────────────────
 
 type CatOverride = { categoryId: string | null | undefined; saving: boolean };
@@ -598,12 +594,9 @@ function CategoryDropdown({
   override: CatOverride;
   onCategoryChange: (txId: string, categoryId: string | null) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, minWidth: 0 });
+  const [editing, setEditing] = useState(false);
+  const selectRef = useRef<HTMLSelectElement>(null);
 
-  // Derive which category to display (override takes precedence)
   const effectiveId =
     override.categoryId !== undefined ? override.categoryId : tx.category_id;
   const effectiveCat = effectiveId ? categories.find((c) => c.id === effectiveId) : null;
@@ -611,112 +604,75 @@ function CategoryDropdown({
     ? locale === "he" ? effectiveCat.name_he : effectiveCat.name_en
     : noCategory;
 
-  function handleOpen(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    const dropW = 240;
-    const left = Math.min(rect.left, window.innerWidth - dropW - 8);
-    setPos({ top: rect.bottom + 6, left: Math.max(8, left), minWidth: dropW });
-    setOpen(true);
+  function openSelect() {
+    setEditing(true);
+    // After render, focus + programmatically open the native select
+    setTimeout(() => {
+      selectRef.current?.focus();
+      selectRef.current?.click();
+    }, 0);
   }
 
-  useEffect(() => {
-    if (!open) return;
-    const onMouse = (e: MouseEvent) => {
-      if (dropdownRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    const onScroll = () => setOpen(false);
-    document.addEventListener("mousedown", onMouse);
-    document.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      document.removeEventListener("mousedown", onMouse);
-      document.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [open]);
-
-  function handleSelect(categoryId: string | null) {
-    setOpen(false);
-    onCategoryChange(tx.id, categoryId);
+  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const val = e.target.value || null;
+    setEditing(false);
+    onCategoryChange(tx.id, val);
   }
 
-  return (
-    <>
-      <button
-        ref={triggerRef}
-        onClick={handleOpen}
-        disabled={override.saving}
-        className="group"
-        title={noCategory}
+  function handleBlur() {
+    setEditing(false);
+  }
+
+  // Spinner while saving
+  if (override.saving) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[12px] text-white/30">
+        <SpinnerIcon />
+      </span>
+    );
+  }
+
+  // Native select while editing
+  if (editing) {
+    return (
+      <select
+        ref={selectRef}
+        defaultValue={effectiveId ?? ""}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        className="rounded-full border border-white/20 bg-[oklch(0.13_0.02_260)] px-2.5 py-1 text-[11px] text-white/80 outline-none"
+        style={effectiveCat ? { borderColor: `${effectiveCat.color}50` } : {}}
       >
-        {override.saving ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[12px] text-white/30">
-            <SpinnerIcon />
-          </span>
-        ) : effectiveCat ? (
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] transition-all group-hover:brightness-125"
-            style={{ borderColor: `${effectiveCat.color}40`, background: `${effectiveCat.color}18` }}
-          >
-            <span className="text-[13px] leading-none">{effectiveCat.emoji || "•"}</span>
-            <span className="text-[11px] font-medium" style={{ color: effectiveCat.color }}>
-              {displayName}
-            </span>
-            <ChevronDownIcon />
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[12px] text-white/25 transition-all group-hover:border-white/20 group-hover:text-white/50">
-            {displayName}
-            <ChevronDownIcon />
-          </span>
-        )}
-      </button>
+        <option value="">{noCategory}</option>
+        {categories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.emoji} {locale === "he" ? cat.name_he : cat.name_en}
+          </option>
+        ))}
+      </select>
+    );
+  }
 
-      {open && (
-        <div
-          ref={dropdownRef}
-          className="fixed z-[200] overflow-y-auto rounded-2xl border border-white/[0.12] bg-[oklch(0.11_0.02_260)] p-1.5 shadow-[0_8px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
-          style={{ top: pos.top, left: pos.left, minWidth: pos.minWidth, maxHeight: 320 }}
+  // Badge (click → open select)
+  return (
+    <button onClick={openSelect} className="group">
+      {effectiveCat ? (
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] transition-all group-hover:brightness-125"
+          style={{ borderColor: `${effectiveCat.color}40`, background: `${effectiveCat.color}18` }}
         >
-          {/* None */}
-          <button
-            onClick={() => handleSelect(null)}
-            className={cn(
-              "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] transition-all hover:bg-white/[0.07]",
-              effectiveId === null ? "bg-white/[0.06] text-white/60" : "text-white/35",
-            )}
-          >
-            <span className="w-5 text-center text-[13px] leading-none">—</span>
-            <span>{noCategory}</span>
-            {effectiveId === null && <CheckIcon />}
-          </button>
-
-          <div className="my-1 h-px bg-white/[0.06]" />
-
-          {categories.map((cat) => {
-            const name = locale === "he" ? cat.name_he : cat.name_en;
-            const isActive = effectiveId === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => handleSelect(cat.id)}
-                className={cn(
-                  "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] transition-all hover:bg-white/[0.07]",
-                  isActive ? "bg-white/[0.06]" : "",
-                )}
-              >
-                <span className="w-5 text-center text-[14px] leading-none">{cat.emoji || "•"}</span>
-                <span className="font-medium" style={{ color: cat.color }}>{name}</span>
-                {isActive && <CheckIcon />}
-              </button>
-            );
-          })}
-        </div>
+          <span className="text-[13px] leading-none">{effectiveCat.emoji || "•"}</span>
+          <span className="text-[11px] font-medium" style={{ color: effectiveCat.color }}>
+            {displayName}
+          </span>
+          <ChevronDownIcon />
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[12px] text-white/25 transition-all group-hover:border-white/20 group-hover:text-white/50">
+          {displayName}
+          <ChevronDownIcon />
+        </span>
       )}
-    </>
+    </button>
   );
 }

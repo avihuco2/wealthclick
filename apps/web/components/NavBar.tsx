@@ -68,72 +68,76 @@ export function NavBar({
           </span>
         </a>
 
-        {/* Right: lang switcher + hamburger (all screen sizes) */}
+        {/* Right: lang switcher + hamburger */}
         <div className="flex items-center gap-2">
           <LanguageSwitcher currentLocale={locale} />
-          <button
-            onClick={() => setOpen((v) => !v)}
-            aria-label="Toggle menu"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white/60 transition-all hover:bg-white/[0.10] hover:text-white/90"
-          >
-            {open ? <XIcon /> : <HamburgerIcon />}
-          </button>
+
+          {/* Hamburger + anchored dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Toggle menu"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white/60 transition-all hover:bg-white/[0.10] hover:text-white/90"
+            >
+              {open ? <XIcon /> : <HamburgerIcon />}
+            </button>
+
+            {/* Dropdown panel — anchored to button, not full-width */}
+            {open && (
+              <div className="absolute end-0 top-full z-50 mt-2 w-64 rounded-2xl border border-white/[0.10] bg-[oklch(0.09_0.02_260/0.97)] p-2 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+
+                {/* User info */}
+                {(userImage || userEmail) && (
+                  <div className="mb-2 flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-2.5">
+                    {userImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={userImage} alt={userName ?? "avatar"} width={32} height={32} className="rounded-full ring-1 ring-white/20" />
+                    ) : (
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-[12px] font-semibold uppercase text-white/70">
+                        {(userName ?? userEmail ?? "U")[0]}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      {userName && <p className="truncate text-[13px] font-medium text-white/80">{userName}</p>}
+                      <p className="truncate text-[11px] text-white/40">{userEmail}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Nav links */}
+                <nav className="flex flex-col gap-0.5">
+                  {navLinks.map((link) => (
+                    <a
+                      key={link.key}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className={`rounded-xl px-3 py-2.5 text-[13px] transition-all ${
+                        activePage === link.key
+                          ? "bg-white/[0.10] text-white"
+                          : "text-white/60 hover:bg-white/[0.06] hover:text-white/90"
+                      }`}
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                </nav>
+
+                {/* Sign out */}
+                {signOutAction && (
+                  <form action={signOutAction} className="mt-1 border-t border-white/[0.06] pt-1">
+                    <button
+                      type="submit"
+                      className="w-full rounded-xl px-3 py-2.5 text-start text-[13px] text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/60"
+                    >
+                      {t.signOut}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Dropdown menu */}
-      {open && (
-        <div className="border-t border-white/[0.06] bg-[oklch(0.08_0.02_260/0.95)] px-6 py-4 backdrop-blur-xl">
-
-          {/* User info */}
-          {(userImage || userEmail) && (
-            <div className="mb-4 flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3">
-              {userImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={userImage} alt={userName ?? "avatar"} width={36} height={36} className="rounded-full ring-1 ring-white/20" />
-              ) : (
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-[13px] font-semibold uppercase text-white/70">
-                  {(userName ?? userEmail ?? "U")[0]}
-                </div>
-              )}
-              <div className="min-w-0">
-                {userName && <p className="truncate text-[14px] font-medium text-white/80">{userName}</p>}
-                <p className="truncate text-[12px] text-white/40">{userEmail}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Nav links */}
-          <nav className="flex flex-col gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.key}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className={`rounded-xl px-4 py-3 text-[14px] transition-all ${
-                  activePage === link.key
-                    ? "bg-white/[0.10] text-white"
-                    : "text-white/60 hover:bg-white/[0.06] hover:text-white/90"
-                }`}
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-
-          {/* Sign out */}
-          {signOutAction && (
-            <form action={signOutAction} className="mt-3 border-t border-white/[0.06] pt-3">
-              <button
-                type="submit"
-                className="w-full rounded-xl px-4 py-3 text-start text-[14px] text-white/40 transition-all hover:bg-white/[0.06] hover:text-white/60"
-              >
-                {t.signOut}
-              </button>
-            </form>
-          )}
-        </div>
-      )}
     </header>
   );
 }

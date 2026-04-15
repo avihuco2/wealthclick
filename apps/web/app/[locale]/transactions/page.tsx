@@ -125,16 +125,17 @@ export default async function TransactionsPage({
     const session = await auth();
     if (!session?.user?.id) return;
 
-    const name  = (formData.get("name")  as string)?.trim();
-    const emoji = (formData.get("emoji") as string)?.trim() || "🏷️";
-    const color = (formData.get("color") as string) || "#8E8E93";
+    const nameEn = (formData.get("name_en") as string)?.trim();
+    const nameHe = (formData.get("name_he") as string)?.trim();
+    const emoji  = (formData.get("emoji")   as string)?.trim() || "🏷️";
+    const color  = (formData.get("color")   as string) || "#8E8E93";
 
-    if (!name) return;
+    if (!nameEn || !nameHe) return;
 
     const sql = getDb();
     await sql`
       INSERT INTO categories (user_id, name_en, name_he, color, icon, emoji)
-      VALUES (${session.user.id}, ${name}, ${name}, ${color}, 'custom', ${emoji})
+      VALUES (${session.user.id}, ${nameEn}, ${nameHe}, ${color}, 'custom', ${emoji})
     `;
     revalidatePath(`/${locale}/transactions`);
   }

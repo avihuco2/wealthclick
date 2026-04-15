@@ -502,7 +502,7 @@ export default function TransactionsClient({
             </div>
 
             <form action={handleCatSubmit}>
-              {/* Emoji + Name row */}
+              {/* Emoji row */}
               <div className="mb-4 flex gap-3">
                 <div className="w-20">
                   <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.categoryEmoji}</label>
@@ -514,16 +514,31 @@ export default function TransactionsClient({
                     className="w-full rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-center text-[20px] outline-none backdrop-blur-md transition-all focus:border-white/25 focus:bg-white/[0.09]"
                   />
                 </div>
+                {/* English name */}
                 <div className="flex-1">
-                  <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.categoryName}</label>
+                  <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.categoryNameEn}</label>
                   <input
                     type="text"
-                    name="name"
+                    name="name_en"
                     required
-                    placeholder={t.categoryName}
+                    placeholder="e.g. Food"
+                    dir="ltr"
                     className={glassInput}
                   />
                 </div>
+              </div>
+
+              {/* Hebrew name */}
+              <div className="mb-4">
+                <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.categoryNameHe}</label>
+                <input
+                  type="text"
+                  name="name_he"
+                  required
+                  placeholder="לדוגמה: אוכל"
+                  dir="rtl"
+                  className={glassInput}
+                />
               </div>
 
               {/* Color picker */}
@@ -547,7 +562,7 @@ export default function TransactionsClient({
                 <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px]"
                   style={{ borderColor: `${catColor}40`, background: `${catColor}18` }}>
                   <span className="text-[14px]">🏷️</span>
-                  <span className="font-medium" style={{ color: catColor }}>{t.categoryName}</span>
+                  <span className="font-medium" style={{ color: catColor }}>{t.addCategory}</span>
                 </div>
               </div>
 

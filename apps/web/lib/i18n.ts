@@ -154,6 +154,8 @@ const dictionaries = {
       enable: "Enable",
       disable: "Disable",
       statusDisabled: "Disabled",
+      importPeriod: "Import period",
+      months: "mo",
     },
   },
   he: {
@@ -296,6 +298,8 @@ const dictionaries = {
       enable: "הפעל",
       disable: "השבת",
       statusDisabled: "מושבת",
+      importPeriod: "תקופת ייבוא",
+      months: "ח׳",
     },
   },
 } as const;

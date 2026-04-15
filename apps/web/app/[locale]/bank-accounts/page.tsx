@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { getBankAccounts, getLatestScrapeJob } from "@/lib/bankAccounts";
 import { BANK_CONFIGS } from "@/lib/scraperConfig";
-import { getScrapeIntervalHours } from "@/lib/settings";
+import { getScrapeIntervalHours, getScrapeHistoryMonths } from "@/lib/settings";
 import { NavBar } from "@/components/NavBar";
 import BankAccountsClient from "@/components/BankAccountsClient";
 
@@ -24,9 +24,10 @@ export default async function BankAccountsPage({
   const userId = session.user.id;
   if (!userId) redirect(`/${locale}/login`);
 
-  const [accounts, scrapeIntervalHours] = await Promise.all([
+  const [accounts, scrapeIntervalHours, scrapeHistoryMonths] = await Promise.all([
     getBankAccounts(userId),
     getScrapeIntervalHours(),
+    getScrapeHistoryMonths(),
   ]);
   const accountsWithJobs = await Promise.all(
     accounts.map(async (account) => {
@@ -68,6 +69,7 @@ export default async function BankAccountsPage({
           bankConfigs={Object.values(BANK_CONFIGS)}
           locale={typedLocale}
           scrapeIntervalHours={scrapeIntervalHours}
+          scrapeHistoryMonths={scrapeHistoryMonths}
           t={t.bankAccounts}
         />
       </main>

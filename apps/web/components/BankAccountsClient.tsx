@@ -43,6 +43,8 @@ type T = {
   overdue: string;
   enable: string;
   disable: string;
+  importPeriod: string;
+  months: string;
 };
 
 type Props = {
@@ -50,6 +52,7 @@ type Props = {
   bankConfigs: BankConfig[];
   locale: Locale;
   scrapeIntervalHours: number;
+  scrapeHistoryMonths: number;
   t: T;
 };
 
@@ -59,12 +62,14 @@ type ScrapeState = Record<
 >;
 
 const INTERVAL_OPTIONS = [1, 3, 6, 12, 24, 48];
+const HISTORY_OPTIONS = [1, 3, 6, 12];
 
 export default function BankAccountsClient({
   initialAccounts,
   bankConfigs,
   locale,
   scrapeIntervalHours: initialInterval,
+  scrapeHistoryMonths: initialHistory,
   t,
 }: Props) {
   const [accounts, setAccounts] = useState<SafeBankAccount[]>(initialAccounts);
@@ -73,6 +78,8 @@ export default function BankAccountsClient({
   const [syncingAll, setSyncingAll] = useState(false);
   const [interval, setIntervalHours] = useState(initialInterval);
   const [savingInterval, setSavingInterval] = useState(false);
+  const [historyMonths, setHistoryMonths] = useState(initialHistory);
+  const [savingHistory, setSavingHistory] = useState(false);
 
   const refreshAccounts = useCallback(async () => {
     const res = await fetch("/api/bank-accounts");
@@ -124,6 +131,17 @@ export default function BankAccountsClient({
     });
     if (res.ok) setIntervalHours(hours);
     setSavingInterval(false);
+  }
+
+  async function handleHistoryChange(months: number) {
+    setSavingHistory(true);
+    const res = await fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scrapeHistoryMonths: months }),
+    });
+    if (res.ok) setHistoryMonths(months);
+    setSavingHistory(false);
   }
 
   async function handleSyncAll() {
@@ -226,30 +244,57 @@ export default function BankAccountsClient({
         </div>
       </div>
 
-      {/* Auto-sync banner with interval selector */}
-      <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3">
-        <ClockIcon />
-        <span className="text-[13px] text-white/50">{t.autoSync}</span>
-        <div className="flex items-center gap-1">
-          {INTERVAL_OPTIONS.map((h) => (
-            <button
-              key={h}
-              onClick={() => handleIntervalChange(h)}
-              disabled={savingInterval}
-              className={`rounded-lg px-2.5 py-1 text-[12px] font-medium transition-all ${
-                interval === h
-                  ? "bg-[oklch(0.5706_0.2236_258.71)] text-white shadow-[0_1px_8px_oklch(0.5706_0.2236_258.71/0.4)]"
-                  : "text-white/40 hover:bg-white/[0.07] hover:text-white/70"
-              } disabled:cursor-not-allowed disabled:opacity-50`}
-            >
-              {h}{t.hours}
-            </button>
-          ))}
-          {savingInterval && <SpinnerIcon />}
+      {/* Auto-sync + import period banner */}
+      <div className="mb-5 flex flex-col gap-0 rounded-2xl border border-white/[0.07] bg-white/[0.03]">
+        {/* Sync interval row */}
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+          <ClockIcon />
+          <span className="text-[13px] text-white/50">{t.autoSync}</span>
+          <div className="flex items-center gap-1">
+            {INTERVAL_OPTIONS.map((h) => (
+              <button
+                key={h}
+                onClick={() => handleIntervalChange(h)}
+                disabled={savingInterval}
+                className={`rounded-lg px-2.5 py-1 text-[12px] font-medium transition-all ${
+                  interval === h
+                    ? "bg-[oklch(0.5706_0.2236_258.71)] text-white shadow-[0_1px_8px_oklch(0.5706_0.2236_258.71/0.4)]"
+                    : "text-white/40 hover:bg-white/[0.07] hover:text-white/70"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                {h}{t.hours}
+              </button>
+            ))}
+            {savingInterval && <SpinnerIcon />}
+          </div>
+          <span className="ms-auto text-[12px] text-white/30">
+            {enabledCount}/{accounts.length} enabled
+          </span>
         </div>
-        <span className="ms-auto text-[12px] text-white/30">
-          {enabledCount}/{accounts.length} enabled
-        </span>
+        {/* Divider */}
+        <div className="mx-4 h-px bg-white/[0.05]" />
+        {/* History period row */}
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+          <CalendarIcon />
+          <span className="text-[13px] text-white/50">{t.importPeriod}</span>
+          <div className="flex items-center gap-1">
+            {HISTORY_OPTIONS.map((m) => (
+              <button
+                key={m}
+                onClick={() => handleHistoryChange(m)}
+                disabled={savingHistory}
+                className={`rounded-lg px-2.5 py-1 text-[12px] font-medium transition-all ${
+                  historyMonths === m
+                    ? "bg-[oklch(0.5706_0.2236_258.71)] text-white shadow-[0_1px_8px_oklch(0.5706_0.2236_258.71/0.4)]"
+                    : "text-white/40 hover:bg-white/[0.07] hover:text-white/70"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                {m}{t.months}
+              </button>
+            ))}
+            {savingHistory && <SpinnerIcon />}
+          </div>
+        </div>
       </div>
 
       {/* Account list */}
@@ -541,4 +586,7 @@ function SpinnerIcon() {
 }
 function ClockIcon() {
   return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+}
+function CalendarIcon() {
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
 }

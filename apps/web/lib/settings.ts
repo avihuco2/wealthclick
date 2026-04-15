@@ -25,3 +25,8 @@ export async function getScrapeIntervalHours(): Promise<number> {
   const val = await getSetting("scrape_interval_hours", "6");
   return Math.max(1, parseInt(val, 10));
 }
+
+export async function getScrapeHistoryMonths(): Promise<number> {
+  const val = await getSetting("scrape_history_months", "3");
+  return Math.max(1, Math.min(24, parseInt(val, 10)));
+}

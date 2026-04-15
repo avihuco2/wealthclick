@@ -4,6 +4,7 @@ import {
   setBankAccountStatus,
   finishScrapeJob,
 } from "./bankAccounts";
+import { getScrapeHistoryMonths } from "./settings";
 
 const PUPPETEER_ARGS = [
   "--no-sandbox",
@@ -66,9 +67,10 @@ async function runScrape(
 
     const credentials = JSON.parse(decrypt(credentialsEncrypted));
 
+    const historyMonths = await getScrapeHistoryMonths();
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 3); // last 3 months
-    console.log(`[scraper] job ${jobId} — scraping ${companyId} from ${startDate.toISOString().slice(0, 10)}`);
+    startDate.setMonth(startDate.getMonth() - historyMonths);
+    console.log(`[scraper] job ${jobId} — scraping ${companyId} from ${startDate.toISOString().slice(0, 10)} (${historyMonths} months)`);
 
     const scraper = createScraper({
       companyId: companyType,

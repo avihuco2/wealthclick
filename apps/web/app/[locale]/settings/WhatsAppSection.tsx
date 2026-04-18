@@ -178,7 +178,10 @@ export default function WhatsAppSection({ t }: Props) {
       // 403 = name already in use (stuck instance). Delete and retry once.
       if (createRes.status === 403) {
         console.log("[WA] instance exists — deleting and retrying");
-        await fetch("/api/whatsapp/instance/logout", { method: "DELETE" });
+        const delRes = await fetch("/api/whatsapp/instance/logout", { method: "DELETE" });
+        console.log("[WA] delete:", delRes.status);
+        // wait briefly for Evolution API to clean up
+        await new Promise((r) => setTimeout(r, 2000));
         createRes = await fetch("/api/whatsapp/instance/create", { method: "POST" });
         createData = await createRes.json();
         console.log("[WA] retry create:", createRes.status, JSON.stringify(createData).substring(0, 200));

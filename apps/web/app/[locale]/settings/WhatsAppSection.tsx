@@ -56,10 +56,10 @@ export default function WhatsAppSection({ t }: Props) {
   const [config, setConfig] = useState<WhatsAppConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Form state
-  const [evolutionUrl, setEvolutionUrl]     = useState("");
+  // Form state — defaults pre-filled for local Evolution API setup
+  const [evolutionUrl, setEvolutionUrl]     = useState("http://localhost:8080");
   const [apiKey, setApiKey]                 = useState("");
-  const [instanceName, setInstanceName]     = useState("");
+  const [instanceName, setInstanceName]     = useState("wealthclick");
   const [allowedNumbers, setAllowedNumbers] = useState("");
   const [model, setModel]                   = useState<BedrockModelId>("us.anthropic.claude-haiku-4-5-20251001-v1:0");
   const [systemPrompt, setSystemPrompt]     = useState("");

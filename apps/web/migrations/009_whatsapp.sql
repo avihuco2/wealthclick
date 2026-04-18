@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS whatsapp_config (
   -- Allowed phone numbers (E.164 list, stored as JSONB array e.g. ["+972501234567"])
   allowed_numbers JSONB       NOT NULL DEFAULT '[]',
   -- Bedrock model ID chosen by user
-  bedrock_model   TEXT        NOT NULL DEFAULT 'anthropic.claude-3-haiku-20240307-v1:0',
+  bedrock_model   TEXT        NOT NULL DEFAULT 'us.anthropic.claude-haiku-4-5-20251001-v1:0',
   -- Optional system prompt override
   system_prompt   TEXT,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),

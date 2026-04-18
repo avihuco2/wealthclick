@@ -167,27 +167,33 @@ export default function WhatsAppSection({ t }: Props) {
   async function handleConnect() {
     setConnecting(true);
     try {
-      console.log("[WA] handleConnect: calling /api/whatsapp/instance/create");
-      const createRes = await fetch("/api/whatsapp/instance/create", { method: "POST" });
-      const createData = await createRes.json();
-      console.log("[WA] create response:", createRes.status, JSON.stringify(createData));
+      let createRes = await fetch("/api/whatsapp/instance/create", { method: "POST" });
+      let createData = await createRes.json();
+      console.log("[WA] create:", createRes.status, JSON.stringify(createData).substring(0, 200));
+
+      // 403 = name already in use (stuck instance). Delete and retry once.
+      if (createRes.status === 403) {
+        console.log("[WA] instance exists — deleting and retrying");
+        await fetch("/api/whatsapp/instance/logout", { method: "DELETE" });
+        createRes = await fetch("/api/whatsapp/instance/create", { method: "POST" });
+        createData = await createRes.json();
+        console.log("[WA] retry create:", createRes.status, JSON.stringify(createData).substring(0, 200));
+      }
 
       if (!createRes.ok) {
-        console.error("[WA] create failed — setting error state");
+        console.error("[WA] create failed:", createData);
         setConnState("error");
         return;
       }
 
       let base64: string = createData?.qrcode?.base64 ?? "";
-      console.log("[WA] base64 from create:", base64 ? `${base64.substring(0, 40)}...` : "(empty)");
+      console.log("[WA] QR from create:", base64 ? "✓" : "(empty)");
 
       if (!base64) {
-        console.log("[WA] no QR in create response, calling /api/whatsapp/instance/qr");
         const qrRes = await fetch("/api/whatsapp/instance/qr");
         const qrData = await qrRes.json();
-        console.log("[WA] qr response:", qrRes.status, JSON.stringify(qrData).substring(0, 200));
+        console.log("[WA] /qr endpoint:", qrRes.status, JSON.stringify(qrData).substring(0, 200));
         base64 = qrData?.base64 ?? qrData?.qrcode?.base64 ?? "";
-        console.log("[WA] base64 from qr endpoint:", base64 ? `${base64.substring(0, 40)}...` : "(empty)");
       }
 
       if (base64) {
@@ -196,7 +202,7 @@ export default function WhatsAppSection({ t }: Props) {
         stopPolling();
         pollRef.current = setInterval(checkStatus, 3000);
       } else {
-        console.error("[WA] no QR code found in any response — setting error state");
+        console.error("[WA] no QR in any response");
         setConnState("error");
       }
     } catch (e) {

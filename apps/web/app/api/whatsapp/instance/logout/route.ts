@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { decryptApiKey } from "@/lib/whatsappCrypto";
-import { logoutInstance } from "@/lib/evolutionApi";
+import { deleteInstance } from "@/lib/evolutionApi";
 
 export async function DELETE() {
   const session = await auth();
@@ -18,6 +18,6 @@ export async function DELETE() {
   if (!cfg) return NextResponse.json({ error: "WhatsApp not configured" }, { status: 400 });
 
   const apiKey = decryptApiKey(cfg.api_key_enc, cfg.api_key_iv, cfg.api_key_tag);
-  await logoutInstance({ url: cfg.evolution_url, apiKey, instance: cfg.instance_name });
+  await deleteInstance({ url: cfg.evolution_url, apiKey, instance: cfg.instance_name });
   return NextResponse.json({ ok: true });
 }

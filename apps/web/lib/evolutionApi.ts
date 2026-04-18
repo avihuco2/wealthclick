@@ -30,7 +30,6 @@ export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
     method: "POST",
     body: JSON.stringify({
       instanceName: cfg.instance,
-      integration: "WHATSAPP-BAILEYS",
       qrcode: true,
       webhook: {
         enabled: true,
@@ -41,6 +40,11 @@ export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
       },
     }),
   });
+}
+
+/** Delete/remove an instance from Evolution API. */
+export async function deleteInstance(cfg: EvolutionConfig) {
+  return evoFetch(cfg, `/instance/delete/${cfg.instance}`, { method: "DELETE" });
 }
 
 /** Get QR code (base64 image) for the instance. */

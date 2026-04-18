@@ -52,15 +52,20 @@ resource "aws_iam_role_policy" "ec2_bedrock" {
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
         Resource = [
-          # Claude 3 Haiku
+          # Anthropic Claude
           "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
-          # Claude 3.5 Haiku
           "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0",
-          # Claude 3.5 Sonnet
           "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0",
-          # Amazon Nova Micro + Lite
+          # Amazon Nova
           "arn:aws:bedrock:*::foundation-model/amazon.nova-micro-v1:0",
           "arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0",
+          # Qwen3
+          "arn:aws:bedrock:*::foundation-model/qwen.qwen3-32b-v1:0",
+          "arn:aws:bedrock:*::foundation-model/qwen.qwen3-next-80b-a3b",
+          # Gemma 3
+          "arn:aws:bedrock:*::foundation-model/google.gemma-3-4b-it",
+          "arn:aws:bedrock:*::foundation-model/google.gemma-3-12b-it",
+          "arn:aws:bedrock:*::foundation-model/google.gemma-3-27b-it",
         ]
       }
     ]

@@ -186,14 +186,15 @@ export default function WhatsAppSection({ t }: Props) {
         return;
       }
 
-      let base64: string = createData?.qrcode?.base64 ?? "";
-      console.log("[WA] QR from create:", base64 ? "✓" : "(empty)");
-
-      if (!base64) {
+      // QR is not immediate — Baileys needs a moment to generate it. Poll up to 10×1.5s.
+      let base64 = "";
+      for (let attempt = 1; attempt <= 10; attempt++) {
+        await new Promise((r) => setTimeout(r, 1500));
         const qrRes = await fetch("/api/whatsapp/instance/qr");
         const qrData = await qrRes.json();
-        console.log("[WA] /qr endpoint:", qrRes.status, JSON.stringify(qrData).substring(0, 200));
+        console.log(`[WA] QR attempt ${attempt}:`, qrRes.status, JSON.stringify(qrData).substring(0, 150));
         base64 = qrData?.base64 ?? qrData?.qrcode?.base64 ?? "";
+        if (base64) break;
       }
 
       if (base64) {
@@ -202,7 +203,7 @@ export default function WhatsAppSection({ t }: Props) {
         stopPolling();
         pollRef.current = setInterval(checkStatus, 3000);
       } else {
-        console.error("[WA] no QR in any response");
+        console.error("[WA] no QR after 10 attempts");
         setConnState("error");
       }
     } catch (e) {

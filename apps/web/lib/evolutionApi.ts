@@ -30,6 +30,7 @@ export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
     method: "POST",
     body: JSON.stringify({
       instanceName: cfg.instance,
+      integration: "WHATSAPP-BAILEYS",
       qrcode: true,
       webhook: {
         enabled: true,

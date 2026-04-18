@@ -45,18 +45,18 @@ resource "aws_iam_role_policy" "github_actions_deploy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "SSMSendCommand"
+        # Allow SendCommand on the specific SSM document — AWS-managed docs have no tags
+        Sid      = "SSMSendCommandDocument"
+        Effect   = "Allow"
+        Action   = ["ssm:SendCommand"]
+        Resource = ["arn:aws:ssm:${var.aws_region}::document/AWS-RunShellScript"]
+      },
+      {
+        # Allow SendCommand on instances tagged Project=wealthclick only
+        Sid    = "SSMSendCommandInstance"
         Effect = "Allow"
-        Action = [
-          "ssm:SendCommand",
-          "ssm:GetCommandInvocation",
-        ]
-        Resource = [
-          # Scope SendCommand to this document only
-          "arn:aws:ssm:${var.aws_region}::document/AWS-RunShellScript",
-          # Scope to instances tagged Project=wealthclick in this account
-          "arn:aws:ec2:${var.aws_region}:930458520260:instance/*",
-        ]
+        Action = ["ssm:SendCommand"]
+        Resource = ["arn:aws:ec2:${var.aws_region}:930458520260:instance/*"]
         Condition = {
           StringEquals = {
             "aws:ResourceTag/Project" = "wealthclick"

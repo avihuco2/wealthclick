@@ -24,21 +24,18 @@ async function evoFetch(cfg: EvolutionConfig, path: string, init?: RequestInit) 
   return res.json();
 }
 
-/** Create a new instance in Evolution API. */
+/** Create a new instance in Evolution API (v1 compatible). */
 export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
   return evoFetch(cfg, "/instance/create", {
     method: "POST",
     body: JSON.stringify({
       instanceName: cfg.instance,
-      integration: "WHATSAPP-BAILEYS",
       qrcode: true,
-      webhook: {
-        enabled: true,
-        url: webhookUrl,
-        byEvents: true,
-        base64: false,
-        events: ["MESSAGES_UPSERT"],
-      },
+      // v1 webhook config
+      webhookUrl,
+      webhookByEvents: true,
+      webhookBase64: false,
+      webhookEvents: ["MESSAGES_UPSERT"],
     }),
   });
 }
@@ -59,7 +56,10 @@ export async function getInstanceStatus(cfg: EvolutionConfig): Promise<{ instanc
     (data: unknown) => {
       const arr = Array.isArray(data) ? data : [data];
       const inst = arr[0];
-      return { instance: { state: inst?.instance?.state ?? inst?.state ?? "unknown" } };
+      // v1: connectionStatus field; v2: instance.state
+      const state = inst?.connectionStatus ?? inst?.instance?.state ?? inst?.state ?? "unknown";
+      // v1 uses "open" for connected
+      return { instance: { state } };
     },
   );
 }

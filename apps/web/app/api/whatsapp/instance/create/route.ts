@@ -18,7 +18,12 @@ export async function POST(request: Request) {
   `;
   if (!cfg) return NextResponse.json({ error: "WhatsApp not configured" }, { status: 400 });
 
-  const origin = new URL(request.url).origin;
+  // Use forwarded headers from ALB to get the real public origin
+  const fwdHost = request.headers.get("x-forwarded-host");
+  const fwdProto = request.headers.get("x-forwarded-proto") ?? "https";
+  const origin = fwdHost
+    ? `${fwdProto}://${fwdHost}`
+    : new URL(request.url).origin;
   const webhookUrl = `${origin}/api/whatsapp/webhook?key=${cfg.webhook_secret}`;
   const apiKey = decryptApiKey(cfg.api_key_enc, cfg.api_key_iv, cfg.api_key_tag);
 

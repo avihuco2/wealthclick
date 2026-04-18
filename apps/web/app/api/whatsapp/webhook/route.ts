@@ -73,7 +73,7 @@ function normalizePhone(raw: string): string {
 
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url);
-  const webhookKey = searchParams.get("key");
+  const webhookKey = searchParams.get("key"); // URL is sync, searchParams.get() is sync
   if (!webhookKey) return NextResponse.json({ error: "Missing key" }, { status: 400 });
 
   const rawBody = await request.text();
@@ -100,11 +100,12 @@ export async function POST(request: Request) {
 
   if (!config) return NextResponse.json({ ok: true }); // unknown key — silently ignore
 
-  // HMAC validation using Evolution API key as secret
-  // (Evolution sends the webhook with the API key as the HMAC secret)
-  if (config.api_key_enc) {
+  // HMAC validation — only enforce if Evolution sends the header (v2+).
+  // v1.x does not send x-hub-signature-256, so skip when absent.
+  if (signature && config.api_key_enc) {
     const apiKey = decryptApiKey(config.api_key_enc, config.api_key_iv, config.api_key_tag);
     if (!validateHmac(rawBody, signature, apiKey)) {
+      console.warn("[whatsapp] HMAC mismatch — rejected");
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
   }

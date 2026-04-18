@@ -56,8 +56,13 @@ export async function getInstanceStatus(cfg: EvolutionConfig): Promise<{ instanc
     (data: unknown) => {
       const arr = Array.isArray(data) ? data : [data];
       const inst = arr[0];
-      // v1: connectionStatus field; v2: instance.state
-      const state = inst?.connectionStatus ?? inst?.instance?.state ?? inst?.state ?? "unknown";
+      // v1: instance.status="open"; v2: instance.state or connectionStatus
+      const state =
+        inst?.connectionStatus ??
+        inst?.instance?.status ??
+        inst?.instance?.state ??
+        inst?.state ??
+        "unknown";
       // v1 uses "open" for connected
       return { instance: { state } };
     },

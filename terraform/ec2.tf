@@ -51,9 +51,12 @@ resource "aws_iam_role_policy" "ec2_bedrock" {
         Sid    = "BedrockInvoke"
         Effect = "Allow"
         Action = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
-        # Wildcard covers all current and future foundation models —
-        # the user's model picker controls which models are actually used.
-        Resource = ["arn:aws:bedrock:*::foundation-model/*"]
+        Resource = [
+          # Foundation models (direct IDs)
+          "arn:aws:bedrock:*::foundation-model/*",
+          # Cross-region inference profiles (us.*, global.* prefixes)
+          "arn:aws:bedrock:*:*:inference-profile/*",
+        ]
       }
     ]
   })

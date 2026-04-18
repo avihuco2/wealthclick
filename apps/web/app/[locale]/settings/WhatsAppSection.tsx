@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { BEDROCK_MODELS, type BedrockModelId } from "@/lib/bedrock";
+import { BEDROCK_MODELS, type BedrockModelId } from "@/lib/bedrockModels";
 
 interface WhatsAppConfig {
   id: string;

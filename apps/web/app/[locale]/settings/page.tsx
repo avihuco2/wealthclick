@@ -4,6 +4,7 @@ import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { NavBar } from "@/components/NavBar";
 import { getDb } from "@/lib/db";
 import ApiKeysClient from "./ApiKeysClient";
+import WhatsAppSection from "./WhatsAppSection";
 
 export default async function SettingsPage({
   params,
@@ -61,6 +62,7 @@ export default async function SettingsPage({
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="mb-8 text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
         <ApiKeysClient initialKeys={keys} locale={typedLocale} t={t} />
+        <WhatsAppSection t={t.whatsapp} />
       </main>
     </div>
   );

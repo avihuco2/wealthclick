@@ -22,7 +22,7 @@ if (!process.env.DATABASE_URL) {
 
 const sql = postgres(process.env.DATABASE_URL);
 
-const migrations = ['002_transactions.sql', '003_bank_accounts.sql', '004_bank_accounts_scrape_enabled.sql', '005_settings.sql', '006_scrape_history.sql', '007_category_rules.sql', '008_api_keys.sql'];
+const migrations = ['002_transactions.sql', '003_bank_accounts.sql', '004_bank_accounts_scrape_enabled.sql', '005_settings.sql', '006_scrape_history.sql', '007_category_rules.sql', '008_api_keys.sql', '009_whatsapp.sql'];
 
 for (const file of migrations) {
   const path = join(root, 'migrations', file);

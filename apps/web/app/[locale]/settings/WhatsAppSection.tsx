@@ -68,12 +68,15 @@ export default function WhatsAppSection({ t }: Props) {
   const [saving, setSaving]           = useState(false);
   const [savedMsg, setSavedMsg]       = useState(false);
   const [connState, setConnState]     = useState<ConnectionState>("unconfigured");
+  // keep ref in sync so polling callbacks always see current state
+  const setConnStateSynced = (s: ConnectionState) => { connStateRef.current = s; setConnState(s); };
   const [qrBase64, setQrBase64]       = useState<string | null>(null);
   const [connecting, setConnecting]   = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [copied, setCopied]           = useState(false);
 
-  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const connStateRef = useRef<ConnectionState>("unconfigured");
 
   // ── Load config ────────────────────────────────────────────────────────────
 
@@ -107,18 +110,19 @@ export default function WhatsAppSection({ t }: Props) {
       const data = await res.json();
       const state: string = data?.instance?.state ?? "unknown";
       if (state === "open") {
-        setConnState("connected");
+        setConnStateSynced("connected");
         setQrBase64(null);
         stopPolling();
       } else if (state === "unconfigured") {
-        setConnState("unconfigured");
-      } else if (connState !== "qr") {
-        setConnState("error");
+        setConnStateSynced("unconfigured");
+      } else if (connStateRef.current !== "qr") {
+        // only set error if we're not currently showing QR
+        setConnStateSynced("error");
       }
     } catch {
       // ignore transient errors
     }
-  }, [config?.id, connState]);
+  }, [config?.id]); // no connState dep — use ref instead
 
   function stopPolling() {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -182,7 +186,7 @@ export default function WhatsAppSection({ t }: Props) {
 
       if (!createRes.ok) {
         console.error("[WA] create failed:", createData);
-        setConnState("error");
+        setConnStateSynced("error");
         return;
       }
 
@@ -199,16 +203,16 @@ export default function WhatsAppSection({ t }: Props) {
 
       if (base64) {
         setQrBase64(base64.startsWith("data:") ? base64 : `data:image/png;base64,${base64}`);
-        setConnState("qr");
+        setConnStateSynced("qr");
         stopPolling();
         pollRef.current = setInterval(checkStatus, 3000);
       } else {
         console.error("[WA] no QR after 10 attempts");
-        setConnState("error");
+        setConnStateSynced("error");
       }
     } catch (e) {
       console.error("[WA] handleConnect threw:", e);
-      setConnState("error");
+      setConnStateSynced("error");
     } finally {
       setConnecting(false);
     }
@@ -220,7 +224,7 @@ export default function WhatsAppSection({ t }: Props) {
     setDisconnecting(true);
     try {
       await fetch("/api/whatsapp/instance/logout", { method: "DELETE" });
-      setConnState("unconfigured");
+      setConnStateSynced("unconfigured");
       setQrBase64(null);
       stopPolling();
     } finally {

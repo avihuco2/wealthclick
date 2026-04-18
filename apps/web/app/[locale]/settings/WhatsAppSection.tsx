@@ -167,25 +167,27 @@ export default function WhatsAppSection({ t }: Props) {
   async function handleConnect() {
     setConnecting(true);
     try {
-      // Create instance — QR may be in the create response (v2 returns it immediately)
+      console.log("[WA] handleConnect: calling /api/whatsapp/instance/create");
       const createRes = await fetch("/api/whatsapp/instance/create", { method: "POST" });
       const createData = await createRes.json();
+      console.log("[WA] create response:", createRes.status, JSON.stringify(createData));
 
       if (!createRes.ok) {
-        console.error("Create instance failed:", createData);
+        console.error("[WA] create failed — setting error state");
         setConnState("error");
         return;
       }
 
-      // Try QR from create response first, then fall back to /qr endpoint
       let base64: string = createData?.qrcode?.base64 ?? "";
+      console.log("[WA] base64 from create:", base64 ? `${base64.substring(0, 40)}...` : "(empty)");
 
       if (!base64) {
+        console.log("[WA] no QR in create response, calling /api/whatsapp/instance/qr");
         const qrRes = await fetch("/api/whatsapp/instance/qr");
-        if (qrRes.ok) {
-          const qrData = await qrRes.json();
-          base64 = qrData?.base64 ?? qrData?.qrcode?.base64 ?? "";
-        }
+        const qrData = await qrRes.json();
+        console.log("[WA] qr response:", qrRes.status, JSON.stringify(qrData).substring(0, 200));
+        base64 = qrData?.base64 ?? qrData?.qrcode?.base64 ?? "";
+        console.log("[WA] base64 from qr endpoint:", base64 ? `${base64.substring(0, 40)}...` : "(empty)");
       }
 
       if (base64) {
@@ -194,10 +196,11 @@ export default function WhatsAppSection({ t }: Props) {
         stopPolling();
         pollRef.current = setInterval(checkStatus, 3000);
       } else {
+        console.error("[WA] no QR code found in any response — setting error state");
         setConnState("error");
       }
     } catch (e) {
-      console.error(e);
+      console.error("[WA] handleConnect threw:", e);
       setConnState("error");
     } finally {
       setConnecting(false);

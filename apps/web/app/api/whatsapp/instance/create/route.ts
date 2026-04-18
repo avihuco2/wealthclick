@@ -22,9 +22,15 @@ export async function POST(request: Request) {
   const webhookUrl = `${origin}/api/whatsapp/webhook?key=${cfg.webhook_secret}`;
   const apiKey = decryptApiKey(cfg.api_key_enc, cfg.api_key_iv, cfg.api_key_tag);
 
-  const result = await createInstance(
-    { url: cfg.evolution_url, apiKey, instance: cfg.instance_name },
-    webhookUrl,
-  );
-  return NextResponse.json(result);
+  try {
+    const result = await createInstance(
+      { url: cfg.evolution_url, apiKey, instance: cfg.instance_name },
+      webhookUrl,
+    );
+    console.log("[WA create] success:", JSON.stringify(result).substring(0, 300));
+    return NextResponse.json(result);
+  } catch (err) {
+    console.error("[WA create] Evolution API error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 502 });
+  }
 }

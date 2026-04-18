@@ -10,12 +10,13 @@ type Props = {
   userEmail?: string | null;
   userImage?: string | null;
   isAdmin?: boolean;
-  activePage?: "dashboard" | "transactions" | "bank-accounts" | "insights" | "admin";
+  activePage?: "dashboard" | "transactions" | "bank-accounts" | "insights" | "settings" | "admin";
   t: {
     dashboard: string;
     transactions: string;
     bankAccounts?: string;
     insights?: string;
+    settings?: string;
     userManagement?: string;
     signOut: string;
   };
@@ -42,6 +43,9 @@ export function NavBar({
       : []),
     ...(t.insights
       ? [{ href: `/${locale}/insights`, label: t.insights, key: "insights" }]
+      : []),
+    ...(t.settings
+      ? [{ href: `/${locale}/settings`, label: t.settings, key: "settings" }]
       : []),
     ...(isAdmin && t.userManagement
       ? [{ href: `/${locale}/admin`, label: t.userManagement, key: "admin" }]

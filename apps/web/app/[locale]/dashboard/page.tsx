@@ -71,6 +71,7 @@ export default async function DashboardPage({
           transactions: t.transactions,
           bankAccounts: getDictionary(typedLocale).bankAccounts.navLabel,
           insights: getDictionary(typedLocale).insights.navLabel,
+          settings: getDictionary(typedLocale).settings.navLabel,
           userManagement: t.userManagement,
           signOut: t.signOut,
         }}

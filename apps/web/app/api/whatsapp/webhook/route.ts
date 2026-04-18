@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     api_key_tag: string;
     instance_name: string;
     webhook_secret: string;
-    allowed_numbers: string[];
+    allowed_numbers: string[] | string;
     bedrock_model: string;
     system_prompt: string | null;
   }[]>`
@@ -97,6 +97,14 @@ export async function POST(request: Request) {
     FROM whatsapp_config
     WHERE webhook_secret = ${webhookKey}::uuid
   `;
+
+  if (config) {
+    // Normalize allowed_numbers: jsonb may come back as a JSON string or already an array
+    if (typeof config.allowed_numbers === "string") {
+      try { config.allowed_numbers = JSON.parse(config.allowed_numbers); } catch { config.allowed_numbers = []; }
+    }
+    if (!Array.isArray(config.allowed_numbers)) config.allowed_numbers = [];
+  }
 
   if (!config) return NextResponse.json({ ok: true }); // unknown key — silently ignore
 

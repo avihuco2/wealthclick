@@ -30,9 +30,15 @@ export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
     method: "POST",
     body: JSON.stringify({
       instanceName: cfg.instance,
+      integration: "WHATSAPP-BAILEYS",
       qrcode: true,
-      webhook: { url: webhookUrl, byEvents: true, base64: false },
-      events: ["MESSAGES_UPSERT"],
+      webhook: {
+        enabled: true,
+        url: webhookUrl,
+        byEvents: true,
+        base64: false,
+        events: ["MESSAGES_UPSERT"],
+      },
     }),
   });
 }

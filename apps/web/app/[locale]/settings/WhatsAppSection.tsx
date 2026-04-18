@@ -167,20 +167,38 @@ export default function WhatsAppSection({ t }: Props) {
   async function handleConnect() {
     setConnecting(true);
     try {
-      await fetch("/api/whatsapp/instance/create", { method: "POST" });
-      // Fetch QR
-      const qrRes = await fetch("/api/whatsapp/instance/qr");
-      const qrData = await qrRes.json();
-      const base64: string = qrData?.base64 ?? qrData?.qrcode?.base64 ?? "";
+      // Create instance — QR may be in the create response (v2 returns it immediately)
+      const createRes = await fetch("/api/whatsapp/instance/create", { method: "POST" });
+      const createData = await createRes.json();
+
+      if (!createRes.ok) {
+        console.error("Create instance failed:", createData);
+        setConnState("error");
+        return;
+      }
+
+      // Try QR from create response first, then fall back to /qr endpoint
+      let base64: string = createData?.qrcode?.base64 ?? "";
+
+      if (!base64) {
+        const qrRes = await fetch("/api/whatsapp/instance/qr");
+        if (qrRes.ok) {
+          const qrData = await qrRes.json();
+          base64 = qrData?.base64 ?? qrData?.qrcode?.base64 ?? "";
+        }
+      }
+
       if (base64) {
         setQrBase64(base64.startsWith("data:") ? base64 : `data:image/png;base64,${base64}`);
         setConnState("qr");
-        // Poll every 3s for connection
         stopPolling();
         pollRef.current = setInterval(checkStatus, 3000);
+      } else {
+        setConnState("error");
       }
     } catch (e) {
       console.error(e);
+      setConnState("error");
     } finally {
       setConnecting(false);
     }

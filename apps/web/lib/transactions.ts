@@ -44,6 +44,34 @@ export async function getTransactions(
   `;
 }
 
+export async function getTransactionsByDateRange(
+  userId: string,
+  from: string,   // YYYY-MM-DD
+  to: string,     // YYYY-MM-DD
+  type?: "income" | "expense",
+  limit = 100,
+): Promise<DbTransaction[]> {
+  const sql = getDb();
+  const typeFilter = type ? sql`AND t.type = ${type}` : sql``;
+  const safeLimit = Math.min(Math.max(1, limit), 500);
+  return sql<DbTransaction[]>`
+    SELECT
+      t.*,
+      c.name_en AS category_name_en,
+      c.name_he AS category_name_he,
+      c.color   AS category_color,
+      c.emoji   AS category_emoji
+    FROM transactions t
+    LEFT JOIN categories c ON c.id = t.category_id
+    WHERE t.user_id = ${userId}
+      AND t.date >= ${from}::date
+      AND t.date <= ${to}::date
+      ${typeFilter}
+    ORDER BY t.date DESC, t.created_at DESC
+    LIMIT ${safeLimit}
+  `;
+}
+
 export async function getTransactionStats(
   userId: string,
   month?: string, // omit for all-time

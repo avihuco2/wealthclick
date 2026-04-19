@@ -28,7 +28,17 @@ export async function handleWhatsAppMessage(opts: {
     WHERE user_id = ${userId} AND phone_number = ${phone}
   `;
 
-  const history: Message[] = conv?.messages ?? [];
+  // Normalize messages from DB — strip SDK-internal properties that break Bedrock on re-submission
+  const rawHistory = conv?.messages ?? [];
+  const history: Message[] = (rawHistory as Record<string, unknown>[]).map((m) => ({
+    role: m.role as "user" | "assistant",
+    content: ((m.content as Record<string, unknown>[]) ?? []).map((block) => {
+      if ("text" in block) return { text: block.text as string };
+      if ("toolUse" in block) return { toolUse: block.toolUse };
+      if ("toolResult" in block) return { toolResult: block.toolResult };
+      return block;
+    }),
+  }));
 
   // Append new user message
   const updatedHistory: Message[] = [
@@ -42,7 +52,7 @@ export async function handleWhatsAppMessage(opts: {
     result = await converseWithTools({ userId, modelId, messages: updatedHistory, systemPrompt });
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : String(e);
-    console.error("[whatsappAgent] Bedrock error:", errMsg, JSON.stringify(e));
+    console.error("[whatsappAgent] Bedrock error:", errMsg);
     await sendTextMessage(evolutionCfg, phone, "Sorry, I ran into an error. Please try again.");
     return;
   }

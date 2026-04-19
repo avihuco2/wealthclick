@@ -179,7 +179,6 @@ export async function POST(request: Request) {
     const phone = normalizePhone(remoteJid);
 
     // Whitelist only applies when we have a real phone number (not LID)
-    const isLid = remoteJid.endsWith("@lid");
     if (!isLid && config.allowed_numbers.length > 0 && !config.allowed_numbers.includes(phone)) {
       console.log(`[whatsapp] blocked ${phone} — not in whitelist`);
       continue;

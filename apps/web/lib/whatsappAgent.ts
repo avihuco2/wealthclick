@@ -48,9 +48,23 @@ export async function handleWhatsAppMessage(opts: {
     }),
   }));
 
+  // Trim history to maxHistory, but always start at a clean user text message
+  // (never start with a toolResult user message — Bedrock rejects that)
+  let trimmed = history.slice(-maxHistory);
+  while (trimmed.length > 0) {
+    const first = trimmed[0];
+    const firstContent = first.content ?? [];
+    const isToolResult = firstContent.some((b) => "toolResult" in b);
+    if (first.role !== "user" || isToolResult) {
+      trimmed = trimmed.slice(1);
+    } else {
+      break;
+    }
+  }
+
   // Append new user message
   const updatedHistory: Message[] = [
-    ...history,
+    ...trimmed,
     { role: "user", content: [{ text }] },
   ];
 
@@ -60,7 +74,9 @@ export async function handleWhatsAppMessage(opts: {
     result = await converseWithTools({ userId, modelId, messages: updatedHistory, systemPrompt });
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : String(e);
-    console.error("[whatsappAgent] Bedrock error:", errMsg);
+    const errName = e instanceof Error ? e.constructor.name : "Unknown";
+    // Log full error detail so we can diagnose model/tool issues from PM2 logs
+    console.error("[whatsappAgent] Bedrock error:", errName, errMsg, JSON.stringify(e, null, 2));
     await sendTextMessage(evolutionCfg, phone, "Sorry, I ran into an error. Please try again.");
     return;
   }
@@ -68,8 +84,13 @@ export async function handleWhatsAppMessage(opts: {
   // Send reply
   await sendTextMessage(evolutionCfg, phone, result.reply);
 
-  // Persist trimmed history
-  const toSave = result.updatedMessages.slice(-maxHistory);
+  // Persist trimmed history — ensure we don't start mid-tool-use-chain
+  let toSave = result.updatedMessages.slice(-maxHistory);
+  while (toSave.length > 0) {
+    const first = toSave[0];
+    const isToolResult = (first.content ?? []).some((b) => "toolResult" in b);
+    if (first.role !== "user" || isToolResult) { toSave = toSave.slice(1); } else { break; }
+  }
 
   await sql`
     INSERT INTO whatsapp_conversations (user_id, phone_number, messages, last_message_at)

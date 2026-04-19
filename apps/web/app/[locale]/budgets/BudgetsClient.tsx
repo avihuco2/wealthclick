@@ -26,6 +26,9 @@ interface T {
   actualIncome: string;
   totalAllocated: string;
   unallocated: string;
+  importFromLastMonth: string;
+  importing: string;
+  imported: string;
 }
 
 interface Props {
@@ -114,6 +117,7 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
     Math.round(parseFloat(income.forecasted_amount))
   );
   const [incomeSaveState, setIncomeSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [importState, setImportState] = useState<"idle" | "importing" | "imported">("idle");
 
   // ── Month navigation ──────────────────────────────────────────────────────
   const isCurrentMonth = month === currentMonth();
@@ -122,6 +126,18 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
     const next = shiftMonth(month, delta);
     router.push(`?month=${next}`);
   }
+
+  // ── Import from last month ────────────────────────────────────────────────
+  const importFromLastMonth = useCallback(async () => {
+    setImportState("importing");
+    await fetch("/api/budgets/copy-from-last-month", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ month }),
+    });
+    setImportState("imported");
+    setTimeout(() => { setImportState("idle"); router.refresh(); }, 1000);
+  }, [month, router]);
 
   // ── Save budget for a category ────────────────────────────────────────────
   const saveBudget = useCallback(async (categoryId: string, amount: number) => {
@@ -169,6 +185,14 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
           <h1 className="text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
           <p className="mt-1 text-[14px] text-white/45">{t.subtitle}</p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={importFromLastMonth}
+            disabled={importState !== "idle"}
+            className="rounded-xl border border-white/[0.10] bg-white/[0.04] px-4 py-2.5 text-[13px] text-white/60 transition hover:bg-white/[0.08] hover:text-white/90 disabled:opacity-40"
+          >
+            {importState === "importing" ? t.importing : importState === "imported" ? t.imported : t.importFromLastMonth}
+          </button>
         <div className="flex items-center gap-2 rounded-2xl border border-white/[0.10] bg-white/[0.05] px-4 py-2.5">
           <button
             onClick={() => navigate(-1)}
@@ -188,6 +212,7 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
           >
             <ChevronIcon dir={locale === "he" ? "left" : "right"} />
           </button>
+        </div>
         </div>
       </div>
 

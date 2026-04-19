@@ -206,6 +206,9 @@ const dictionaries = {
       actualIncome: "Actual income",
       totalAllocated: "Allocated",
       unallocated: "Unallocated",
+      importFromLastMonth: "Import from last month",
+      importing: "Importing…",
+      imported: "Imported ✓",
     },
     settings: {
       navLabel: "Settings",
@@ -458,6 +461,9 @@ const dictionaries = {
       actualIncome: "הכנסה בפועל",
       totalAllocated: "הוקצה",
       unallocated: "לא הוקצה",
+      importFromLastMonth: "ייבא מחודש שעבר",
+      importing: "מייבא…",
+      imported: "יובא ✓",
     },
     settings: {
       navLabel: "הגדרות",

@@ -42,6 +42,7 @@ jobs:
               "/usr/local/bin/aws secretsmanager get-secret-value --region il-central-1 --secret-id wealthclick/app --query SecretString --output text | python3 -c '\''import json,sys; d=json.load(sys.stdin); [print(f\"{k}={v}\") for k,v in d.items()]'\'' > /opt/wealthclick/apps/web/.env",
               "chown ubuntu:ubuntu /opt/wealthclick/apps/web/.env",
               "chmod 600 /opt/wealthclick/apps/web/.env",
+              "chown -R ubuntu:ubuntu /opt/wealthclick",
               "cd /opt/wealthclick",
               "sudo -u ubuntu git pull origin main",
               "cd apps/web",

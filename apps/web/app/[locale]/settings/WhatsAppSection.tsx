@@ -64,7 +64,7 @@ export default function WhatsAppSection({ t }: Props) {
   const [apiKey, setApiKey]                 = useState("");
   const [instanceName, setInstanceName]     = useState("wealthclick");
   const [allowedNumbers, setAllowedNumbers] = useState("");
-  const [model, setModel]                   = useState<BedrockModelId>("us.anthropic.claude-haiku-4-5-20251001-v1:0");
+  const [model, setModel]                   = useState<BedrockModelId>("anthropic.claude-3-haiku-20240307-v1:0");
   const [systemPrompt, setSystemPrompt]     = useState("");
   const [maxHistory, setMaxHistory]         = useState(40);
 

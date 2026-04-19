@@ -11,7 +11,15 @@ import {
   type ContentBlock,
 } from "@aws-sdk/client-bedrock-runtime";
 
-export { BEDROCK_MODELS, type BedrockModelId } from "./bedrockModels";
+export type { BedrockModelId } from "./bedrockModels";
+import { BEDROCK_MODELS } from "./bedrockModels";
+export { BEDROCK_MODELS };
+
+function modelSupportsTools(modelId: string): boolean {
+  const entry = BEDROCK_MODELS.find((m) => m.id === modelId);
+  // Unknown models: assume tools supported (Claude-family users expect it)
+  return entry ? entry.supportsTools : true;
+}
 
 // ─── Tool definitions for Bedrock ─────────────────────────────────────────────
 
@@ -163,6 +171,7 @@ export async function converseWithTools(opts: {
   const { userId, modelId, messages, systemPrompt } = opts;
 
   const client = new BedrockRuntimeClient({ region: process.env.AWS_BEDROCK_REGION ?? "us-east-1" });
+  const withTools = modelSupportsTools(modelId);
 
   const conversationMessages: Message[] = [...messages];
 
@@ -172,7 +181,7 @@ export async function converseWithTools(opts: {
       modelId,
       system: [{ text: systemPrompt || DEFAULT_SYSTEM }],
       messages: conversationMessages,
-      toolConfig: { tools: AGENT_TOOLS },
+      ...(withTools ? { toolConfig: { tools: AGENT_TOOLS } } : {}),
       inferenceConfig: { maxTokens: 1024, temperature: 0.3 },
     });
 

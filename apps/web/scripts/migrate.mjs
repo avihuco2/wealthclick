@@ -1,5 +1,5 @@
 import postgres from 'postgres';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -22,14 +22,13 @@ if (!process.env.DATABASE_URL) {
 
 const sql = postgres(process.env.DATABASE_URL);
 
-const migrations = ['002_transactions.sql', '003_bank_accounts.sql', '004_bank_accounts_scrape_enabled.sql', '005_settings.sql', '006_scrape_history.sql', '007_category_rules.sql', '008_api_keys.sql', '009_whatsapp.sql'];
+const migrationsDir = join(root, 'migrations');
+const migrations = readdirSync(migrationsDir)
+  .filter((f) => f.endsWith('.sql'))
+  .sort();
 
 for (const file of migrations) {
-  const path = join(root, 'migrations', file);
-  if (!existsSync(path)) {
-    console.warn(`Skipping ${file} (not found)`);
-    continue;
-  }
+  const path = join(migrationsDir, file);
   const text = readFileSync(path, 'utf8');
   console.log(`Running ${file}...`);
   await sql.unsafe(text);

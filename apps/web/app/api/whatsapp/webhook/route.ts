@@ -115,6 +115,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  // Debug: dump full payload to find phone number mapping
+  console.log("[whatsapp] FULL PAYLOAD:", JSON.stringify(payload).substring(0, 2000));
+
   const eventName = payload.event as string ?? "";
   if (eventName !== "messages.upsert" && eventName !== "MESSAGES_UPSERT") {
     return NextResponse.json({ ok: true });

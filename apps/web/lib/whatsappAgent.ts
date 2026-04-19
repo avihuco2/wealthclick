@@ -37,7 +37,7 @@ export async function handleWhatsAppMessage(opts: {
       if ("toolUse" in block) return { toolUse: block.toolUse };
       if ("toolResult" in block) return { toolResult: block.toolResult };
       return block;
-    }),
+    }) as Message["content"],
   }));
 
   // Append new user message

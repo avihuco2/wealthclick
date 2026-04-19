@@ -137,8 +137,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  // v1 includes sender field (e.g. "972559311474@s.whatsapp.net") at payload root
-  const senderJid = (payload.sender as string) ?? "";
+  // v1 sender = instance owner (bot), NOT the message author.
+  // The actual sender is in key.remoteJid (may be LID format like 123@lid).
 
   const evolutionCfg: EvolutionConfig = {
     url: config.evolution_url,
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
     const fromMe = !!key?.fromMe;
     // v1 may use LID format (@lid) for remoteJid; use sender field as fallback for phone
     const remoteJid = key?.remoteJid as string ?? "";
-    const replyTo = senderJid || remoteJid;
+    const replyTo = remoteJid;
 
     const messageContent = m.message as Record<string, unknown> | undefined;
     const text =
@@ -160,17 +160,19 @@ export async function POST(request: Request) {
       ((messageContent?.extendedTextMessage as Record<string, unknown>)?.text as string) ||
       "";
 
-    console.log(`[whatsapp] msg: id=${msgId} fromMe=${fromMe} jid=${remoteJid} sender=${senderJid} text="${text.substring(0, 60)}"`);
+    console.log(`[whatsapp] msg: id=${msgId} fromMe=${fromMe} jid=${remoteJid} text="${text.substring(0, 60)}"`);
 
     if (fromMe) continue;
     if (!text?.trim()) continue;
     if (!replyTo) continue;
     if (msgId && isDuplicate(msgId)) { console.log("[whatsapp] duplicate, skipping"); continue; }
 
-    // Normalize phone from sender JID (not LID) for whitelist check
-    const phone = normalizePhone(senderJid || remoteJid);
+    // v1 may use LID format (@lid) for remoteJid — phone extraction only works for @s.whatsapp.net
+    const phone = normalizePhone(remoteJid);
 
-    if (config.allowed_numbers.length > 0 && !config.allowed_numbers.includes(phone)) {
+    // Whitelist only applies when we have a real phone number (not LID)
+    const isLid = remoteJid.endsWith("@lid");
+    if (!isLid && config.allowed_numbers.length > 0 && !config.allowed_numbers.includes(phone)) {
       console.log(`[whatsapp] blocked ${phone} — not in whitelist`);
       continue;
     }

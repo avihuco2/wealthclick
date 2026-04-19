@@ -115,9 +115,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Debug: dump full payload to find phone number mapping
-  console.log("[whatsapp] FULL PAYLOAD:", JSON.stringify(payload).substring(0, 2000));
-
   const eventName = payload.event as string ?? "";
   if (eventName !== "messages.upsert" && eventName !== "MESSAGES_UPSERT") {
     return NextResponse.json({ ok: true });
@@ -191,13 +188,6 @@ export async function POST(request: Request) {
 
     console.log(`[whatsapp] processing message from ${phone}, replying to ${replyTo}`);
 
-    // DEBUG: echo directly to validate channel — remove when LLM flow verified
-    sendTextMessage(evolutionCfg, replyTo, "OK — message received ✓")
-      .then((res) => console.log("[whatsapp] echo sent OK:", JSON.stringify(res).substring(0, 200)))
-      .catch((e) => console.error("[whatsapp] echo FAILED:", e));
-    continue;
-
-    // eslint-disable-next-line no-unreachable
     handleWhatsAppMessage({
       userId: config.user_id,
       phone: replyTo,

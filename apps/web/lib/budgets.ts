@@ -6,59 +6,81 @@ export type CategoryBudgetRow = {
   name_he: string;
   color: string;
   emoji: string;
-  monthly_budget: string;
-  avg_3m: string;
-  avg_6m: string;
-  current_month_actual: string;
+  monthly_budget: string;       // budget for the requested month (0 if none)
+  avg_3m: string;               // avg monthly expense last 3 full months
+  avg_6m: string;               // avg monthly expense last 6 full months
+  current_month_actual: string; // actual expense in requested month
 };
 
-export async function getCategoryBudgets(userId: string): Promise<CategoryBudgetRow[]> {
+export type BudgetIncomeRow = {
+  forecasted_amount: string;    // forecasted income for the month
+  actual_income: string;        // real income transactions for the month
+};
+
+function prevMonth(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export async function getCategoryBudgets(
+  userId: string,
+  month: string,
+): Promise<CategoryBudgetRow[]> {
   const sql = getDb();
+  const prior = prevMonth(month);
+  const monthStart = `${month}-01`;
 
   const rows = await sql<CategoryBudgetRow[]>`
     SELECT
-      c.id                              AS category_id,
+      c.id  AS category_id,
       c.name_en,
       c.name_he,
       c.color,
       c.emoji,
-      COALESCE(b.monthly_amount, 0)::text AS monthly_budget,
 
-      -- 3-month average: months 1-3 before current month
+      -- Budget: use this month's value, fall back to last month's, default 0
+      COALESCE(
+        (SELECT monthly_amount FROM category_budgets
+         WHERE user_id = ${userId} AND category_id = c.id AND month = ${month}),
+        (SELECT monthly_amount FROM category_budgets
+         WHERE user_id = ${userId} AND category_id = c.id AND month = ${prior}),
+        0
+      )::text AS monthly_budget,
+
+      -- 3-month average (3 full months before requested month)
       COALESCE((
         SELECT ROUND(SUM(t.amount) / 3, 2)
         FROM transactions t
         WHERE t.user_id     = ${userId}
           AND t.category_id = c.id
           AND t.type        = 'expense'
-          AND t.date >= date_trunc('month', CURRENT_DATE) - INTERVAL '3 months'
-          AND t.date <  date_trunc('month', CURRENT_DATE)
+          AND t.date >= (${monthStart}::date - INTERVAL '3 months')
+          AND t.date <   ${monthStart}::date
       ), 0)::text AS avg_3m,
 
-      -- 6-month average: months 1-6 before current month
+      -- 6-month average (6 full months before requested month)
       COALESCE((
         SELECT ROUND(SUM(t.amount) / 6, 2)
         FROM transactions t
         WHERE t.user_id     = ${userId}
           AND t.category_id = c.id
           AND t.type        = 'expense'
-          AND t.date >= date_trunc('month', CURRENT_DATE) - INTERVAL '6 months'
-          AND t.date <  date_trunc('month', CURRENT_DATE)
+          AND t.date >= (${monthStart}::date - INTERVAL '6 months')
+          AND t.date <   ${monthStart}::date
       ), 0)::text AS avg_6m,
 
-      -- current month actual
+      -- Actual spending in requested month
       COALESCE((
         SELECT SUM(t.amount)
         FROM transactions t
         WHERE t.user_id     = ${userId}
           AND t.category_id = c.id
           AND t.type        = 'expense'
-          AND t.date >= date_trunc('month', CURRENT_DATE)
+          AND to_char(t.date, 'YYYY-MM') = ${month}
       ), 0)::text AS current_month_actual
 
     FROM categories c
-    LEFT JOIN category_budgets b
-      ON b.category_id = c.id AND b.user_id = ${userId}
     WHERE c.user_id = ${userId}
     ORDER BY c.name_en
   `;
@@ -69,67 +91,60 @@ export async function getCategoryBudgets(userId: string): Promise<CategoryBudget
 export async function upsertCategoryBudget(
   userId: string,
   categoryId: string,
+  month: string,
   monthlyAmount: number,
 ): Promise<void> {
   const sql = getDb();
   await sql`
-    INSERT INTO category_budgets (user_id, category_id, monthly_amount, updated_at)
-    VALUES (${userId}, ${categoryId}, ${monthlyAmount}, now())
-    ON CONFLICT (user_id, category_id)
+    INSERT INTO category_budgets (user_id, category_id, month, monthly_amount, updated_at)
+    VALUES (${userId}, ${categoryId}, ${month}, ${monthlyAmount}, now())
+    ON CONFLICT (user_id, category_id, month)
     DO UPDATE SET monthly_amount = ${monthlyAmount}, updated_at = now()
   `;
 }
 
-export type BudgetDashboard = {
-  total_budget: string;
-  total_actual: string;
-  categories: {
-    category_id: string;
-    name_en: string;
-    name_he: string;
-    color: string;
-    emoji: string;
-    budget: string;
-    actual: string;
-  }[];
-};
-
-export async function getBudgetDashboard(userId: string): Promise<BudgetDashboard> {
+export async function getBudgetIncome(
+  userId: string,
+  month: string,
+): Promise<BudgetIncomeRow> {
   const sql = getDb();
+  const prior = prevMonth(month);
 
-  const rows = await sql<{
-    category_id: string;
-    name_en: string;
-    name_he: string;
-    color: string;
-    emoji: string;
-    budget: string;
-    actual: string;
-  }[]>`
+  const [row] = await sql<{ forecasted_amount: string; actual_income: string }[]>`
     SELECT
-      c.id       AS category_id,
-      c.name_en,
-      c.name_he,
-      c.color,
-      c.emoji,
-      COALESCE(b.monthly_amount, 0)::text AS budget,
+      -- Forecasted: this month's entry → last month's → last month's actual income → 0
+      COALESCE(
+        (SELECT forecasted_amount FROM budget_income
+         WHERE user_id = ${userId} AND month = ${month}),
+        (SELECT forecasted_amount FROM budget_income
+         WHERE user_id = ${userId} AND month = ${prior}),
+        (SELECT SUM(amount) FROM transactions
+         WHERE user_id = ${userId} AND type = 'income'
+           AND to_char(date, 'YYYY-MM') = ${prior}),
+        0
+      )::text AS forecasted_amount,
+
+      -- Actual income this month
       COALESCE((
-        SELECT SUM(t.amount)
-        FROM transactions t
-        WHERE t.user_id     = ${userId}
-          AND t.category_id = c.id
-          AND t.type        = 'expense'
-          AND t.date >= date_trunc('month', CURRENT_DATE)
-      ), 0)::text AS actual
-    FROM categories c
-    JOIN category_budgets b ON b.category_id = c.id AND b.user_id = ${userId}
-    WHERE c.user_id = ${userId}
-      AND b.monthly_amount > 0
-    ORDER BY b.monthly_amount DESC
+        SELECT SUM(amount) FROM transactions
+        WHERE user_id = ${userId} AND type = 'income'
+          AND to_char(date, 'YYYY-MM') = ${month}
+      ), 0)::text AS actual_income
   `;
 
-  const total_budget = rows.reduce((s, r) => s + parseFloat(r.budget), 0).toFixed(2);
-  const total_actual = rows.reduce((s, r) => s + parseFloat(r.actual), 0).toFixed(2);
+  return row ?? { forecasted_amount: "0", actual_income: "0" };
+}
 
-  return { total_budget, total_actual, categories: rows };
+export async function upsertBudgetIncome(
+  userId: string,
+  month: string,
+  forecastedAmount: number,
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    INSERT INTO budget_income (user_id, month, forecasted_amount, updated_at)
+    VALUES (${userId}, ${month}, ${forecastedAmount}, now())
+    ON CONFLICT (user_id, month)
+    DO UPDATE SET forecasted_amount = ${forecastedAmount}, updated_at = now()
+  `;
 }

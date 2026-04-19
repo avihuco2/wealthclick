@@ -1,44 +1,76 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { CategoryBudgetRow } from "@/lib/budgets";
+import { useRouter } from "next/navigation";
+import type { CategoryBudgetRow, BudgetIncomeRow } from "@/lib/budgets";
 import type { Locale } from "@/lib/i18n";
+
+interface T {
+  title: string;
+  subtitle: string;
+  category: string;
+  avg3m: string;
+  avg6m: string;
+  monthlyBudget: string;
+  thisMonth: string;
+  ofIncome: string;
+  save: string;
+  saving: string;
+  saved: string;
+  totalBudget: string;
+  totalActual: string;
+  remaining: string;
+  dashboardTitle: string;
+  noData: string;
+  forecastedIncome: string;
+  actualIncome: string;
+  totalAllocated: string;
+  unallocated: string;
+}
 
 interface Props {
   rows: CategoryBudgetRow[];
+  income: BudgetIncomeRow;
+  month: string;
   locale: Locale;
-  t: {
-    category: string;
-    avg3m: string;
-    avg6m: string;
-    monthlyBudget: string;
-    thisMonth: string;
-    progress: string;
-    noBudget: string;
-    over: string;
-    under: string;
-    save: string;
-    saving: string;
-    saved: string;
-    totalBudget: string;
-    totalActual: string;
-    remaining: string;
-    dashboardTitle: string;
-    noData: string;
-  };
+  t: T;
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 const fmt = (val: string | number) =>
-  new Intl.NumberFormat("he-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 0 }).format(
-    typeof val === "string" ? parseFloat(val) : val,
-  );
+  new Intl.NumberFormat("he-IL", {
+    style: "currency",
+    currency: "ILS",
+    maximumFractionDigits: 0,
+  }).format(typeof val === "string" ? parseFloat(val) : val);
+
+function monthLabel(month: string, locale: Locale): string {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString(locale === "he" ? "he-IL" : "en-US", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function shiftMonth(month: string, delta: number): string {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function currentMonth(): string {
+  return new Date().toISOString().slice(0, 7);
+}
+
+// ─── ProgressBar ──────────────────────────────────────────────────────────────
 
 function ProgressBar({ actual, budget, color }: { actual: number; budget: number; color: string }) {
   if (budget <= 0) return null;
   const pct = Math.min((actual / budget) * 100, 100);
   const over = actual > budget;
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+    <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
       <div
         className="h-full rounded-full transition-all duration-500"
         style={{ width: `${pct}%`, backgroundColor: over ? "oklch(0.78 0.16 27)" : color }}
@@ -47,118 +79,184 @@ function ProgressBar({ actual, budget, color }: { actual: number; budget: number
   );
 }
 
-function BudgetInput({
-  categoryId,
-  initial,
-  t,
-}: {
-  categoryId: string;
-  initial: number;
-  t: Props["t"];
-}) {
-  const [value, setValue] = useState(initial === 0 ? "" : String(initial));
-  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
+// ─── IncomePctBadge ───────────────────────────────────────────────────────────
 
-  const save = useCallback(async () => {
-    const amount = parseFloat(value) || 0;
-    setState("saving");
-    await fetch("/api/budgets", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category_id: categoryId, monthly_amount: amount }),
-    });
-    setState("saved");
-    setTimeout(() => setState("idle"), 2000);
-  }, [categoryId, value]);
-
-  const label = state === "saving" ? t.saving : state === "saved" ? t.saved : t.save;
-
+function IncomePctBadge({ budget, income }: { budget: number; income: number }) {
+  if (income <= 0 || budget <= 0) return null;
+  const pct = Math.round((budget / income) * 100);
+  const color =
+    pct > 30 ? "oklch(0.78 0.16 27)" :
+    pct > 15 ? "oklch(0.80 0.17 54)" :
+               "oklch(0.72 0.17 142)";
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-white/40">₪</span>
-      <input
-        type="number"
-        min={0}
-        value={value}
-        onChange={(e) => { setValue(e.target.value); setState("idle"); }}
-        onKeyDown={(e) => e.key === "Enter" && save()}
-        placeholder="0"
-        className="w-24 rounded-lg bg-white/[0.06] px-2 py-1 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/25"
-      />
-      <button
-        onClick={save}
-        disabled={state !== "idle"}
-        className="rounded-lg bg-white/[0.08] px-2.5 py-1 text-xs text-white/60 transition hover:bg-white/[0.14] hover:text-white/90 disabled:opacity-40"
-      >
-        {label}
-      </button>
-    </div>
+    <span
+      className="ms-1.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+      style={{ color, backgroundColor: `${color}18` }}
+    >
+      {pct}%
+    </span>
   );
 }
 
-export default function BudgetsClient({ rows, locale, t }: Props) {
-  const totalBudget = rows.reduce((s, r) => s + parseFloat(r.monthly_budget), 0);
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function BudgetsClient({ rows, income, month, locale, t }: Props) {
+  const router = useRouter();
+
+  // ── Budgets state (categoryId → amount) ──────────────────────────────────
+  const [budgets, setBudgets] = useState<Record<string, number>>(() =>
+    Object.fromEntries(rows.map((r) => [r.category_id, parseFloat(r.monthly_budget)]))
+  );
+  const [savingStates, setSavingStates] = useState<Record<string, "idle" | "saving" | "saved">>({});
+
+  // ── Forecasted income state ───────────────────────────────────────────────
+  const [forecastedIncome, setForecastedIncome] = useState(
+    Math.round(parseFloat(income.forecasted_amount))
+  );
+  const [incomeSaveState, setIncomeSaveState] = useState<"idle" | "saving" | "saved">("idle");
+
+  // ── Month navigation ──────────────────────────────────────────────────────
+  const isCurrentMonth = month === currentMonth();
+
+  function navigate(delta: number) {
+    const next = shiftMonth(month, delta);
+    router.push(`?month=${next}`);
+  }
+
+  // ── Save budget for a category ────────────────────────────────────────────
+  const saveBudget = useCallback(async (categoryId: string, amount: number) => {
+    setSavingStates((s) => ({ ...s, [categoryId]: "saving" }));
+    await fetch("/api/budgets", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category_id: categoryId, month, monthly_amount: amount }),
+    });
+    setSavingStates((s) => ({ ...s, [categoryId]: "saved" }));
+    setTimeout(() => setSavingStates((s) => ({ ...s, [categoryId]: "idle" })), 2000);
+  }, [month]);
+
+  // ── Save forecasted income ────────────────────────────────────────────────
+  const saveIncome = useCallback(async (val: number) => {
+    setIncomeSaveState("saving");
+    await fetch("/api/budgets/income", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ month, forecasted_amount: val }),
+    });
+    setIncomeSaveState("saved");
+    setTimeout(() => setIncomeSaveState("idle"), 2000);
+  }, [month]);
+
+  // ── Derived totals ────────────────────────────────────────────────────────
+  const totalBudget = Object.values(budgets).reduce((s, v) => s + v, 0);
   const totalActual = rows.reduce((s, r) => s + parseFloat(r.current_month_actual), 0);
   const remaining = totalBudget - totalActual;
-  const budgetedRows = rows.filter((r) => parseFloat(r.monthly_budget) > 0);
+  const totalAllocated = totalBudget;
+  const unallocated = forecastedIncome - totalAllocated;
 
   const name = (r: CategoryBudgetRow) => locale === "he" ? r.name_he : r.name_en;
 
+  const incomeLabel =
+    incomeSaveState === "saving" ? t.saving :
+    incomeSaveState === "saved"  ? t.saved  : t.save;
+
   return (
     <div className="space-y-6">
-      {/* ── Summary cards ── */}
-      {totalBudget > 0 && (
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: t.totalBudget, value: fmt(totalBudget), color: "oklch(0.5706 0.2236 258.71)" },
-            { label: t.totalActual, value: fmt(totalActual), color: remaining >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.78 0.16 27)" },
-            { label: t.remaining,   value: fmt(Math.abs(remaining)), color: remaining >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.78 0.16 27)" },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5 backdrop-blur-md">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-white/40">{label}</p>
-              <p className="mt-2 text-[26px] font-semibold" style={{ color }}>{value}</p>
-            </div>
-          ))}
-        </div>
-      )}
 
-      {/* ── Dashboard: budgeted categories vs actual ── */}
-      {budgetedRows.length > 0 && (
-        <div className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-md">
-          <h2 className="mb-4 text-[15px] font-semibold text-white/80">{t.dashboardTitle}</h2>
-          <div className="space-y-4">
-            {budgetedRows.map((r) => {
-              const budget = parseFloat(r.monthly_budget);
-              const actual = parseFloat(r.current_month_actual);
-              const over = actual > budget;
-              const pct = budget > 0 ? Math.round((actual / budget) * 100) : 0;
-              return (
-                <div key={r.category_id} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 text-white/80">
-                      <span>{r.emoji}</span>
-                      <span>{name(r)}</span>
-                    </span>
-                    <span className="flex items-center gap-2 text-white/50">
-                      <span style={{ color: over ? "oklch(0.78 0.16 27)" : "oklch(0.72 0.17 142)" }}>
-                        {fmt(actual)}
-                      </span>
-                      <span>/</span>
-                      <span>{fmt(budget)}</span>
-                      <span className="w-10 text-end text-xs" style={{ color: over ? "oklch(0.78 0.16 27)" : "oklch(0.72 0.17 142)" }}>
-                        {pct}%
-                      </span>
-                    </span>
-                  </div>
-                  <ProgressBar actual={actual} budget={budget} color={r.color} />
-                </div>
-              );
-            })}
+      {/* ── Header: title + month navigator ── */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
+          <p className="mt-1 text-[14px] text-white/45">{t.subtitle}</p>
+        </div>
+        <div className="flex items-center gap-2 rounded-2xl border border-white/[0.10] bg-white/[0.05] px-4 py-2.5">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.08] hover:text-white/90"
+            aria-label="Previous month"
+          >
+            <ChevronIcon dir={locale === "he" ? "right" : "left"} />
+          </button>
+          <span className="min-w-[120px] text-center text-[14px] font-medium text-white/90">
+            {monthLabel(month, locale)}
+          </span>
+          <button
+            onClick={() => navigate(1)}
+            disabled={isCurrentMonth}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.08] hover:text-white/90 disabled:opacity-25"
+            aria-label="Next month"
+          >
+            <ChevronIcon dir={locale === "he" ? "left" : "right"} />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Forecasted income card ── */}
+      <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] p-5">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-0.5">
+            <p className="text-[12px] font-medium uppercase tracking-wider text-white/40">{t.forecastedIncome}</p>
+            <p className="text-[13px] text-white/50">
+              {t.actualIncome}: <span className="text-white/70">{fmt(income.actual_income)}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-white/40">₪</span>
+            <input
+              type="number"
+              min={0}
+              value={forecastedIncome || ""}
+              onChange={(e) => { setForecastedIncome(Math.max(0, parseInt(e.target.value) || 0)); setIncomeSaveState("idle"); }}
+              onKeyDown={(e) => e.key === "Enter" && saveIncome(forecastedIncome)}
+              placeholder="0"
+              className="w-32 rounded-xl bg-white/[0.06] px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/25"
+            />
+            <button
+              onClick={() => saveIncome(forecastedIncome)}
+              disabled={incomeSaveState !== "idle"}
+              className="rounded-xl bg-[oklch(0.5706_0.2236_258.71)]/20 px-3 py-2 text-xs font-medium text-[oklch(0.72_0.18_258.71)] transition hover:bg-[oklch(0.5706_0.2236_258.71)]/30 disabled:opacity-40"
+            >
+              {incomeLabel}
+            </button>
           </div>
         </div>
-      )}
+        {/* Income allocation bar */}
+        {forecastedIncome > 0 && (
+          <div className="mt-4 space-y-1.5">
+            <div className="flex justify-between text-[11px] text-white/40">
+              <span>{t.totalAllocated}: {fmt(totalAllocated)} ({Math.round((totalAllocated / forecastedIncome) * 100)}%)</span>
+              <span style={{ color: unallocated >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.78 0.16 27)" }}>
+                {t.unallocated}: {fmt(Math.abs(unallocated))}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min((totalAllocated / forecastedIncome) * 100, 100)}%`,
+                  backgroundColor: unallocated >= 0 ? "oklch(0.5706 0.2236 258.71)" : "oklch(0.78 0.16 27)",
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* ── Full categories table ── */}
+      {/* ── Summary cards ── */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: t.totalBudget, value: fmt(totalBudget), color: "oklch(0.5706 0.2236 258.71)" },
+          { label: t.totalActual, value: fmt(totalActual), color: remaining >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.78 0.16 27)" },
+          { label: t.remaining,   value: fmt(Math.abs(remaining)), color: remaining >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.78 0.16 27)" },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-white/40">{label}</p>
+            <p className="mt-2 text-[24px] font-semibold" style={{ color }}>{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Category table ── */}
       <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-md">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -173,37 +271,62 @@ export default function BudgetsClient({ rows, locale, t }: Props) {
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
               {rows.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-white/30">{t.noData}</td>
-                </tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-white/30">{t.noData}</td></tr>
               )}
               {rows.map((r) => {
-                const budget = parseFloat(r.monthly_budget);
+                const budget = budgets[r.category_id] ?? 0;
                 const actual = parseFloat(r.current_month_actual);
-                const over = budget > 0 && actual > budget;
+                const over   = budget > 0 && actual > budget;
+                const state  = savingStates[r.category_id] ?? "idle";
+                const btnLabel = state === "saving" ? t.saving : state === "saved" ? t.saved : t.save;
+
                 return (
                   <tr key={r.category_id} className="group transition-colors hover:bg-white/[0.03]">
-                    <td className="px-6 py-3.5">
-                      <span className="flex items-center gap-2.5">
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-2.5">
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-base" style={{ backgroundColor: `${r.color}20` }}>
                           {r.emoji}
                         </span>
                         <span className="font-medium text-white/80">{name(r)}</span>
-                      </span>
+                      </div>
                     </td>
-                    <td className="px-4 py-3.5 text-end text-white/50">{fmt(r.avg_3m)}</td>
-                    <td className="px-4 py-3.5 text-end text-white/50">{fmt(r.avg_6m)}</td>
-                    <td className="px-4 py-3.5 text-end">
-                      <span style={{ color: over ? "oklch(0.78 0.16 27)" : "white" }} className="opacity-80">
-                        {fmt(r.current_month_actual)}
-                      </span>
+                    <td className="px-4 py-3 text-end text-white/40">{fmt(r.avg_3m)}</td>
+                    <td className="px-4 py-3 text-end text-white/40">{fmt(r.avg_6m)}</td>
+                    <td className="px-4 py-3 text-end">
+                      <div>
+                        <span style={{ color: over ? "oklch(0.78 0.16 27)" : "rgba(255,255,255,0.75)" }}>
+                          {fmt(actual)}
+                        </span>
+                        {budget > 0 && (
+                          <ProgressBar actual={actual} budget={budget} color={r.color} />
+                        )}
+                      </div>
                     </td>
-                    <td className="px-6 py-3.5 text-end">
-                      <BudgetInput
-                        categoryId={r.category_id}
-                        initial={budget}
-                        t={t}
-                      />
+                    <td className="px-6 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <IncomePctBadge budget={budget} income={forecastedIncome} />
+                        <span className="text-white/40">₪</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={budget || ""}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const v = Math.max(0, parseFloat(e.target.value) || 0);
+                            setBudgets((prev) => ({ ...prev, [r.category_id]: v }));
+                            setSavingStates((s) => ({ ...s, [r.category_id]: "idle" }));
+                          }}
+                          onKeyDown={(e) => e.key === "Enter" && saveBudget(r.category_id, budget)}
+                          className="w-24 rounded-lg bg-white/[0.06] px-2 py-1.5 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/25"
+                        />
+                        <button
+                          onClick={() => saveBudget(r.category_id, budget)}
+                          disabled={state !== "idle"}
+                          className="rounded-lg bg-white/[0.07] px-2.5 py-1.5 text-xs text-white/55 transition hover:bg-white/[0.13] hover:text-white/90 disabled:opacity-40"
+                        >
+                          {btnLabel}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -213,5 +336,17 @@ export default function BudgetsClient({ rows, locale, t }: Props) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+function ChevronIcon({ dir }: { dir: "left" | "right" }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {dir === "left"
+        ? <polyline points="15 18 9 12 15 6" />
+        : <polyline points="9 18 15 12 9 6" />}
+    </svg>
   );
 }

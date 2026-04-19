@@ -2,13 +2,15 @@ import { auth, signOut } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { NavBar } from "@/components/NavBar";
-import { getCategoryBudgets } from "@/lib/budgets";
+import { getCategoryBudgets, getBudgetIncome } from "@/lib/budgets";
 import BudgetsClient from "./BudgetsClient";
 
 export default async function BudgetsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ month?: string }>;
 }) {
   const { locale } = await params;
   if (!isValidLocale(locale)) notFound();
@@ -17,10 +19,18 @@ export default async function BudgetsPage({
   const session = await auth();
   if (!session?.user) redirect(`/${locale}/login`);
 
+  const { month: monthParam } = await searchParams;
+  const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam)
+    ? monthParam
+    : new Date().toISOString().slice(0, 7);
+
   const dict = getDictionary(typedLocale);
   const t = dict.budgets;
 
-  const rows = await getCategoryBudgets(session.user.id);
+  const [rows, income] = await Promise.all([
+    getCategoryBudgets(session.user.id, month),
+    getBudgetIncome(session.user.id, month),
+  ]);
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
@@ -53,11 +63,13 @@ export default async function BudgetsPage({
       />
 
       <main className="mx-auto max-w-5xl px-6 py-12">
-        <div className="mb-8">
-          <h1 className="text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
-          <p className="mt-1 text-[14px] text-white/45">{t.subtitle}</p>
-        </div>
-        <BudgetsClient rows={rows} locale={typedLocale} t={t} />
+        <BudgetsClient
+          rows={rows}
+          income={income}
+          month={month}
+          locale={typedLocale}
+          t={t}
+        />
       </main>
     </div>
   );

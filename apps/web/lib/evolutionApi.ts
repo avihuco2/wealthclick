@@ -38,11 +38,13 @@ export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
   await evoFetch(cfg, `/webhook/set/${cfg.instance}`, {
     method: "POST",
     body: JSON.stringify({
-      enabled: true,
-      url: webhookUrl,
-      webhookByEvents: true,
-      webhookBase64: false,
-      events: ["MESSAGES_UPSERT"],
+      webhook: {
+        enabled: true,
+        url: webhookUrl,
+        webhookByEvents: true,
+        webhookBase64: false,
+        events: ["MESSAGES_UPSERT"],
+      },
     }),
   });
 

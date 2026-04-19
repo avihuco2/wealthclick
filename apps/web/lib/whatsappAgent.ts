@@ -34,9 +34,9 @@ export async function handleWhatsAppMessage(opts: {
     role: m.role as "user" | "assistant",
     content: ((m.content as Record<string, unknown>[]) ?? []).map((block): ContentBlock => {
       if ("text" in block) return { text: block.text as string };
-      if ("toolUse" in block) return { toolUse: block.toolUse } as ContentBlock;
-      if ("toolResult" in block) return { toolResult: block.toolResult } as ContentBlock;
-      return block as ContentBlock;
+      if ("toolUse" in block) return { toolUse: block.toolUse } as unknown as ContentBlock;
+      if ("toolResult" in block) return { toolResult: block.toolResult } as unknown as ContentBlock;
+      return block as unknown as ContentBlock;
     }),
   }));
 

@@ -1,10 +1,9 @@
 /**
- * Evolution API client — thin wrapper for WhatsApp instance management and messaging.
- * Compatible with Evolution API v1.8.x (Baileys-based).
+ * Evolution API client — compatible with v2.2.x (Baileys 6.x with LID support).
  */
 
 export interface EvolutionConfig {
-  url: string;   // e.g. http://localhost:8080
+  url: string;
   apiKey: string;
   instance: string;
 }
@@ -31,11 +30,11 @@ export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
     method: "POST",
     body: JSON.stringify({
       instanceName: cfg.instance,
+      integration: "WHATSAPP-BAILEYS",
       qrcode: true,
     }),
   });
 
-  // v1 create payload webhook fields are unreliable — always set explicitly
   await evoFetch(cfg, `/webhook/set/${cfg.instance}`, {
     method: "POST",
     body: JSON.stringify({
@@ -50,33 +49,35 @@ export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
   return createResult;
 }
 
-/** Delete/remove an instance from Evolution API. */
+/** Delete/remove an instance. */
 export async function deleteInstance(cfg: EvolutionConfig) {
   return evoFetch(cfg, `/instance/delete/${cfg.instance}`, { method: "DELETE" });
 }
 
-/** Get QR code (base64 image) for the instance. */
+/** Get QR code for the instance. */
 export async function getQrCode(cfg: EvolutionConfig): Promise<{ base64?: string; pairingCode?: string; code?: string }> {
   return evoFetch(cfg, `/instance/connect/${cfg.instance}`);
 }
 
-/** Get connection status of instance. */
+/** Get connection status. */
 export async function getInstanceStatus(cfg: EvolutionConfig): Promise<{ instance: { state: string } }> {
-  return evoFetch(cfg, `/instance/fetchInstances?instanceName=${encodeURIComponent(cfg.instance)}`).then(
-    (data: unknown) => {
-      const arr = Array.isArray(data) ? data : [data];
-      const inst = arr[0];
-      if (!inst) return { instance: { state: "unknown" } };
-      // v1: instance.status="open"; v2: instance.state or connectionStatus
-      const state =
-        inst?.connectionStatus ??
-        inst?.instance?.status ??
-        inst?.instance?.state ??
-        inst?.state ??
-        "unknown";
+  return evoFetch(cfg, `/instance/connectionState/${cfg.instance}`).then(
+    (data: Record<string, unknown>) => {
+      const state = (data?.instance as Record<string, unknown>)?.state as string ?? data?.state as string ?? "unknown";
       return { instance: { state } };
     },
-  );
+  ).catch(() => {
+    // Fallback to fetchInstances for v1 compat
+    return evoFetch(cfg, `/instance/fetchInstances?instanceName=${encodeURIComponent(cfg.instance)}`).then(
+      (data: unknown) => {
+        const arr = Array.isArray(data) ? data : [data];
+        const inst = arr[0];
+        if (!inst) return { instance: { state: "unknown" } };
+        const state = inst?.connectionStatus ?? inst?.instance?.status ?? inst?.instance?.state ?? inst?.state ?? "unknown";
+        return { instance: { state } };
+      },
+    );
+  });
 }
 
 /** Logout / disconnect instance. */
@@ -84,10 +85,10 @@ export async function logoutInstance(cfg: EvolutionConfig) {
   return evoFetch(cfg, `/instance/logout/${cfg.instance}`, { method: "DELETE" });
 }
 
-/** Send a text message (v1 payload format). */
+/** Send a text message — works with both phone numbers and LID JIDs. */
 export async function sendTextMessage(cfg: EvolutionConfig, to: string, text: string) {
   return evoFetch(cfg, `/message/sendText/${cfg.instance}`, {
     method: "POST",
-    body: JSON.stringify({ number: to, textMessage: { text } }),
+    body: JSON.stringify({ number: to, text }),
   });
 }

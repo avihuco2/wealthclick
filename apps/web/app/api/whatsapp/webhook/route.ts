@@ -1,13 +1,9 @@
 /**
  * POST /api/whatsapp/webhook?key=<webhook_secret>
  *
- * Security layers:
- *  1. Webhook secret in URL — routes to correct user
- *  2. HMAC-SHA256 signature validation (x-hub-signature-256 header from Evolution API)
- *  3. Allowed numbers whitelist (E.164)
- *  4. In-memory rate limiting — 20 messages per phone per hour
- *  5. Message deduplication (recent message ID set)
- *  6. fromMe filter — skip bot's own outgoing messages
+ * Receives webhook events from Evolution API v1.8.x.
+ * v1 payload shape: { event, data: { key, message, pushName, ... }, sender }
+ * — data is a single message, NOT { messages: [...] }.
  */
 
 import { NextResponse } from "next/server";
@@ -20,7 +16,7 @@ import { sendTextMessage, type EvolutionConfig } from "@/lib/evolutionApi";
 // ─── Rate limiting ────────────────────────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 const RATE_LIMIT_MAX   = 20;
-const RATE_LIMIT_MS    = 60 * 60 * 1000; // 1 hour
+const RATE_LIMIT_MS    = 60 * 60 * 1000;
 
 function isRateLimited(phone: string): boolean {
   const now = Date.now();
@@ -103,7 +99,7 @@ export async function POST(request: Request) {
 
   if (!config) return NextResponse.json({ ok: true });
 
-  // HMAC validation — v1.x does not send x-hub-signature-256, so skip when absent
+  // HMAC — v1 doesn't send the header, skip when absent
   if (signature && config.api_key_enc) {
     const apiKey = decryptApiKey(config.api_key_enc, config.api_key_iv, config.api_key_tag);
     if (!validateHmac(rawBody, signature, apiKey)) {
@@ -112,26 +108,37 @@ export async function POST(request: Request) {
     }
   }
 
-  let body: unknown;
+  let payload: Record<string, unknown>;
   try {
-    body = JSON.parse(rawBody);
+    payload = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const event = body as Record<string, unknown>;
-  console.log(`[whatsapp] webhook event: ${event.event}`);
-
-  if (event.event !== "messages.upsert" && event.event !== "MESSAGES_UPSERT") {
+  const eventName = payload.event as string ?? "";
+  if (eventName !== "messages.upsert" && eventName !== "MESSAGES_UPSERT") {
     return NextResponse.json({ ok: true });
   }
 
-  const data = event.data as Record<string, unknown> | undefined;
-  const messages = data?.messages as unknown[];
-  if (!Array.isArray(messages)) {
-    console.log("[whatsapp] no messages array in payload");
+  // v1: data is a single message object with key/message/sender at top level
+  // v2: data.messages is an array
+  const data = payload.data as Record<string, unknown> | undefined;
+  if (!data) return NextResponse.json({ ok: true });
+
+  // Normalize to array of messages
+  let messages: Record<string, unknown>[];
+  if (Array.isArray(data.messages)) {
+    messages = data.messages as Record<string, unknown>[];
+  } else if (data.key && data.message) {
+    // v1 single-message format
+    messages = [data as Record<string, unknown>];
+  } else {
+    console.log("[whatsapp] unrecognized payload shape:", JSON.stringify(data).substring(0, 200));
     return NextResponse.json({ ok: true });
   }
+
+  // v1 includes sender field (e.g. "972559311474@s.whatsapp.net") at payload root
+  const senderJid = (payload.sender as string) ?? "";
 
   const evolutionCfg: EvolutionConfig = {
     url: config.evolution_url,
@@ -139,26 +146,29 @@ export async function POST(request: Request) {
     instance: config.instance_name,
   };
 
-  for (const msg of messages) {
-    const m = msg as Record<string, unknown>;
+  for (const m of messages) {
     const key = m.key as Record<string, unknown> | undefined;
     const msgId = key?.id as string ?? "";
     const fromMe = !!key?.fromMe;
+    // v1 may use LID format (@lid) for remoteJid; use sender field as fallback for phone
     const remoteJid = key?.remoteJid as string ?? "";
+    const replyTo = senderJid || remoteJid;
+
     const messageContent = m.message as Record<string, unknown> | undefined;
     const text =
       (messageContent?.conversation as string) ||
       ((messageContent?.extendedTextMessage as Record<string, unknown>)?.text as string) ||
       "";
 
-    console.log(`[whatsapp] msg: id=${msgId} fromMe=${fromMe} jid=${remoteJid} text="${text.substring(0, 60)}"`);
+    console.log(`[whatsapp] msg: id=${msgId} fromMe=${fromMe} jid=${remoteJid} sender=${senderJid} text="${text.substring(0, 60)}"`);
 
     if (fromMe) continue;
     if (!text?.trim()) continue;
-    if (!remoteJid) continue;
+    if (!replyTo) continue;
     if (msgId && isDuplicate(msgId)) { console.log("[whatsapp] duplicate, skipping"); continue; }
 
-    const phone = normalizePhone(remoteJid);
+    // Normalize phone from sender JID (not LID) for whitelist check
+    const phone = normalizePhone(senderJid || remoteJid);
 
     if (config.allowed_numbers.length > 0 && !config.allowed_numbers.includes(phone)) {
       console.log(`[whatsapp] blocked ${phone} — not in whitelist`);
@@ -170,18 +180,18 @@ export async function POST(request: Request) {
       continue;
     }
 
-    console.log(`[whatsapp] processing message from ${phone}`);
+    console.log(`[whatsapp] processing message from ${phone}, replying to ${replyTo}`);
 
     // DEBUG: echo directly to validate channel — remove when LLM flow verified
-    sendTextMessage(evolutionCfg, remoteJid, "OK — message received ✓")
+    sendTextMessage(evolutionCfg, replyTo, "OK — message received ✓")
       .then((res) => console.log("[whatsapp] echo sent OK:", JSON.stringify(res).substring(0, 200)))
-      .catch((e) => console.error("[whatsapp] echo send FAILED:", e));
+      .catch((e) => console.error("[whatsapp] echo FAILED:", e));
     continue;
 
     // eslint-disable-next-line no-unreachable
     handleWhatsAppMessage({
       userId: config.user_id,
-      phone: remoteJid,
+      phone: replyTo,
       text: text.trim(),
       evolutionCfg,
       modelId: config.bedrock_model,

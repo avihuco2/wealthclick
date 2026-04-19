@@ -18,8 +18,9 @@ export async function handleWhatsAppMessage(opts: {
   evolutionCfg: EvolutionConfig;
   modelId: string;
   systemPrompt?: string;
+  maxHistory?: number;
 }): Promise<void> {
-  const { userId, phone, text, evolutionCfg, modelId, systemPrompt } = opts;
+  const { userId, phone, text, evolutionCfg, modelId, systemPrompt, maxHistory = 40 } = opts;
   const sql = getDb();
 
   // Load conversation history
@@ -68,7 +69,7 @@ export async function handleWhatsAppMessage(opts: {
   await sendTextMessage(evolutionCfg, phone, result.reply);
 
   // Persist trimmed history
-  const toSave = result.updatedMessages.slice(-MAX_HISTORY);
+  const toSave = result.updatedMessages.slice(-maxHistory);
 
   await sql`
     INSERT INTO whatsapp_conversations (user_id, phone_number, messages, last_message_at)

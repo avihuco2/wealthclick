@@ -12,6 +12,7 @@ interface WhatsAppConfig {
   allowed_numbers: string[];
   bedrock_model: string;
   system_prompt: string | null;
+  max_history: number;
 }
 
 type ConnectionState = "unconfigured" | "qr" | "connected" | "error";
@@ -49,6 +50,8 @@ interface Props {
     statusConnected: string;
     statusDisconnected: string;
     statusError: string;
+    maxHistory: string;
+    maxHistoryHint: string;
   };
 }
 
@@ -63,6 +66,7 @@ export default function WhatsAppSection({ t }: Props) {
   const [allowedNumbers, setAllowedNumbers] = useState("");
   const [model, setModel]                   = useState<BedrockModelId>("us.anthropic.claude-haiku-4-5-20251001-v1:0");
   const [systemPrompt, setSystemPrompt]     = useState("");
+  const [maxHistory, setMaxHistory]         = useState(40);
 
   // UI state
   const [saving, setSaving]           = useState(false);
@@ -93,6 +97,7 @@ export default function WhatsAppSection({ t }: Props) {
         setAllowedNumbers(cfg.allowed_numbers.join(", "));
         setModel(cfg.bedrock_model as BedrockModelId);
         setSystemPrompt(cfg.system_prompt ?? "");
+        setMaxHistory(cfg.max_history ?? 40);
       }
     } finally {
       setLoading(false);
@@ -155,6 +160,7 @@ export default function WhatsAppSection({ t }: Props) {
           allowed_numbers: numbers,
           bedrock_model: model,
           system_prompt: systemPrompt.trim() || null,
+          max_history: maxHistory,
         }),
       });
       setApiKey(""); // clear after save
@@ -420,6 +426,20 @@ export default function WhatsAppSection({ t }: Props) {
             placeholder={t.systemPromptPlaceholder}
             className="w-full resize-none rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none ring-1 ring-white/10 focus:ring-white/30"
           />
+        </div>
+
+        {/* Max history */}
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-white/70">{t.maxHistory}</label>
+          <input
+            type="number"
+            min={1}
+            max={200}
+            value={maxHistory}
+            onChange={(e) => setMaxHistory(Math.max(1, Math.min(200, Number(e.target.value) || 40)))}
+            className="w-32 rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/30"
+          />
+          <p className="text-xs text-white/40">{t.maxHistoryHint}</p>
         </div>
 
         <button

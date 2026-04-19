@@ -83,9 +83,10 @@ export async function POST(request: Request) {
     allowed_numbers: string[] | string;
     bedrock_model: string;
     system_prompt: string | null;
+    max_history: number;
   }[]>`
     SELECT user_id, evolution_url, api_key_enc, api_key_iv, api_key_tag,
-           instance_name, webhook_secret::text, allowed_numbers, bedrock_model, system_prompt
+           instance_name, webhook_secret::text, allowed_numbers, bedrock_model, system_prompt, max_history
     FROM whatsapp_config
     WHERE webhook_secret = ${webhookKey}::uuid
   `;
@@ -195,6 +196,7 @@ export async function POST(request: Request) {
       evolutionCfg,
       modelId: config.bedrock_model,
       systemPrompt: config.system_prompt ?? undefined,
+      maxHistory: config.max_history ?? 40,
     }).catch((e) => console.error("[whatsapp] agent error:", e));
   }
 

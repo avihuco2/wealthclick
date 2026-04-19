@@ -26,11 +26,12 @@ export async function GET() {
     allowed_numbers: string[];
     bedrock_model: string;
     system_prompt: string | null;
+    max_history: number;
   }[]>`
     SELECT id, evolution_url,
            (api_key_enc IS NOT NULL) AS has_api_key,
            instance_name, webhook_secret::text,
-           allowed_numbers, bedrock_model, system_prompt
+           allowed_numbers, bedrock_model, system_prompt, max_history
     FROM whatsapp_config WHERE user_id = ${session.user.id}
   `;
 
@@ -51,16 +52,18 @@ export async function PUT(request: Request) {
 
   const {
     evolution_url,
-    api_key,       // plaintext — only present when user is changing it
+    api_key,
     instance_name,
     allowed_numbers,
     bedrock_model,
     system_prompt,
+    max_history,
   } = body as Record<string, unknown>;
+
+  const maxHistoryVal = Math.max(1, Math.min(200, Number(max_history) || 40));
 
   const sql = getDb();
 
-  // Build encrypted key fields if a new key was provided
   let keyFields: Record<string, string> = {};
   if (api_key && typeof api_key === "string" && api_key.trim()) {
     const { enc, iv, tag } = encryptApiKey(api_key.trim());
@@ -72,7 +75,6 @@ export async function PUT(request: Request) {
   `;
 
   if (existing) {
-    // Update — only overwrite key fields if new key provided
     if (Object.keys(keyFields).length > 0) {
       await sql`
         UPDATE whatsapp_config SET
@@ -84,6 +86,7 @@ export async function PUT(request: Request) {
           allowed_numbers = ${JSON.stringify(allowed_numbers ?? [])}::jsonb,
           bedrock_model   = ${bedrock_model as string},
           system_prompt   = ${system_prompt as string | null},
+          max_history     = ${maxHistoryVal},
           updated_at      = NOW()
         WHERE user_id = ${session.user.id}
       `;
@@ -95,6 +98,7 @@ export async function PUT(request: Request) {
           allowed_numbers = ${JSON.stringify(allowed_numbers ?? [])}::jsonb,
           bedrock_model   = ${bedrock_model as string},
           system_prompt   = ${system_prompt as string | null},
+          max_history     = ${maxHistoryVal},
           updated_at      = NOW()
         WHERE user_id = ${session.user.id}
       `;
@@ -106,12 +110,12 @@ export async function PUT(request: Request) {
     await sql`
       INSERT INTO whatsapp_config
         (user_id, evolution_url, api_key_enc, api_key_iv, api_key_tag,
-         instance_name, allowed_numbers, bedrock_model, system_prompt)
+         instance_name, allowed_numbers, bedrock_model, system_prompt, max_history)
       VALUES (
         ${session.user.id}, ${evolution_url as string},
         ${keyFields.api_key_enc}, ${keyFields.api_key_iv}, ${keyFields.api_key_tag},
         ${instance_name as string}, ${JSON.stringify(allowed_numbers ?? [])}::jsonb,
-        ${bedrock_model as string}, ${system_prompt as string | null}
+        ${bedrock_model as string}, ${system_prompt as string | null}, ${maxHistoryVal}
       )
     `;
   }

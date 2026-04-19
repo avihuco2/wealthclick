@@ -78,6 +78,6 @@ export async function logoutInstance(cfg: EvolutionConfig) {
 export async function sendTextMessage(cfg: EvolutionConfig, to: string, text: string) {
   return evoFetch(cfg, `/message/sendText/${cfg.instance}`, {
     method: "POST",
-    body: JSON.stringify({ number: to, text }),
+    body: JSON.stringify({ number: to, textMessage: { text } }),
   });
 }

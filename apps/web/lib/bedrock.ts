@@ -168,7 +168,9 @@ export async function converseWithTools(opts: {
   messages: Message[];
   systemPrompt?: string;
 }): Promise<ConverseTurnResult> {
-  const { userId, modelId, messages, systemPrompt } = opts;
+  const { userId, messages, systemPrompt } = opts;
+  // Strip cross-region inference profile prefix (us./eu./ap.) — causes SDK SerializationException with tools
+  const modelId = opts.modelId.replace(/^(us|eu|ap)\./, "");
 
   const client = new BedrockRuntimeClient({ region: process.env.AWS_BEDROCK_REGION ?? "us-east-1" });
   const withTools = modelSupportsTools(modelId);

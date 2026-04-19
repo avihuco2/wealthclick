@@ -39,12 +39,10 @@ export async function getCategoryBudgets(
       c.color,
       c.emoji,
 
-      -- Budget: use this month's value, fall back to last month's, default 0
+      -- Budget: only what was explicitly saved for this month, 0 if none
       COALESCE(
         (SELECT monthly_amount FROM category_budgets
          WHERE user_id = ${userId} AND category_id = c.id AND month = ${month}),
-        (SELECT monthly_amount FROM category_budgets
-         WHERE user_id = ${userId} AND category_id = c.id AND month = ${prior}),
         0
       )::text AS monthly_budget,
 
@@ -112,12 +110,10 @@ export async function getBudgetIncome(
 
   const [row] = await sql<{ forecasted_amount: string; actual_income: string }[]>`
     SELECT
-      -- Forecasted: this month's entry → last month's → last month's actual income → 0
+      -- Forecasted: this month's saved entry, else last month's actual income as hint
       COALESCE(
         (SELECT forecasted_amount FROM budget_income
          WHERE user_id = ${userId} AND month = ${month}),
-        (SELECT forecasted_amount FROM budget_income
-         WHERE user_id = ${userId} AND month = ${prior}),
         (SELECT SUM(amount) FROM transactions
          WHERE user_id = ${userId} AND type = 'income'
            AND to_char(date, 'YYYY-MM') = ${prior}),

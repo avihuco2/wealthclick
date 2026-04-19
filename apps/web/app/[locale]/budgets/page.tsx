@@ -64,6 +64,7 @@ export default async function BudgetsPage({
 
       <main className="mx-auto max-w-5xl px-6 py-12">
         <BudgetsClient
+          key={month}
           rows={rows}
           income={income}
           month={month}

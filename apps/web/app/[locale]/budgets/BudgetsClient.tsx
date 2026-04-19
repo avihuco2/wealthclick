@@ -110,7 +110,7 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
   const [budgets, setBudgets] = useState<Record<string, number>>(() =>
     Object.fromEntries(rows.map((r) => [r.category_id, parseFloat(r.monthly_budget)]))
   );
-  const [savingStates, setSavingStates] = useState<Record<string, "idle" | "saving" | "saved">>({});
+  const [saveAllState, setSaveAllState] = useState<"idle" | "saving" | "saved">("idle");
 
   // ── Forecasted income state ───────────────────────────────────────────────
   const [forecastedIncome, setForecastedIncome] = useState(
@@ -135,21 +135,31 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ month }),
     });
+    const [newRows, newIncome] = await Promise.all([
+      fetch(`/api/budgets?month=${month}`).then((r) => r.json()),
+      fetch(`/api/budgets/income?month=${month}`).then((r) => r.json()),
+    ]);
+    setBudgets(Object.fromEntries(newRows.map((r: CategoryBudgetRow) => [r.category_id, parseFloat(r.monthly_budget)])));
+    setForecastedIncome(Math.round(parseFloat(newIncome.forecasted_amount)));
     setImportState("imported");
-    setTimeout(() => { setImportState("idle"); router.refresh(); }, 1000);
-  }, [month, router]);
-
-  // ── Save budget for a category ────────────────────────────────────────────
-  const saveBudget = useCallback(async (categoryId: string, amount: number) => {
-    setSavingStates((s) => ({ ...s, [categoryId]: "saving" }));
-    await fetch("/api/budgets", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category_id: categoryId, month, monthly_amount: amount }),
-    });
-    setSavingStates((s) => ({ ...s, [categoryId]: "saved" }));
-    setTimeout(() => setSavingStates((s) => ({ ...s, [categoryId]: "idle" })), 2000);
+    setTimeout(() => setImportState("idle"), 1500);
   }, [month]);
+
+  // ── Save all budgets ──────────────────────────────────────────────────────
+  const saveAll = useCallback(async () => {
+    setSaveAllState("saving");
+    await Promise.all(
+      Object.entries(budgets).map(([categoryId, amount]) =>
+        fetch("/api/budgets", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category_id: categoryId, month, monthly_amount: amount }),
+        })
+      )
+    );
+    setSaveAllState("saved");
+    setTimeout(() => setSaveAllState("idle"), 2000);
+  }, [budgets, month]);
 
   // ── Save forecasted income ────────────────────────────────────────────────
   const saveIncome = useCallback(async (val: number) => {
@@ -171,6 +181,8 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
   const unallocated = forecastedIncome - totalAllocated;
 
   const name = (r: CategoryBudgetRow) => locale === "he" ? r.name_he : r.name_en;
+
+  const saveAllLabel = saveAllState === "saving" ? t.saving : saveAllState === "saved" ? t.saved : t.save;
 
   const incomeLabel =
     incomeSaveState === "saving" ? t.saving :
@@ -302,8 +314,6 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
                 const budget = budgets[r.category_id] ?? 0;
                 const actual = parseFloat(r.current_month_actual);
                 const over   = budget > 0 && actual > budget;
-                const state  = savingStates[r.category_id] ?? "idle";
-                const btnLabel = state === "saving" ? t.saving : state === "saved" ? t.saved : t.save;
 
                 return (
                   <tr key={r.category_id} className="group transition-colors hover:bg-white/[0.03]">
@@ -339,18 +349,9 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
                           onChange={(e) => {
                             const v = Math.max(0, parseFloat(e.target.value) || 0);
                             setBudgets((prev) => ({ ...prev, [r.category_id]: v }));
-                            setSavingStates((s) => ({ ...s, [r.category_id]: "idle" }));
                           }}
-                          onKeyDown={(e) => e.key === "Enter" && saveBudget(r.category_id, budget)}
                           className="w-24 rounded-lg bg-white/[0.06] px-2 py-1.5 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/25"
                         />
-                        <button
-                          onClick={() => saveBudget(r.category_id, budget)}
-                          disabled={state !== "idle"}
-                          className="rounded-lg bg-white/[0.07] px-2.5 py-1.5 text-xs text-white/55 transition hover:bg-white/[0.13] hover:text-white/90 disabled:opacity-40"
-                        >
-                          {btnLabel}
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -359,6 +360,17 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* ── Save all button ── */}
+      <div className="flex justify-end">
+        <button
+          onClick={saveAll}
+          disabled={saveAllState !== "idle"}
+          className="rounded-xl bg-[oklch(0.5706_0.2236_258.71)]/20 px-6 py-2.5 text-sm font-medium text-[oklch(0.72_0.18_258.71)] transition hover:bg-[oklch(0.5706_0.2236_258.71)]/30 disabled:opacity-40"
+        >
+          {saveAllLabel}
+        </button>
       </div>
     </div>
   );

@@ -42,7 +42,7 @@ export async function handleWhatsAppMessage(opts: {
     result = await converseWithTools({ userId, modelId, messages: updatedHistory, systemPrompt });
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : String(e);
-    console.error("[whatsappAgent] Bedrock error:", errMsg);
+    console.error("[whatsappAgent] Bedrock error:", errMsg, JSON.stringify(e));
     await sendTextMessage(evolutionCfg, phone, "Sorry, I ran into an error. Please try again.");
     return;
   }

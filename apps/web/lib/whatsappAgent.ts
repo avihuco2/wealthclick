@@ -30,14 +30,14 @@ export async function handleWhatsAppMessage(opts: {
 
   // Normalize messages from DB — strip SDK-internal properties that break Bedrock on re-submission
   const rawHistory = conv?.messages ?? [];
-  const history: Message[] = (rawHistory as Record<string, unknown>[]).map((m) => ({
+  const history: Message[] = (rawHistory as unknown as Record<string, unknown>[]).map((m) => ({
     role: m.role as "user" | "assistant",
-    content: ((m.content as Record<string, unknown>[]) ?? []).map((block) => {
+    content: ((m.content as Record<string, unknown>[]) ?? []).map((block): Message["content"][number] => {
       if ("text" in block) return { text: block.text as string };
-      if ("toolUse" in block) return { toolUse: block.toolUse };
-      if ("toolResult" in block) return { toolResult: block.toolResult };
-      return block;
-    }) as Message["content"],
+      if ("toolUse" in block) return { toolUse: block.toolUse } as Message["content"][number];
+      if ("toolResult" in block) return { toolResult: block.toolResult } as Message["content"][number];
+      return block as Message["content"][number];
+    }),
   }));
 
   // Append new user message

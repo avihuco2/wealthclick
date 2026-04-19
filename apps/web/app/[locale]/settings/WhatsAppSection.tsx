@@ -52,6 +52,10 @@ interface Props {
     statusError: string;
     maxHistory: string;
     maxHistoryHint: string;
+    clearHistory: string;
+    clearHistoryConfirm: string;
+    clearingHistory: string;
+    historyCleared: string;
   };
 }
 
@@ -64,9 +68,11 @@ export default function WhatsAppSection({ t }: Props) {
   const [apiKey, setApiKey]                 = useState("");
   const [instanceName, setInstanceName]     = useState("wealthclick");
   const [allowedNumbers, setAllowedNumbers] = useState("");
-  const [model, setModel]                   = useState<BedrockModelId>("anthropic.claude-3-haiku-20240307-v1:0");
+  const [model, setModel]                   = useState<BedrockModelId>("anthropic.claude-3-haiku-20240307-v1:0" as BedrockModelId);
   const [systemPrompt, setSystemPrompt]     = useState("");
   const [maxHistory, setMaxHistory]         = useState(40);
+  const [clearingHistory, setClearingHistory] = useState(false);
+  const [historyClearedMsg, setHistoryClearedMsg] = useState(false);
 
   // UI state
   const [saving, setSaving]           = useState(false);
@@ -139,6 +145,20 @@ export default function WhatsAppSection({ t }: Props) {
   }, [config?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => stopPolling(), []);
+
+  // ── Clear conversation history ─────────────────────────────────────────────
+
+  async function handleClearHistory() {
+    if (!confirm(t.clearHistoryConfirm)) return;
+    setClearingHistory(true);
+    try {
+      await fetch("/api/whatsapp/clear-history", { method: "POST" });
+      setHistoryClearedMsg(true);
+      setTimeout(() => setHistoryClearedMsg(false), 3000);
+    } finally {
+      setClearingHistory(false);
+    }
+  }
 
   // ── Save config ────────────────────────────────────────────────────────────
 
@@ -442,13 +462,22 @@ export default function WhatsAppSection({ t }: Props) {
           <p className="text-xs text-white/40">{t.maxHistoryHint}</p>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={isSaveDisabled}
-          className="self-start rounded-xl bg-[oklch(0.5706_0.2236_258.71)] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40"
-        >
-          {saving ? t.saving : savedMsg ? t.saved : t.save}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleSave}
+            disabled={isSaveDisabled}
+            className="rounded-xl bg-[oklch(0.5706_0.2236_258.71)] px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-40"
+          >
+            {saving ? t.saving : savedMsg ? t.saved : t.save}
+          </button>
+          <button
+            onClick={handleClearHistory}
+            disabled={clearingHistory}
+            className="rounded-xl bg-red-500/20 px-5 py-2.5 text-sm font-medium text-red-300 ring-1 ring-red-500/30 transition hover:bg-red-500/30 disabled:opacity-40"
+          >
+            {clearingHistory ? t.clearingHistory : historyClearedMsg ? t.historyCleared : t.clearHistory}
+          </button>
+        </div>
       </div>
     </section>
   );

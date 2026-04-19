@@ -161,6 +161,7 @@ export default async function TransactionsPage({
           transactions: getDictionary(typedLocale).dashboard.transactions,
           bankAccounts: getDictionary(typedLocale).bankAccounts.navLabel,
           insights: getDictionary(typedLocale).insights.navLabel,
+          budgets: getDictionary(typedLocale).budgets.navLabel,
           settings: getDictionary(typedLocale).settings.navLabel,
           userManagement: getDictionary(typedLocale).dashboard.userManagement,
           signOut: getDictionary(typedLocale).dashboard.signOut,

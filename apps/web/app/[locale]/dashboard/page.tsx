@@ -71,6 +71,7 @@ export default async function DashboardPage({
           transactions: t.transactions,
           bankAccounts: getDictionary(typedLocale).bankAccounts.navLabel,
           insights: getDictionary(typedLocale).insights.navLabel,
+          budgets: getDictionary(typedLocale).budgets.navLabel,
           settings: getDictionary(typedLocale).settings.navLabel,
           userManagement: t.userManagement,
           signOut: t.signOut,
@@ -160,6 +161,13 @@ export default async function DashboardPage({
               description={getDictionary(typedLocale).insights.widgetDescription}
             />
           </a>
+          <a href={`/${locale}/budgets`} className="block">
+            <QuickAction
+              icon={<BudgetIcon />}
+              title={getDictionary(typedLocale).budgets.navLabel}
+              description={getDictionary(typedLocale).budgets.subtitle}
+            />
+          </a>
         </div>
       </main>
     </div>
@@ -233,4 +241,7 @@ function TargetIcon() {
 }
 function InsightsIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 20h20" /><path d="m5 17 4-5 4 3 4-6 4 5" /></svg>;
+}
+function BudgetIcon() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>;
 }

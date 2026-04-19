@@ -6,7 +6,7 @@
 import { getDb } from "./db";
 import { converseWithTools, type ConverseTurnResult } from "./bedrock";
 import { sendTextMessage, type EvolutionConfig } from "./evolutionApi";
-import type { Message } from "@aws-sdk/client-bedrock-runtime";
+import type { Message, ContentBlock } from "@aws-sdk/client-bedrock-runtime";
 
 // Max messages to keep in history (older messages trimmed from the start, keeping system coherence)
 const MAX_HISTORY = 40;
@@ -32,11 +32,11 @@ export async function handleWhatsAppMessage(opts: {
   const rawHistory = conv?.messages ?? [];
   const history: Message[] = (rawHistory as unknown as Record<string, unknown>[]).map((m) => ({
     role: m.role as "user" | "assistant",
-    content: ((m.content as Record<string, unknown>[]) ?? []).map((block): Message["content"][number] => {
+    content: ((m.content as Record<string, unknown>[]) ?? []).map((block): ContentBlock => {
       if ("text" in block) return { text: block.text as string };
-      if ("toolUse" in block) return { toolUse: block.toolUse } as Message["content"][number];
-      if ("toolResult" in block) return { toolResult: block.toolResult } as Message["content"][number];
-      return block as Message["content"][number];
+      if ("toolUse" in block) return { toolUse: block.toolUse } as ContentBlock;
+      if ("toolResult" in block) return { toolResult: block.toolResult } as ContentBlock;
+      return block as ContentBlock;
     }),
   }));
 

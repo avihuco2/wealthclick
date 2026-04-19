@@ -17,9 +17,11 @@ export const BEDROCK_MODELS = [
   { id: "us.anthropic.claude-3-5-haiku-20241022-v1:0",  label: "Claude 3.5 Haiku",      supportsTools: true  },
   { id: "anthropic.claude-3-haiku-20240307-v1:0",       label: "Claude 3 Haiku",        supportsTools: true  },
   // ── Amazon Nova ───────────────────────────────────────────────────────────
+  // Nova models use us. cross-region inference profiles which cause SDK SerializationException
+  // when toolConfig is passed — disable tools for all Nova models
   { id: "us.amazon.nova-micro-v1:0",                    label: "Nova Micro",            supportsTools: false },
-  { id: "us.amazon.nova-lite-v1:0",                     label: "Nova Lite",             supportsTools: true  },
-  { id: "us.amazon.nova-pro-v1:0",                      label: "Nova Pro",              supportsTools: true  },
+  { id: "us.amazon.nova-lite-v1:0",                     label: "Nova Lite",             supportsTools: false },
+  { id: "us.amazon.nova-pro-v1:0",                      label: "Nova Pro",              supportsTools: false },
   // ── Meta Llama ────────────────────────────────────────────────────────────
   { id: "meta.llama3-8b-instruct-v1:0",                 label: "Llama 3 8B",            supportsTools: false },
   { id: "meta.llama3-70b-instruct-v1:0",                label: "Llama 3 70B",           supportsTools: false },

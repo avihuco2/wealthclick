@@ -120,6 +120,54 @@ const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    toolSpec: {
+      name: "get_budget",
+      description: "Get the monthly budget plan: forecasted income, per-category budgets, actual spending, and 3mo/6mo averages.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            month: { type: "string", description: "Month in YYYY-MM format e.g. 2025-03" },
+          },
+          required: ["month"],
+        },
+      },
+    },
+  },
+  {
+    toolSpec: {
+      name: "set_category_budget",
+      description: "Set or update the monthly budget for a specific category. Use list_categories to get category IDs.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            month:          { type: "string", description: "Month in YYYY-MM format" },
+            category_id:    { type: "string", description: "Category UUID" },
+            monthly_amount: { type: "number", description: "Budget amount in ILS (non-negative)" },
+          },
+          required: ["month", "category_id", "monthly_amount"],
+        },
+      },
+    },
+  },
+  {
+    toolSpec: {
+      name: "set_forecasted_income",
+      description: "Set the expected (forecasted) income for a month.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            month:              { type: "string", description: "Month in YYYY-MM format" },
+            forecasted_amount:  { type: "number", description: "Expected income in ILS (non-negative)" },
+          },
+          required: ["month", "forecasted_amount"],
+        },
+      },
+    },
+  },
 ];
 
 // ─── Tool execution router ─────────────────────────────────────────────────────
@@ -131,6 +179,9 @@ import {
   toolCreateTransaction,
   toolUpdateTransaction,
   toolDeleteTransaction,
+  toolGetBudget,
+  toolSetCategoryBudget,
+  toolSetForecastedIncome,
 } from "./agentTools";
 
 async function executeTool(
@@ -144,7 +195,10 @@ async function executeTool(
     case "list_categories":      return toolListCategories(userId);
     case "create_transaction":   return toolCreateTransaction(userId, input as Parameters<typeof toolCreateTransaction>[1]);
     case "update_transaction":   return toolUpdateTransaction(userId, input as Parameters<typeof toolUpdateTransaction>[1]);
-    case "delete_transaction":   return toolDeleteTransaction(userId, input as { id: string });
+    case "delete_transaction":      return toolDeleteTransaction(userId, input as { id: string });
+    case "get_budget":              return toolGetBudget(userId, input as { month: string });
+    case "set_category_budget":     return toolSetCategoryBudget(userId, input as Parameters<typeof toolSetCategoryBudget>[1]);
+    case "set_forecasted_income":   return toolSetForecastedIncome(userId, input as Parameters<typeof toolSetForecastedIncome>[1]);
     default: throw new Error(`Unknown tool: ${name}`);
   }
 }

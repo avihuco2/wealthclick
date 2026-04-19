@@ -7,6 +7,7 @@ import { getDb } from "./db";
 import { getTransactionsByDateRange } from "./transactions";
 import { getInsightsData } from "./insights";
 import { upsertCategoryRule } from "./categoryRules";
+import { getCategoryBudgets, getBudgetIncome, upsertCategoryBudget, upsertBudgetIncome } from "./budgets";
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
@@ -173,4 +174,64 @@ export async function toolDeleteTransaction(userId: string, args: { id: string }
   const rows = await sql`DELETE FROM transactions WHERE id = ${id} AND user_id = ${userId} RETURNING id`;
   if (rows.length === 0) throw new Error("Transaction not found");
   return `Transaction ${id} deleted.`;
+}
+
+export async function toolGetBudget(userId: string, args: { month: string }): Promise<string> {
+  const { month } = args;
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) throw new Error("month must be YYYY-MM");
+
+  const [rows, income] = await Promise.all([
+    getCategoryBudgets(userId, month),
+    getBudgetIncome(userId, month),
+  ]);
+
+  const forecasted = parseFloat(income.forecasted_amount);
+  const actual     = parseFloat(income.actual_income);
+  const totalBudget = rows.reduce((s, r) => s + parseFloat(r.monthly_budget), 0);
+  const totalActual = rows.reduce((s, r) => s + parseFloat(r.current_month_actual), 0);
+
+  const lines = rows.map((r) => {
+    const budget = parseFloat(r.monthly_budget);
+    const spent  = parseFloat(r.current_month_actual);
+    const avg3   = parseFloat(r.avg_3m);
+    const avg6   = parseFloat(r.avg_6m);
+    const pct    = forecasted > 0 && budget > 0 ? ` (${Math.round((budget / forecasted) * 100)}% of income)` : "";
+    const status = budget > 0 ? (spent > budget ? " ⚠️ over budget" : ` remaining: ${fmt(budget - spent)}`) : "";
+    return `  • ${r.emoji || "🏷️"} ${r.name_en}: budget ${fmt(budget)}${pct}, spent ${fmt(spent)}${status} | 3mo avg ${fmt(avg3)}, 6mo avg ${fmt(avg6)}`;
+  });
+
+  return [
+    `📋 Budget — ${month}`,
+    "",
+    `💰 Forecasted income: ${fmt(forecasted)} | Actual income: ${fmt(actual)}`,
+    `📊 Total budgeted: ${fmt(totalBudget)} | Total spent: ${fmt(totalActual)} | Remaining: ${fmt(totalBudget - totalActual)}`,
+    "",
+    "Per category:",
+    ...lines,
+  ].join("\n");
+}
+
+export async function toolSetCategoryBudget(
+  userId: string,
+  args: { month: string; category_id: string; monthly_amount: number },
+): Promise<string> {
+  const { month, category_id, monthly_amount } = args;
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) throw new Error("month must be YYYY-MM");
+  if (!category_id) throw new Error("category_id required");
+  if (typeof monthly_amount !== "number" || monthly_amount < 0) throw new Error("monthly_amount must be a non-negative number");
+
+  await upsertCategoryBudget(userId, category_id, month, monthly_amount);
+  return `Budget for category ${category_id} in ${month} set to ${fmt(monthly_amount)}.`;
+}
+
+export async function toolSetForecastedIncome(
+  userId: string,
+  args: { month: string; forecasted_amount: number },
+): Promise<string> {
+  const { month, forecasted_amount } = args;
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) throw new Error("month must be YYYY-MM");
+  if (typeof forecasted_amount !== "number" || forecasted_amount < 0) throw new Error("forecasted_amount must be a non-negative number");
+
+  await upsertBudgetIncome(userId, month, forecasted_amount);
+  return `Forecasted income for ${month} set to ${fmt(forecasted_amount)}.`;
 }

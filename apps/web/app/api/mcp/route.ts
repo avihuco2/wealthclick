@@ -14,6 +14,7 @@ import { getTransactionsByDateRange } from "@/lib/transactions";
 import { getInsightsData } from "@/lib/insights";
 import { getDb } from "@/lib/db";
 import { upsertCategoryRule } from "@/lib/categoryRules";
+import { toolGetBudget, toolSetCategoryBudget, toolSetForecastedIncome } from "@/lib/agentTools";
 
 // ─── Session store — persists in PM2 process on EC2 ────────────────────────
 
@@ -115,6 +116,42 @@ const TOOLS = [
         id: { type: "string", description: "Transaction UUID to delete" },
       },
       required: ["id"],
+    },
+  },
+  {
+    name: "get_budget",
+    description: "Get the monthly budget plan: forecasted income, per-category budgets, actual spending this month, and 3mo/6mo spending averages.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        month: { type: "string", description: "Month in YYYY-MM format, e.g. 2025-03" },
+      },
+      required: ["month"],
+    },
+  },
+  {
+    name: "set_category_budget",
+    description: "Set or update the monthly budget for a specific category. Use list_categories to look up category IDs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        month:          { type: "string", description: "Month in YYYY-MM format" },
+        category_id:    { type: "string", description: "Category UUID" },
+        monthly_amount: { type: "number", description: "Budget amount in ILS (non-negative)" },
+      },
+      required: ["month", "category_id", "monthly_amount"],
+    },
+  },
+  {
+    name: "set_forecasted_income",
+    description: "Set the expected (forecasted) income for a month.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        month:             { type: "string", description: "Month in YYYY-MM format" },
+        forecasted_amount: { type: "number", description: "Expected income in ILS (non-negative)" },
+      },
+      required: ["month", "forecasted_amount"],
     },
   },
 ];
@@ -267,6 +304,40 @@ async function callTool(name: string, args: Record<string, unknown>, userId: str
       const rows = await sql`DELETE FROM transactions WHERE id = ${id as string} AND user_id = ${userId} RETURNING id`;
       if (rows.length === 0) return errorContent("Transaction not found");
       return textContent(`Transaction ${id} deleted.`);
+    }
+
+    case "get_budget": {
+      const month = args.month as string;
+      try {
+        return textContent(await toolGetBudget(userId, { month }));
+      } catch (e) {
+        return errorContent(e instanceof Error ? e.message : "Error");
+      }
+    }
+
+    case "set_category_budget": {
+      const { month, category_id, monthly_amount } = args;
+      try {
+        return textContent(await toolSetCategoryBudget(userId, {
+          month: month as string,
+          category_id: category_id as string,
+          monthly_amount: monthly_amount as number,
+        }));
+      } catch (e) {
+        return errorContent(e instanceof Error ? e.message : "Error");
+      }
+    }
+
+    case "set_forecasted_income": {
+      const { month, forecasted_amount } = args;
+      try {
+        return textContent(await toolSetForecastedIncome(userId, {
+          month: month as string,
+          forecasted_amount: forecasted_amount as number,
+        }));
+      } catch (e) {
+        return errorContent(e instanceof Error ? e.message : "Error");
+      }
     }
 
     default:

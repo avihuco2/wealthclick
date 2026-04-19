@@ -1,9 +1,10 @@
 /**
  * Evolution API client — thin wrapper for WhatsApp instance management and messaging.
+ * Compatible with Evolution API v1.8.x (Baileys-based).
  */
 
 export interface EvolutionConfig {
-  url: string;   // e.g. https://evo.example.com
+  url: string;   // e.g. http://localhost:8080
   apiKey: string;
   instance: string;
 }
@@ -24,20 +25,29 @@ async function evoFetch(cfg: EvolutionConfig, path: string, init?: RequestInit) 
   return res.json();
 }
 
-/** Create a new instance in Evolution API (v1 compatible). */
+/** Create a new instance and configure its webhook. */
 export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
-  return evoFetch(cfg, "/instance/create", {
+  const createResult = await evoFetch(cfg, "/instance/create", {
     method: "POST",
     body: JSON.stringify({
       instanceName: cfg.instance,
       qrcode: true,
-      // v1 webhook config
-      webhookUrl,
-      webhookByEvents: true,
-      webhookBase64: false,
-      webhookEvents: ["MESSAGES_UPSERT"],
     }),
   });
+
+  // v1 create payload webhook fields are unreliable — always set explicitly
+  await evoFetch(cfg, `/webhook/set/${cfg.instance}`, {
+    method: "POST",
+    body: JSON.stringify({
+      enabled: true,
+      url: webhookUrl,
+      webhookByEvents: true,
+      webhookBase64: false,
+      events: ["MESSAGES_UPSERT"],
+    }),
+  });
+
+  return createResult;
 }
 
 /** Delete/remove an instance from Evolution API. */
@@ -56,6 +66,7 @@ export async function getInstanceStatus(cfg: EvolutionConfig): Promise<{ instanc
     (data: unknown) => {
       const arr = Array.isArray(data) ? data : [data];
       const inst = arr[0];
+      if (!inst) return { instance: { state: "unknown" } };
       // v1: instance.status="open"; v2: instance.state or connectionStatus
       const state =
         inst?.connectionStatus ??
@@ -63,7 +74,6 @@ export async function getInstanceStatus(cfg: EvolutionConfig): Promise<{ instanc
         inst?.instance?.state ??
         inst?.state ??
         "unknown";
-      // v1 uses "open" for connected
       return { instance: { state } };
     },
   );
@@ -74,7 +84,7 @@ export async function logoutInstance(cfg: EvolutionConfig) {
   return evoFetch(cfg, `/instance/logout/${cfg.instance}`, { method: "DELETE" });
 }
 
-/** Send a text message. */
+/** Send a text message (v1 payload format). */
 export async function sendTextMessage(cfg: EvolutionConfig, to: string, text: string) {
   return evoFetch(cfg, `/message/sendText/${cfg.instance}`, {
     method: "POST",

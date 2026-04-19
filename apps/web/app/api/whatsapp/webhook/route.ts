@@ -18,7 +18,6 @@ import { handleWhatsAppMessage } from "@/lib/whatsappAgent";
 import { sendTextMessage, type EvolutionConfig } from "@/lib/evolutionApi";
 
 // ─── Rate limiting ────────────────────────────────────────────────────────────
-// Map<phone, {count, windowStart}>
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 const RATE_LIMIT_MAX   = 20;
 const RATE_LIMIT_MS    = 60 * 60 * 1000; // 1 hour
@@ -43,7 +42,6 @@ function isDuplicate(msgId: string): boolean {
   if (seenMessageIds.has(msgId)) return true;
   seenMessageIds.add(msgId);
   if (seenMessageIds.size > MAX_SEEN_IDS) {
-    // Evict oldest by deleting first entry
     seenMessageIds.delete(seenMessageIds.values().next().value!);
   }
   return false;
@@ -52,7 +50,6 @@ function isDuplicate(msgId: string): boolean {
 // ─── HMAC validation ──────────────────────────────────────────────────────────
 function validateHmac(body: string, signature: string | null, secret: string): boolean {
   if (!signature) return false;
-  // Expected format: sha256=<hex>
   const prefix = "sha256=";
   if (!signature.startsWith(prefix)) return false;
   const expected = createHmac("sha256", secret).update(body, "utf8").digest("hex");
@@ -64,7 +61,6 @@ function validateHmac(body: string, signature: string | null, secret: string): b
 
 // ─── Normalize phone to E.164 ─────────────────────────────────────────────────
 function normalizePhone(raw: string): string {
-  // Evolution sends numbers like "972501234567@s.whatsapp.net"
   const digits = raw.replace(/@.*$/, "").replace(/\D/g, "");
   return "+" + digits;
 }
@@ -73,7 +69,7 @@ function normalizePhone(raw: string): string {
 
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url);
-  const webhookKey = searchParams.get("key"); // URL is sync, searchParams.get() is sync
+  const webhookKey = searchParams.get("key");
   if (!webhookKey) return NextResponse.json({ error: "Missing key" }, { status: 400 });
 
   const rawBody = await request.text();
@@ -99,17 +95,15 @@ export async function POST(request: Request) {
   `;
 
   if (config) {
-    // Normalize allowed_numbers: jsonb may come back as a JSON string or already an array
     if (typeof config.allowed_numbers === "string") {
       try { config.allowed_numbers = JSON.parse(config.allowed_numbers); } catch { config.allowed_numbers = []; }
     }
     if (!Array.isArray(config.allowed_numbers)) config.allowed_numbers = [];
   }
 
-  if (!config) return NextResponse.json({ ok: true }); // unknown key — silently ignore
+  if (!config) return NextResponse.json({ ok: true });
 
-  // HMAC validation — only enforce if Evolution sends the header (v2+).
-  // v1.x does not send x-hub-signature-256, so skip when absent.
+  // HMAC validation — v1.x does not send x-hub-signature-256, so skip when absent
   if (signature && config.api_key_enc) {
     const apiKey = decryptApiKey(config.api_key_enc, config.api_key_iv, config.api_key_tag);
     if (!validateHmac(rawBody, signature, apiKey)) {
@@ -126,14 +120,18 @@ export async function POST(request: Request) {
   }
 
   const event = body as Record<string, unknown>;
+  console.log(`[whatsapp] webhook event: ${event.event}`);
 
-  // Only handle MESSAGES_UPSERT
   if (event.event !== "messages.upsert" && event.event !== "MESSAGES_UPSERT") {
     return NextResponse.json({ ok: true });
   }
 
-  const messages = (event.data as Record<string, unknown>)?.messages as unknown[];
-  if (!Array.isArray(messages)) return NextResponse.json({ ok: true });
+  const data = event.data as Record<string, unknown> | undefined;
+  const messages = data?.messages as unknown[];
+  if (!Array.isArray(messages)) {
+    console.log("[whatsapp] no messages array in payload");
+    return NextResponse.json({ ok: true });
+  }
 
   const evolutionCfg: EvolutionConfig = {
     url: config.evolution_url,
@@ -141,52 +139,49 @@ export async function POST(request: Request) {
     instance: config.instance_name,
   };
 
-  // Process each message (usually just one)
   for (const msg of messages) {
     const m = msg as Record<string, unknown>;
-    const msgId = m.key ? (m.key as Record<string, unknown>).id as string : "";
-    const fromMe = m.key ? !!(m.key as Record<string, unknown>).fromMe : false;
-    const remoteJid = m.key ? (m.key as Record<string, unknown>).remoteJid as string : "";
+    const key = m.key as Record<string, unknown> | undefined;
+    const msgId = key?.id as string ?? "";
+    const fromMe = !!key?.fromMe;
+    const remoteJid = key?.remoteJid as string ?? "";
+    const messageContent = m.message as Record<string, unknown> | undefined;
     const text =
-      (m.message as Record<string, unknown>)?.conversation as string ||
-      ((m.message as Record<string, unknown>)?.extendedTextMessage as Record<string, unknown>)?.text as string ||
+      (messageContent?.conversation as string) ||
+      ((messageContent?.extendedTextMessage as Record<string, unknown>)?.text as string) ||
       "";
 
-    // Skip own messages, empty text
+    console.log(`[whatsapp] msg: id=${msgId} fromMe=${fromMe} jid=${remoteJid} text="${text.substring(0, 60)}"`);
+
     if (fromMe) continue;
     if (!text?.trim()) continue;
     if (!remoteJid) continue;
-
-    // Deduplication
-    if (msgId && isDuplicate(msgId)) continue;
+    if (msgId && isDuplicate(msgId)) { console.log("[whatsapp] duplicate, skipping"); continue; }
 
     const phone = normalizePhone(remoteJid);
 
-    // Whitelist check
     if (config.allowed_numbers.length > 0 && !config.allowed_numbers.includes(phone)) {
       console.log(`[whatsapp] blocked ${phone} — not in whitelist`);
       continue;
     }
 
-    // Rate limiting
     if (isRateLimited(phone)) {
       console.log(`[whatsapp] rate limited ${phone}`);
       continue;
     }
 
-    console.log(`[whatsapp] incoming from ${phone}: "${text.trim().substring(0, 80)}"`);
+    console.log(`[whatsapp] processing message from ${phone}`);
 
-    // DEBUG: echo "OK" directly — remove when LLM flow is validated
-    sendTextMessage(evolutionCfg, remoteJid, "OK — message received ✓").catch((e) =>
-      console.error("[whatsapp] echo error:", e),
-    );
+    // DEBUG: echo directly to validate channel — remove when LLM flow verified
+    sendTextMessage(evolutionCfg, remoteJid, "OK — message received ✓")
+      .then((res) => console.log("[whatsapp] echo sent OK:", JSON.stringify(res).substring(0, 200)))
+      .catch((e) => console.error("[whatsapp] echo send FAILED:", e));
     continue;
 
-    // Fire and forget — respond to Evolution API immediately
     // eslint-disable-next-line no-unreachable
     handleWhatsAppMessage({
       userId: config.user_id,
-      phone: remoteJid, // use original JID for sending
+      phone: remoteJid,
       text: text.trim(),
       evolutionCfg,
       modelId: config.bedrock_model,

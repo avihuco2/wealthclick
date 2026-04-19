@@ -23,13 +23,20 @@ export async function handleWhatsAppMessage(opts: {
   const sql = getDb();
 
   // Load conversation history
-  const [conv] = await sql<{ messages: Message[] }[]>`
+  const [conv] = await sql<{ messages: unknown }[]>`
     SELECT messages FROM whatsapp_conversations
     WHERE user_id = ${userId} AND phone_number = ${phone}
   `;
 
-  // Normalize messages from DB — strip SDK-internal properties that break Bedrock on re-submission
-  const rawHistory = conv?.messages ?? [];
+  // Normalize messages from DB — may be a JSON string or parsed array depending on postgres-js version
+  let rawHistory: Record<string, unknown>[];
+  const rawMessages = conv?.messages ?? [];
+  if (typeof rawMessages === "string") {
+    try { rawHistory = JSON.parse(rawMessages); } catch { rawHistory = []; }
+  } else {
+    rawHistory = rawMessages as Record<string, unknown>[];
+  }
+  if (!Array.isArray(rawHistory)) rawHistory = [];
   const history: Message[] = (rawHistory as unknown as Record<string, unknown>[]).map((m) => ({
     role: m.role as "user" | "assistant",
     content: ((m.content as Record<string, unknown>[]) ?? []).map((block): ContentBlock => {
@@ -65,8 +72,8 @@ export async function handleWhatsAppMessage(opts: {
 
   await sql`
     INSERT INTO whatsapp_conversations (user_id, phone_number, messages, last_message_at)
-    VALUES (${userId}, ${phone}, ${JSON.stringify(toSave)}, NOW())
+    VALUES (${userId}, ${phone}, ${JSON.stringify(toSave)}::jsonb, NOW())
     ON CONFLICT (user_id, phone_number)
-    DO UPDATE SET messages = ${JSON.stringify(toSave)}, last_message_at = NOW()
+    DO UPDATE SET messages = ${JSON.stringify(toSave)}::jsonb, last_message_at = NOW()
   `;
 }

@@ -153,9 +153,14 @@ export async function POST(request: Request) {
     const key = m.key as Record<string, unknown> | undefined;
     const msgId = key?.id as string ?? "";
     const fromMe = !!key?.fromMe;
-    // v1 may use LID format (@lid) for remoteJid; use sender field as fallback for phone
     const remoteJid = key?.remoteJid as string ?? "";
-    const replyTo = remoteJid;
+    // v1 Baileys uses LID (@lid) format — can't send back to LID via sendText.
+    // Resolve to E.164 phone number: strip @lid digits are not the phone,
+    // so use allowed_numbers list (if single entry) or fall back to remoteJid.
+    const isLid = remoteJid.endsWith("@lid");
+    const replyTo = isLid && config.allowed_numbers.length === 1
+      ? config.allowed_numbers[0].replace(/^\+/, "") + "@s.whatsapp.net"
+      : remoteJid;
 
     const messageContent = m.message as Record<string, unknown> | undefined;
     const text =

@@ -1,5 +1,5 @@
 /**
- * Evolution API client — compatible with v2.2.x (Baileys 6.x with LID support).
+ * Evolution API client — compatible with v1.8.x (Baileys-based).
  */
 
 export interface EvolutionConfig {
@@ -24,27 +24,25 @@ async function evoFetch(cfg: EvolutionConfig, path: string, init?: RequestInit) 
   return res.json();
 }
 
-/** Create a new instance and configure its webhook. */
+/** Create a new instance and configure its webhook (v1). */
 export async function createInstance(cfg: EvolutionConfig, webhookUrl: string) {
   const createResult = await evoFetch(cfg, "/instance/create", {
     method: "POST",
     body: JSON.stringify({
       instanceName: cfg.instance,
-      integration: "WHATSAPP-BAILEYS",
       qrcode: true,
     }),
   });
 
+  // v1 webhook set — flat payload (no wrapper)
   await evoFetch(cfg, `/webhook/set/${cfg.instance}`, {
     method: "POST",
     body: JSON.stringify({
-      webhook: {
-        enabled: true,
-        url: webhookUrl,
-        webhookByEvents: true,
-        webhookBase64: false,
-        events: ["MESSAGES_UPSERT"],
-      },
+      enabled: true,
+      url: webhookUrl,
+      webhookByEvents: true,
+      webhookBase64: false,
+      events: ["MESSAGES_UPSERT"],
     }),
   });
 
@@ -61,25 +59,22 @@ export async function getQrCode(cfg: EvolutionConfig): Promise<{ base64?: string
   return evoFetch(cfg, `/instance/connect/${cfg.instance}`);
 }
 
-/** Get connection status. */
+/** Get connection status (v1). */
 export async function getInstanceStatus(cfg: EvolutionConfig): Promise<{ instance: { state: string } }> {
-  return evoFetch(cfg, `/instance/connectionState/${cfg.instance}`).then(
-    (data: Record<string, unknown>) => {
-      const state = (data?.instance as Record<string, unknown>)?.state as string ?? data?.state as string ?? "unknown";
+  return evoFetch(cfg, `/instance/fetchInstances?instanceName=${encodeURIComponent(cfg.instance)}`).then(
+    (data: unknown) => {
+      const arr = Array.isArray(data) ? data : [data];
+      const inst = arr[0];
+      if (!inst) return { instance: { state: "unknown" } };
+      const state =
+        inst?.connectionStatus ??
+        inst?.instance?.status ??
+        inst?.instance?.state ??
+        inst?.state ??
+        "unknown";
       return { instance: { state } };
     },
-  ).catch(() => {
-    // Fallback to fetchInstances for v1 compat
-    return evoFetch(cfg, `/instance/fetchInstances?instanceName=${encodeURIComponent(cfg.instance)}`).then(
-      (data: unknown) => {
-        const arr = Array.isArray(data) ? data : [data];
-        const inst = arr[0];
-        if (!inst) return { instance: { state: "unknown" } };
-        const state = inst?.connectionStatus ?? inst?.instance?.status ?? inst?.instance?.state ?? inst?.state ?? "unknown";
-        return { instance: { state } };
-      },
-    );
-  });
+  );
 }
 
 /** Logout / disconnect instance. */
@@ -87,10 +82,24 @@ export async function logoutInstance(cfg: EvolutionConfig) {
   return evoFetch(cfg, `/instance/logout/${cfg.instance}`, { method: "DELETE" });
 }
 
-/** Send a text message — works with both phone numbers and LID JIDs. */
+/**
+ * Send a text message (v1).
+ * Handles LID JIDs by using the Baileys relay endpoint which accepts full JIDs.
+ */
 export async function sendTextMessage(cfg: EvolutionConfig, to: string, text: string) {
+  // v1 sendText doesn't support @lid JIDs — use sendMessage relay endpoint instead
+  if (to.endsWith("@lid")) {
+    return evoFetch(cfg, `/chat/sendMessage/${cfg.instance}`, {
+      method: "POST",
+      body: JSON.stringify({
+        jid: to,
+        message: { conversation: text },
+      }),
+    });
+  }
+
   return evoFetch(cfg, `/message/sendText/${cfg.instance}`, {
     method: "POST",
-    body: JSON.stringify({ number: to, text }),
+    body: JSON.stringify({ number: to, textMessage: { text } }),
   });
 }

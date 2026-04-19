@@ -15,7 +15,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { getDb } from "@/lib/db";
 import { decryptApiKey } from "@/lib/whatsappCrypto";
 import { handleWhatsAppMessage } from "@/lib/whatsappAgent";
-import type { EvolutionConfig } from "@/lib/evolutionApi";
+import { sendTextMessage, type EvolutionConfig } from "@/lib/evolutionApi";
 
 // ─── Rate limiting ────────────────────────────────────────────────────────────
 // Map<phone, {count, windowStart}>
@@ -174,7 +174,16 @@ export async function POST(request: Request) {
       continue;
     }
 
+    console.log(`[whatsapp] incoming from ${phone}: "${text.trim().substring(0, 80)}"`);
+
+    // DEBUG: echo "OK" directly — remove when LLM flow is validated
+    sendTextMessage(evolutionCfg, remoteJid, "OK — message received ✓").catch((e) =>
+      console.error("[whatsapp] echo error:", e),
+    );
+    continue;
+
     // Fire and forget — respond to Evolution API immediately
+    // eslint-disable-next-line no-unreachable
     handleWhatsAppMessage({
       userId: config.user_id,
       phone: remoteJid, // use original JID for sending

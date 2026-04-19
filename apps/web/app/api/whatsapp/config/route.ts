@@ -34,6 +34,11 @@ export async function GET() {
     FROM whatsapp_config WHERE user_id = ${session.user.id}
   `;
 
+  if (row && typeof row.allowed_numbers === "string") {
+    try { row.allowed_numbers = JSON.parse(row.allowed_numbers as unknown as string); } catch { row.allowed_numbers = []; }
+  }
+  if (row && !Array.isArray(row.allowed_numbers)) row.allowed_numbers = [];
+
   return NextResponse.json({ config: row ?? null });
 }
 

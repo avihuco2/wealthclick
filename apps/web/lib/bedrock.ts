@@ -17,8 +17,12 @@ export { BEDROCK_MODELS };
 
 function modelSupportsTools(modelId: string): boolean {
   const entry = BEDROCK_MODELS.find((m) => m.id === modelId);
-  // Unknown models: assume tools supported (Claude-family users expect it)
   return entry ? entry.supportsTools : true;
+}
+
+function modelSupportsSystem(modelId: string): boolean {
+  const entry = BEDROCK_MODELS.find((m) => m.id === modelId);
+  return entry ? entry.supportsSystem : true;
 }
 
 // ─── Tool definitions for Bedrock ─────────────────────────────────────────────
@@ -228,7 +232,8 @@ export async function converseWithTools(opts: {
   const { userId, modelId, messages, systemPrompt } = opts;
 
   const client = new BedrockRuntimeClient({ region: process.env.AWS_BEDROCK_REGION ?? "us-east-1" });
-  const withTools = modelSupportsTools(modelId);
+  const withTools  = modelSupportsTools(modelId);
+  const withSystem = modelSupportsSystem(modelId);
 
   const conversationMessages: Message[] = [...messages];
 
@@ -236,7 +241,7 @@ export async function converseWithTools(opts: {
   for (let round = 0; round < 5; round++) {
     const cmd = new ConverseCommand({
       modelId,
-      system: [{ text: systemPrompt || DEFAULT_SYSTEM }],
+      ...(withSystem ? { system: [{ text: systemPrompt || DEFAULT_SYSTEM }] } : {}),
       messages: conversationMessages,
       ...(withTools ? { toolConfig: { tools: AGENT_TOOLS } } : {}),
       inferenceConfig: { maxTokens: 1024, temperature: 0.3 },

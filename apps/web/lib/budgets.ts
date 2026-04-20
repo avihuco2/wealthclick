@@ -80,6 +80,25 @@ export async function getCategoryBudgets(
 
     FROM categories c
     WHERE c.user_id = ${userId}
+      AND (
+        -- Has an explicit budget set for this month
+        EXISTS (
+          SELECT 1 FROM category_budgets cb
+          WHERE cb.user_id = ${userId} AND cb.category_id = c.id AND cb.month = ${month} AND cb.monthly_amount > 0
+        )
+        -- Or has expense transactions in the last 6 months
+        OR EXISTS (
+          SELECT 1 FROM transactions t
+          WHERE t.user_id = ${userId} AND t.category_id = c.id AND t.type = 'expense'
+            AND t.date >= (${monthStart}::date - INTERVAL '6 months')
+        )
+        -- Or has expense transactions in the current month
+        OR EXISTS (
+          SELECT 1 FROM transactions t
+          WHERE t.user_id = ${userId} AND t.category_id = c.id AND t.type = 'expense'
+            AND to_char(t.date, 'YYYY-MM') = ${month}
+        )
+      )
     ORDER BY c.name_en
   `;
 

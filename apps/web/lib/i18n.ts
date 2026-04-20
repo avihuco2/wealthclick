@@ -122,6 +122,11 @@ const dictionaries = {
       autoCategorize: "Auto-categorize",
       autoCategorized: "transactions categorized",
       autoCategorizeNone: "No matches found",
+      installments: "Installments",
+      installmentsPlaceholder: "e.g. 12",
+      installmentsOf: "of",
+      deleteAllInstallments: "Delete all payments",
+      deleteThisInstallment: "Delete this payment only",
     },
     bankAccounts: {
       navLabel: "Bank Accounts",
@@ -377,6 +382,11 @@ const dictionaries = {
       autoCategorize: "קטגוריזציה אוטומטית",
       autoCategorized: "עסקאות קוטגרו",
       autoCategorizeNone: "לא נמצאו התאמות",
+      installments: "תשלומים",
+      installmentsPlaceholder: "לדוגמה 12",
+      installmentsOf: "מתוך",
+      deleteAllInstallments: "מחק את כל התשלומים",
+      deleteThisInstallment: "מחק תשלום זה בלבד",
     },
     bankAccounts: {
       navLabel: "חשבונות בנק",

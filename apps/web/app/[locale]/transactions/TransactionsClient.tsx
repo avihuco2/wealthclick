@@ -52,6 +52,7 @@ export default function TransactionsClient({
 
   // Inline delete confirm
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
 
   // Auto-categorize
   const [autoCatting, setAutoCatting] = useState(false);
@@ -122,12 +123,14 @@ export default function TransactionsClient({
     });
   }
 
-  function handleDelete(id: string) {
+  function handleDelete(id: string, deleteGroup = false) {
     const fd = new FormData();
     fd.set("id", id);
+    if (deleteGroup) fd.set("delete_group", "1");
     startTransition(async () => {
       await deleteAction(fd);
       setDeletingId(null);
+      setDeleteGroupId(null);
       router.refresh();
     });
   }
@@ -294,8 +297,8 @@ export default function TransactionsClient({
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/[0.06] bg-white/[0.03]">
-                  {[t.date, t.description, t.category, t.account, t.amount, ""].map((h, i) => (
-                    <th key={i} className={cn("px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-white/30", i >= 4 ? "text-end" : "text-start")}>
+                  {[t.date, t.description, t.installments, t.category, t.account, t.amount, ""].map((h, i) => (
+                    <th key={i} className={cn("px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-white/30", i >= 5 ? "text-end" : "text-start")}>
                       {h}
                     </th>
                   ))}
@@ -309,6 +312,17 @@ export default function TransactionsClient({
 
                     {/* Description */}
                     <td className="max-w-[180px] truncate px-4 py-3.5 text-[13px] text-white/80">{tx.description}</td>
+
+                    {/* Installments badge */}
+                    <td className="whitespace-nowrap px-4 py-3.5">
+                      {tx.installment_total && tx.installment_current ? (
+                        <span className="inline-flex items-center rounded-full border border-white/[0.12] bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium tabular-nums text-white/50">
+                          {tx.installment_current}/{tx.installment_total}
+                        </span>
+                      ) : (
+                        <span className="text-white/10">—</span>
+                      )}
+                    </td>
 
                     {/* Category — inline dropdown */}
                     <td className="px-4 py-3.5">
@@ -336,22 +350,30 @@ export default function TransactionsClient({
                     <td className="px-4 py-3.5">
                       <div className="flex items-center justify-end gap-1.5">
                         {deletingId === tx.id ? (
-                          <>
-                            <button onClick={() => handleDelete(tx.id)} disabled={isPending}
-                              className="rounded-lg border border-[oklch(0.577_0.245_27.325/0.4)] bg-[oklch(0.577_0.245_27.325/0.12)] px-2.5 py-1 text-[11px] font-medium text-[oklch(0.78_0.16_27)] transition-all hover:bg-[oklch(0.577_0.245_27.325/0.2)] disabled:opacity-50">
-                              {t.delete}
-                            </button>
-                            <button onClick={() => setDeletingId(null)}
-                              className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] text-white/50 transition-all hover:text-white/80">
-                              {t.cancel}
-                            </button>
-                          </>
+                          <div className="flex flex-col items-end gap-1">
+                            {tx.installment_group_id && tx.installment_total && tx.installment_total > 1 && (
+                              <button onClick={() => handleDelete(tx.id, true)} disabled={isPending}
+                                className="rounded-lg border border-[oklch(0.577_0.245_27.325/0.6)] bg-[oklch(0.577_0.245_27.325/0.2)] px-2.5 py-1 text-[11px] font-medium text-[oklch(0.78_0.16_27)] transition-all hover:bg-[oklch(0.577_0.245_27.325/0.3)] disabled:opacity-50 whitespace-nowrap">
+                                {t.deleteAllInstallments} ({tx.installment_total})
+                              </button>
+                            )}
+                            <div className="flex gap-1">
+                              <button onClick={() => handleDelete(tx.id)} disabled={isPending}
+                                className="rounded-lg border border-[oklch(0.577_0.245_27.325/0.4)] bg-[oklch(0.577_0.245_27.325/0.12)] px-2.5 py-1 text-[11px] font-medium text-[oklch(0.78_0.16_27)] transition-all hover:bg-[oklch(0.577_0.245_27.325/0.2)] disabled:opacity-50 whitespace-nowrap">
+                                {tx.installment_group_id ? t.deleteThisInstallment : t.delete}
+                              </button>
+                              <button onClick={() => { setDeletingId(null); setDeleteGroupId(null); }}
+                                className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] text-white/50 transition-all hover:text-white/80">
+                                {t.cancel}
+                              </button>
+                            </div>
+                          </div>
                         ) : (
                           <>
                             <button onClick={() => openEdit(tx)} className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-white/40 transition-all hover:bg-white/[0.09] hover:text-white/80">
                               <PencilIcon />
                             </button>
-                            <button onClick={() => setDeletingId(tx.id)} className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-white/40 transition-all hover:border-[oklch(0.577_0.245_27.325/0.3)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)]">
+                            <button onClick={() => { setDeletingId(tx.id); setDeleteGroupId(tx.installment_group_id); }} className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-white/40 transition-all hover:border-[oklch(0.577_0.245_27.325/0.3)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)]">
                               <TrashIcon />
                             </button>
                           </>
@@ -468,11 +490,20 @@ export default function TransactionsClient({
               </div>
 
               {/* Account */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.account}</label>
                 <input type="text" name="account" defaultValue={editingTx?.account ?? ""}
                   placeholder={t.accountPlaceholder} className={glassInput} />
               </div>
+
+              {/* Installments — only when adding new */}
+              {!editingTx && (
+                <div className="mb-6">
+                  <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.installments}</label>
+                  <input type="number" name="installments" min="1" max="360" step="1"
+                    placeholder={t.installmentsPlaceholder} className={glassInput} />
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button type="button" onClick={closeModal}

@@ -52,14 +52,32 @@ export default async function TransactionsPage({
     const date = formData.get("date") as string;
     const categoryId = (formData.get("category_id") as string) || null;
     const account = (formData.get("account") as string)?.trim() || null;
+    const installmentsRaw = parseInt(formData.get("installments") as string, 10);
+    const installments = isNaN(installmentsRaw) || installmentsRaw < 2 ? 1 : Math.min(installmentsRaw, 360);
 
     if (!description || isNaN(amount) || amount <= 0 || !type || !date) return;
 
-    await sql`
-      INSERT INTO transactions (user_id, category_id, account, date, amount, description, type)
-      VALUES (${session.user.id}, ${categoryId}, ${account}, ${date}, ${amount}, ${description}, ${type})
-    `;
-    // Learn rule for future auto-categorization
+    if (installments > 1) {
+      const { randomUUID } = await import("crypto");
+      const groupId = randomUUID();
+      const [baseYear, baseMonth, baseDay] = date.split("-").map(Number);
+      for (let i = 0; i < installments; i++) {
+        const d = new Date(Date.UTC(baseYear, baseMonth - 1 + i, baseDay));
+        const installDate = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+        await sql`
+          INSERT INTO transactions (user_id, category_id, account, date, amount, description, type,
+                                    installment_total, installment_current, installment_group_id)
+          VALUES (${session.user.id}, ${categoryId}, ${account}, ${installDate}, ${amount}, ${description}, ${type},
+                  ${installments}, ${i + 1}, ${groupId}::uuid)
+        `;
+      }
+    } else {
+      await sql`
+        INSERT INTO transactions (user_id, category_id, account, date, amount, description, type)
+        VALUES (${session.user.id}, ${categoryId}, ${account}, ${date}, ${amount}, ${description}, ${type})
+      `;
+    }
+
     if (categoryId && description) {
       await upsertCategoryRule(session.user.id, description, categoryId);
     }
@@ -110,12 +128,25 @@ export default async function TransactionsPage({
     if (!session?.user?.id) return;
 
     const id = formData.get("id") as string;
+    const deleteGroup = formData.get("delete_group") === "1";
     if (!id) return;
 
     const sql = getDb();
-    await sql`
-      DELETE FROM transactions WHERE id = ${id} AND user_id = ${session.user.id}
-    `;
+    if (deleteGroup) {
+      await sql`
+        DELETE FROM transactions
+        WHERE installment_group_id = (
+          SELECT installment_group_id FROM transactions
+          WHERE id = ${id} AND user_id = ${session.user.id}
+        )
+        AND user_id = ${session.user.id}
+        AND installment_group_id IS NOT NULL
+      `;
+    } else {
+      await sql`
+        DELETE FROM transactions WHERE id = ${id} AND user_id = ${session.user.id}
+      `;
+    }
     revalidatePath(`/${locale}/transactions`);
     revalidatePath(`/${locale}/dashboard`);
   }

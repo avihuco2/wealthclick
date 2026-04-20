@@ -9,6 +9,9 @@ export type DbTransaction = {
   amount: string; // NUMERIC returns as string from the postgres driver
   description: string;
   type: "income" | "expense";
+  installment_total: number | null;
+  installment_current: number | null;
+  installment_group_id: string | null;
   created_at: Date;
   updated_at: Date;
   // joined from categories

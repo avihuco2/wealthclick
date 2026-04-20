@@ -99,6 +99,69 @@ export async function GET() {
             count: { type: "integer" },
           },
         },
+        BudgetCategory: {
+          type: "object",
+          properties: {
+            category_id:    { type: "string", format: "uuid" },
+            name_en:        { type: "string", example: "Food & Dining" },
+            name_he:        { type: "string", example: "אוכל ומסעדות" },
+            color:          { type: "string", example: "#FF6B6B" },
+            emoji:          { type: "string", example: "🍔" },
+            monthly_budget: { type: "number", example: 2000, description: "Saved budget for the month (0 if not set)" },
+            avg_3m:         { type: "number", example: 1850.5, description: "Average monthly expense over last 3 months" },
+            avg_6m:         { type: "number", example: 1920.0, description: "Average monthly expense over last 6 months" },
+            actual:         { type: "number", example: 1423.5, description: "Actual spending this month" },
+            remaining:      { type: "number", example: 576.5, description: "Budget minus actual (negative = over budget)" },
+          },
+        },
+        BudgetIncome: {
+          type: "object",
+          properties: {
+            month:              { type: "string", example: "2025-04" },
+            forecasted_amount:  { type: "number", example: 15000, description: "Expected income for the month" },
+            actual_income:      { type: "number", example: 14800, description: "Real income transactions this month" },
+          },
+        },
+        BudgetResponse: {
+          type: "object",
+          properties: {
+            month:      { type: "string", example: "2025-04" },
+            income:     { $ref: "#/components/schemas/BudgetIncome" },
+            categories: { type: "array", items: { $ref: "#/components/schemas/BudgetCategory" } },
+            summary: {
+              type: "object",
+              properties: {
+                total_budget: { type: "number", example: 12000 },
+                total_actual: { type: "number", example: 9430.5 },
+                remaining:    { type: "number", example: 2569.5 },
+              },
+            },
+          },
+        },
+        BudgetCategoryInput: {
+          type: "object",
+          required: ["category_id", "monthly_amount"],
+          properties: {
+            category_id:    { type: "string", format: "uuid" },
+            monthly_amount: { type: "number", minimum: 0, example: 2000 },
+          },
+        },
+        BudgetPutInput: {
+          type: "object",
+          required: ["month", "categories"],
+          properties: {
+            month:      { type: "string", example: "2025-04", description: "YYYY-MM" },
+            categories: { type: "array", items: { $ref: "#/components/schemas/BudgetCategoryInput" }, minItems: 1 },
+          },
+        },
+        BudgetIncomePutInput: {
+          type: "object",
+          required: ["month", "forecasted_amount"],
+          properties: {
+            month:             { type: "string", example: "2025-04", description: "YYYY-MM" },
+            forecasted_amount: { type: "number", minimum: 0, example: 15000 },
+          },
+        },
       },
     },
     security: [{ bearerAuth: [] }],
@@ -160,6 +223,64 @@ export async function GET() {
             "200": { description: "Deleted", content: { "application/json": { schema: { type: "object", properties: { deleted: { type: "string" } } } } } },
             "401": { description: "Missing or invalid API key", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
             "404": { description: "Transaction not found", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+      },
+      "/budgets": {
+        get: {
+          summary: "Get monthly budget",
+          description: "Returns the full budget for a given month: income, per-category budgets vs actuals, 3mo/6mo averages, and summary totals.",
+          operationId: "getBudget",
+          parameters: [
+            { name: "month", in: "query", required: false, schema: { type: "string", example: "2025-04" }, description: "Month in YYYY-MM format. Defaults to current month." },
+          ],
+          responses: {
+            "200": { description: "Budget data", content: { "application/json": { schema: { $ref: "#/components/schemas/BudgetResponse" } } } },
+            "400": { description: "Invalid month", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "401": { description: "Unauthorized", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+        put: {
+          summary: "Set category budgets",
+          description: "Upserts monthly budget amounts for one or more categories. Existing values are overwritten.",
+          operationId: "setBudgets",
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: { $ref: "#/components/schemas/BudgetPutInput" } } },
+          },
+          responses: {
+            "200": { description: "Budgets saved", content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" }, updated: { type: "integer" } } } } } },
+            "400": { description: "Validation error", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "401": { description: "Unauthorized", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+      },
+      "/budgets/income": {
+        get: {
+          summary: "Get income for month",
+          description: "Returns forecasted and actual income for a given month.",
+          operationId: "getBudgetIncome",
+          parameters: [
+            { name: "month", in: "query", required: false, schema: { type: "string", example: "2025-04" }, description: "Month in YYYY-MM format. Defaults to current month." },
+          ],
+          responses: {
+            "200": { description: "Income data", content: { "application/json": { schema: { $ref: "#/components/schemas/BudgetIncome" } } } },
+            "400": { description: "Invalid month", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "401": { description: "Unauthorized", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+        put: {
+          summary: "Set forecasted income",
+          description: "Sets the expected (forecasted) income for a given month.",
+          operationId: "setForecastedIncome",
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: { $ref: "#/components/schemas/BudgetIncomePutInput" } } },
+          },
+          responses: {
+            "200": { description: "Income saved", content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" } } } } } },
+            "400": { description: "Validation error", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+            "401": { description: "Unauthorized", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
           },
         },
       },

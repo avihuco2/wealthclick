@@ -85,7 +85,7 @@ export async function handleWhatsAppMessage(opts: {
     const errMsg = e instanceof Error ? e.message : String(e);
     const errName = e instanceof Error ? e.constructor.name : "Unknown";
     console.error(`[whatsappAgent] ${provider} error:`, errName, errMsg, JSON.stringify(e, null, 2));
-    await sendTextMessage(evolutionCfg, phone, "Sorry, I ran into an error. Please try again.");
+    await sendTextMessage(evolutionCfg, phone, `Error (${provider}/${modelId}): ${errMsg.slice(0, 200)}`);
     return;
   }
 

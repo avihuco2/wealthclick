@@ -19,6 +19,11 @@ const heebo = Heebo({
 export const metadata: Metadata = {
   title: "WealthClick",
   description: "Your personal finance, beautifully managed.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export function generateStaticParams() {

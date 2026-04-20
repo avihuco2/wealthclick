@@ -64,6 +64,19 @@ export async function handleWhatsAppMessage(opts: {
     }
   }
 
+  // Also trim orphaned tool_use turns from the END — if the last assistant message
+  // has tool_use blocks not followed by tool_result, Bedrock rejects the history.
+  while (trimmed.length > 0) {
+    const last = trimmed[trimmed.length - 1];
+    const lastContent = last.content ?? [];
+    const hasOrphanedToolUse = last.role === "assistant" && lastContent.some((b) => "toolUse" in b);
+    if (hasOrphanedToolUse) {
+      trimmed = trimmed.slice(0, -1);
+    } else {
+      break;
+    }
+  }
+
   // Append new user message
   const updatedHistory: Message[] = [
     ...trimmed,
@@ -85,7 +98,7 @@ export async function handleWhatsAppMessage(opts: {
     const errMsg = e instanceof Error ? e.message : String(e);
     const errName = e instanceof Error ? e.constructor.name : "Unknown";
     console.error(`[whatsappAgent] ${provider} error:`, errName, errMsg, JSON.stringify(e, null, 2));
-    await sendTextMessage(evolutionCfg, phone, `Error (${provider}/${modelId}): ${errMsg.slice(0, 200)}`);
+    await sendTextMessage(evolutionCfg, phone, "Sorry, I ran into an error. Please try again.");
     return;
   }
 

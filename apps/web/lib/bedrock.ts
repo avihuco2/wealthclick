@@ -298,13 +298,16 @@ export async function converseWithTools(opts: {
       continue;
     }
 
-    // stop_reason is something else (max_tokens etc.) — return what we have
+    // stop_reason is something else (max_tokens etc.) — return text, but drop the
+    // incomplete assistant turn from history to avoid orphaned tool_use on next call.
     const text = (output.content ?? [])
       .filter((b): b is ContentBlock.TextMember => "text" in b)
       .map((b) => b.text)
       .join("\n")
       .trim();
-    return { reply: text || "...", updatedMessages: conversationMessages };
+    const hasToolUse = (output.content ?? []).some((b) => "toolUse" in b);
+    const safeHistory = hasToolUse ? conversationMessages.slice(0, -1) : conversationMessages;
+    return { reply: text || "...", updatedMessages: safeHistory };
   }
 
   throw new Error("Tool use loop exceeded 5 rounds");

@@ -37,10 +37,16 @@ export const BEDROCK_MODELS = [
 
 // ── Google AI models ──────────────────────────────────────────────────────────
 export const GOOGLE_MODELS = [
-  { id: "gemma-3-27b-it", label: "Gemma 3 27B", provider: "google" as const, supportsTools: true  },
-  { id: "gemma-3-12b-it", label: "Gemma 3 12B", provider: "google" as const, supportsTools: true  },
-  { id: "gemma-3-4b-it",  label: "Gemma 3 4B",  provider: "google" as const, supportsTools: false },
-  { id: "gemma-3-1b-it",  label: "Gemma 3 1B",  provider: "google" as const, supportsTools: false },
+  // Gemma 4
+  { id: "gemma-4-31b-it",      label: "Gemma 4 31B",      provider: "google" as const, supportsTools: false },
+  { id: "gemma-4-26b-a4b-it",  label: "Gemma 4 26B (MoE)", provider: "google" as const, supportsTools: false },
+  // Gemma 3
+  { id: "gemma-3-27b-it",      label: "Gemma 3 27B",      provider: "google" as const, supportsTools: false },
+  { id: "gemma-3-12b-it",      label: "Gemma 3 12B",      provider: "google" as const, supportsTools: false },
+  { id: "gemma-3-4b-it",       label: "Gemma 3 4B",       provider: "google" as const, supportsTools: false },
+  { id: "gemma-3-1b-it",       label: "Gemma 3 1B",       provider: "google" as const, supportsTools: false },
+  { id: "gemma-3n-e4b-it",     label: "Gemma 3n E4B",     provider: "google" as const, supportsTools: false },
+  { id: "gemma-3n-e2b-it",     label: "Gemma 3n E2B",     provider: "google" as const, supportsTools: false },
 ] as const;
 
 export const ALL_MODELS = [...BEDROCK_MODELS, ...GOOGLE_MODELS] as const;

@@ -6,7 +6,7 @@
 import { getDb } from "./db";
 import { converseWithTools, type ConverseTurnResult } from "./bedrock";
 import { converseWithGoogleAI } from "./googleAI";
-import { getModelProvider } from "./bedrockModels";
+import { ALL_MODELS, getModelProvider } from "./bedrockModels";
 import { sendTextMessage, type EvolutionConfig } from "./evolutionApi";
 import type { Message, ContentBlock } from "@aws-sdk/client-bedrock-runtime";
 
@@ -72,10 +72,12 @@ export async function handleWhatsAppMessage(opts: {
 
   // Route to correct provider
   const provider = getModelProvider(modelId);
+  const modelEntry = ALL_MODELS.find((m) => m.id === modelId);
+  const supportsTools = modelEntry?.supportsTools ?? (provider === "bedrock");
   let result: ConverseTurnResult;
   try {
     if (provider === "google") {
-      result = await converseWithGoogleAI({ userId, modelId, messages: updatedHistory, systemPrompt });
+      result = await converseWithGoogleAI({ userId, modelId, messages: updatedHistory, systemPrompt, supportsTools });
     } else {
       result = await converseWithTools({ userId, modelId, messages: updatedHistory, systemPrompt });
     }

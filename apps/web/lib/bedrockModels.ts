@@ -29,6 +29,10 @@ export const BEDROCK_MODELS = [
   // ── Cohere Command ────────────────────────────────────────────────────────
   { id: "cohere.command-r-v1:0",                        label: "Command R",             provider: "bedrock" as const, supportsTools: true  },
   { id: "cohere.command-r-plus-v1:0",                   label: "Command R+",            provider: "bedrock" as const, supportsTools: true  },
+  // ── Google Gemma 3 (via Bedrock) ──────────────────────────────────────────
+  { id: "google.gemma-3-27b-it",                        label: "Gemma 3 27B",           provider: "bedrock" as const, supportsTools: false },
+  { id: "google.gemma-3-12b-it",                        label: "Gemma 3 12B",           provider: "bedrock" as const, supportsTools: false },
+  { id: "google.gemma-3-4b-it",                         label: "Gemma 3 4B",            provider: "bedrock" as const, supportsTools: false },
 ] as const;
 
 // ── Google AI models ──────────────────────────────────────────────────────────

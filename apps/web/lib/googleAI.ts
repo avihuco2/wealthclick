@@ -174,7 +174,7 @@ function bedrockToGoogleContent(messages: Message[]): Content[] {
 
 // ─── Main function ────────────────────────────────────────────────────────────
 
-const DEFAULT_SYSTEM = `You are a personal finance assistant for WealthClick, a private finance app.
+const DEFAULT_SYSTEM_WITH_TOOLS = `You are a personal finance assistant for WealthClick, a private finance app.
 You are speaking with the app's owner — you have full permission to access and manage their financial data.
 You have tools to:
 - Retrieve and manage transactions (list, create, update, delete)
@@ -189,6 +189,11 @@ When asked to set income: use set_forecasted_income.
 Answer in the same language the user writes in (Hebrew or English).
 Keep responses concise and friendly. Format currency as ₪.
 Today's date: ${new Date().toISOString().slice(0, 10)}.`;
+
+const DEFAULT_SYSTEM_CHAT_ONLY = `You are a friendly personal finance assistant for WealthClick.
+Answer in the same language the user writes in (Hebrew or English).
+Keep responses concise. Today's date: ${new Date().toISOString().slice(0, 10)}.
+Do not simulate tool calls or show internal reasoning — just respond naturally.`;
 
 export async function converseWithGoogleAI(opts: {
   userId: string;
@@ -211,6 +216,9 @@ export async function converseWithGoogleAI(opts: {
     .map((b) => b.text)
     .join("\n");
 
+  const effectiveSystem = systemPrompt
+    || (supportsTools ? DEFAULT_SYSTEM_WITH_TOOLS : DEFAULT_SYSTEM_CHAT_ONLY);
+
   // Tool use loop — max 5 rounds
   const conversationContents: Content[] = [...history];
   let currentUserText = userText;
@@ -222,7 +230,7 @@ export async function converseWithGoogleAI(opts: {
       model: modelId,
       contents: conversationContents,
       config: {
-        systemInstruction: systemPrompt || DEFAULT_SYSTEM,
+        systemInstruction: effectiveSystem,
         ...(supportsTools ? { tools: [{ functionDeclarations: GOOGLE_TOOL_DECLARATIONS }] } : {}),
         temperature: 0.3,
         maxOutputTokens: 1024,

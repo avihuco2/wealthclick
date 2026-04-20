@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { BEDROCK_MODELS, type BedrockModelId } from "@/lib/bedrockModels";
+import { ALL_MODELS, GOOGLE_MODELS, type AnyModelId } from "@/lib/bedrockModels";
 
 interface WhatsAppConfig {
   id: string;
@@ -68,7 +68,7 @@ export default function WhatsAppSection({ t }: Props) {
   const [apiKey, setApiKey]                 = useState("");
   const [instanceName, setInstanceName]     = useState("wealthclick");
   const [allowedNumbers, setAllowedNumbers] = useState("");
-  const [model, setModel]                   = useState<BedrockModelId>("anthropic.claude-3-haiku-20240307-v1:0" as BedrockModelId);
+  const [model, setModel]                   = useState<AnyModelId>("anthropic.claude-3-haiku-20240307-v1:0" as AnyModelId);
   const [systemPrompt, setSystemPrompt]     = useState("");
   const [maxHistory, setMaxHistory]         = useState(40);
   const [clearingHistory, setClearingHistory] = useState(false);
@@ -101,7 +101,7 @@ export default function WhatsAppSection({ t }: Props) {
         setEvolutionUrl(cfg.evolution_url);
         setInstanceName(cfg.instance_name);
         setAllowedNumbers(cfg.allowed_numbers.join(", "));
-        setModel(cfg.bedrock_model as BedrockModelId);
+        setModel(cfg.bedrock_model as AnyModelId);
         setSystemPrompt(cfg.system_prompt ?? "");
         setMaxHistory(cfg.max_history ?? 40);
       }
@@ -427,12 +427,19 @@ export default function WhatsAppSection({ t }: Props) {
           <label className="block text-sm font-medium text-white/70">{t.model}</label>
           <select
             value={model}
-            onChange={(e) => setModel(e.target.value as BedrockModelId)}
+            onChange={(e) => setModel(e.target.value as AnyModelId)}
             className="w-full rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/30"
           >
-            {BEDROCK_MODELS.map((m) => (
-              <option key={m.id} value={m.id} className="bg-[#1a1a2e]">{m.label}</option>
-            ))}
+            <optgroup label="AWS Bedrock">
+              {ALL_MODELS.filter((m) => m.provider === "bedrock").map((m) => (
+                <option key={m.id} value={m.id} className="bg-[#1a1a2e]">{m.label}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Google AI (Gemma)">
+              {GOOGLE_MODELS.map((m) => (
+                <option key={m.id} value={m.id} className="bg-[#1a1a2e]">{m.label}</option>
+              ))}
+            </optgroup>
           </select>
         </div>
 

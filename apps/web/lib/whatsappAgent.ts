@@ -5,6 +5,8 @@
 
 import { getDb } from "./db";
 import { converseWithTools, type ConverseTurnResult } from "./bedrock";
+import { converseWithGoogleAI } from "./googleAI";
+import { getModelProvider } from "./bedrockModels";
 import { sendTextMessage, type EvolutionConfig } from "./evolutionApi";
 import type { Message, ContentBlock } from "@aws-sdk/client-bedrock-runtime";
 
@@ -68,15 +70,19 @@ export async function handleWhatsAppMessage(opts: {
     { role: "user", content: [{ text }] },
   ];
 
-  // Call Bedrock
+  // Route to correct provider
+  const provider = getModelProvider(modelId);
   let result: ConverseTurnResult;
   try {
-    result = await converseWithTools({ userId, modelId, messages: updatedHistory, systemPrompt });
+    if (provider === "google") {
+      result = await converseWithGoogleAI({ userId, modelId, messages: updatedHistory, systemPrompt });
+    } else {
+      result = await converseWithTools({ userId, modelId, messages: updatedHistory, systemPrompt });
+    }
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : String(e);
     const errName = e instanceof Error ? e.constructor.name : "Unknown";
-    // Log full error detail so we can diagnose model/tool issues from PM2 logs
-    console.error("[whatsappAgent] Bedrock error:", errName, errMsg, JSON.stringify(e, null, 2));
+    console.error(`[whatsappAgent] ${provider} error:`, errName, errMsg, JSON.stringify(e, null, 2));
     await sendTextMessage(evolutionCfg, phone, "Sorry, I ran into an error. Please try again.");
     return;
   }

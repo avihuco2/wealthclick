@@ -231,8 +231,8 @@ export default function TransactionsClient({
   return (
     <div>
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between gap-3">
-        <h1 className="text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-[24px] font-semibold tracking-tight text-white sm:text-[28px]">{t.title}</h1>
         <div className="flex items-center gap-2">
           {/* Admin: clear all data */}
           {isAdmin && (
@@ -241,45 +241,43 @@ export default function TransactionsClient({
                 <button onClick={handleClearData} disabled={clearing}
                   className="flex items-center gap-1.5 rounded-xl border border-[oklch(0.577_0.245_27.325/0.5)] bg-[oklch(0.577_0.245_27.325/0.15)] px-3 py-2 text-[13px] font-medium text-[oklch(0.78_0.16_27)] transition-all hover:bg-[oklch(0.577_0.245_27.325/0.25)] disabled:opacity-50">
                   {clearing ? <SpinnerIcon /> : <TrashIcon />}
-                  Confirm clear
+                  <span className="hidden sm:inline">Confirm clear</span>
                 </button>
                 <button onClick={() => setClearConfirm(false)}
                   className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-[13px] text-white/50 transition-all hover:text-white/80">
-                  Cancel
+                  <span className="hidden sm:inline">{t.cancel}</span>
+                  <span className="sm:hidden"><XIcon /></span>
                 </button>
               </div>
             ) : (
               <button onClick={() => setClearConfirm(true)}
-                className="flex items-center gap-1.5 rounded-xl border border-[oklch(0.577_0.245_27.325/0.25)] bg-white/[0.04] px-3 py-2 text-[13px] text-white/30 transition-all hover:border-[oklch(0.577_0.245_27.325/0.5)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)]">
+                className="flex items-center gap-1.5 rounded-xl border border-[oklch(0.577_0.245_27.325/0.25)] bg-white/[0.04] p-2 text-[13px] text-white/30 transition-all hover:border-[oklch(0.577_0.245_27.325/0.5)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)] sm:px-3">
                 <TrashIcon />
-                Clear all data
+                <span className="hidden sm:inline">Clear all data</span>
               </button>
             )
           )}
           {/* Auto-categorize */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleAutoCategorize}
-              disabled={autoCatting}
-              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-[14px] font-medium text-white/60 transition-all hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {autoCatting ? <SpinnerIcon /> : <SparklesIcon />}
-              <span>{t.autoCategorize}</span>
-            </button>
-            {autoCatResult !== null && (
-              <span className="text-[12px] text-white/40">
-                {autoCatResult > 0
-                  ? `${autoCatResult} ${t.autoCategorized}`
-                  : t.autoCategorizeNone}
-              </span>
-            )}
-          </div>
+          <button
+            onClick={handleAutoCategorize}
+            disabled={autoCatting}
+            title={t.autoCategorize}
+            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] p-2 text-[14px] font-medium text-white/60 transition-all hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2.5"
+          >
+            {autoCatting ? <SpinnerIcon /> : <SparklesIcon />}
+            <span className="hidden sm:inline">{t.autoCategorize}</span>
+          </button>
+          {autoCatResult !== null && (
+            <span className="hidden text-[12px] text-white/40 sm:inline">
+              {autoCatResult > 0 ? `${autoCatResult} ${t.autoCategorized}` : t.autoCategorizeNone}
+            </span>
+          )}
           <button
             onClick={openAdd}
-            className="flex items-center gap-2 rounded-xl bg-[oklch(0.5706_0.2236_258.71)] px-4 py-2.5 text-[14px] font-medium text-white shadow-[0_2px_12px_oklch(0.5706_0.2236_258.71/0.35)] transition-all hover:brightness-110"
+            className="flex items-center gap-2 rounded-xl bg-[oklch(0.5706_0.2236_258.71)] p-2 text-[14px] font-medium text-white shadow-[0_2px_12px_oklch(0.5706_0.2236_258.71/0.35)] transition-all hover:brightness-110 sm:px-4 sm:py-2.5"
           >
             <PlusIcon />
-            <span>{t.addTransaction}</span>
+            <span className="hidden sm:inline">{t.addTransaction}</span>
           </button>
         </div>
       </div>
@@ -303,11 +301,11 @@ export default function TransactionsClient({
       </div>
 
       {/* Filter + Search */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-1 rounded-xl border border-white/[0.08] bg-white/[0.04] p-1">
           {(["all", "income", "expense"] as const).map((ft) => (
             <button key={ft} onClick={() => setFilterType(ft)}
-              className={cn("rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all",
+              className={cn("flex-1 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all",
                 filterType === ft ? "bg-white/[0.12] text-white" : "text-white/40 hover:text-white/70")}>
               {ft === "all" ? t.filterAll : ft === "income" ? t.filterIncome : t.filterExpense}
             </button>
@@ -315,7 +313,7 @@ export default function TransactionsClient({
         </div>
         <input type="text" placeholder={`${t.description}...`} value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2 text-[13px] text-white placeholder-white/25 outline-none backdrop-blur-md transition-all focus:border-white/25 focus:bg-white/[0.09]" />
+          className="w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2 text-[13px] text-white placeholder-white/25 outline-none backdrop-blur-md transition-all focus:border-white/25 focus:bg-white/[0.09] sm:w-48" />
       </div>
 
       {/* Transaction list */}
@@ -329,77 +327,58 @@ export default function TransactionsClient({
             <p className="mt-1 text-[13px] text-white/25">{t.noTransactionsDesc}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/[0.06] bg-white/[0.03]">
-                  {[t.date, t.description, t.installments, t.category, t.account, t.amount, ""].map((h, i) => (
-                    <th key={i} className={cn("px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-white/30", i >= 5 ? "text-end" : "text-start")}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((tx, i) => (
-                  <tr key={tx.id} className={cn("border-b border-white/[0.04] transition-colors hover:bg-white/[0.03]", i === filtered.length - 1 && "border-none")}>
-                    {/* Date */}
-                    <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-white/40">{fmtDate(tx.date)}</td>
-
-                    {/* Description */}
-                    <td className="max-w-[180px] truncate px-4 py-3.5 text-[13px] text-white/80">{tx.description}</td>
-
-                    {/* Installments badge */}
-                    <td className="whitespace-nowrap px-4 py-3.5">
-                      {tx.installment_total && tx.installment_current ? (
-                        <span className="inline-flex items-center rounded-full border border-white/[0.12] bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium tabular-nums text-white/50">
-                          {tx.installment_current}/{tx.installment_total}
-                        </span>
-                      ) : (
-                        <span className="text-white/10">—</span>
-                      )}
-                    </td>
-
-                    {/* Category — inline dropdown */}
-                    <td className="px-4 py-3.5">
-                      <CategoryDropdown
-                        tx={tx}
-                        categories={categories}
-                        locale={locale}
-                        noCategory={t.noCategory}
-                        override={categoryOverrides[tx.id] ?? { categoryId: undefined, saving: false }}
-                        onCategoryChange={handleCategoryChange}
-                      />
-                    </td>
-
-                    {/* Account */}
-                    <td className="px-4 py-3.5 text-[13px] text-white/40">{tx.account ?? "—"}</td>
-
-                    {/* Amount */}
-                    <td className="whitespace-nowrap px-4 py-3.5 text-end text-[13px] font-medium">
-                      <span className={tx.type === "income" ? "text-[oklch(0.80_0.14_142)]" : "text-[oklch(0.78_0.16_27)]"}>
+          <>
+            {/* ── Mobile card list (hidden on sm+) ── */}
+            <div className="divide-y divide-white/[0.04] sm:hidden">
+              {filtered.map((tx) => {
+                const isDeleting = deletingId === tx.id;
+                return (
+                  <div key={tx.id} className="px-4 py-3.5">
+                    {/* Row 1: date + amount */}
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-[12px] text-white/40">{fmtDate(tx.date)}</span>
+                      <span className={cn("text-[15px] font-semibold tabular-nums", tx.type === "income" ? "text-[oklch(0.80_0.14_142)]" : "text-[oklch(0.78_0.16_27)]")}>
                         {tx.type === "income" ? "+" : "-"}{fmtCurrency(tx.amount)}
                       </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-3.5">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {deletingId === tx.id ? (
+                    </div>
+                    {/* Row 2: description + installment badge */}
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="flex-1 truncate text-[14px] font-medium text-white/85">{tx.description}</span>
+                      {tx.installment_total && tx.installment_current && (
+                        <span className="shrink-0 rounded-full border border-white/[0.12] bg-white/[0.06] px-2 py-0.5 text-[11px] tabular-nums text-white/50">
+                          {tx.installment_current}/{tx.installment_total}
+                        </span>
+                      )}
+                    </div>
+                    {/* Row 3: category + account + actions */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <CategoryDropdown
+                          tx={tx}
+                          categories={categories}
+                          locale={locale}
+                          noCategory={t.noCategory}
+                          override={categoryOverrides[tx.id] ?? { categoryId: undefined, saving: false }}
+                          onCategoryChange={handleCategoryChange}
+                        />
+                        {tx.account && <span className="shrink-0 text-[11px] text-white/30">{tx.account}</span>}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {isDeleting ? (
                           <div className="flex flex-col items-end gap-1">
                             {tx.installment_group_id && tx.installment_total && tx.installment_total > 1 && (
                               <button onClick={() => handleDelete(tx.id, true)} disabled={isPending}
-                                className="rounded-lg border border-[oklch(0.577_0.245_27.325/0.6)] bg-[oklch(0.577_0.245_27.325/0.2)] px-2.5 py-1 text-[11px] font-medium text-[oklch(0.78_0.16_27)] transition-all hover:bg-[oklch(0.577_0.245_27.325/0.3)] disabled:opacity-50 whitespace-nowrap">
+                                className="whitespace-nowrap rounded-lg border border-[oklch(0.577_0.245_27.325/0.6)] bg-[oklch(0.577_0.245_27.325/0.2)] px-2 py-1 text-[10px] font-medium text-[oklch(0.78_0.16_27)] disabled:opacity-50">
                                 {t.deleteAllInstallments} ({tx.installment_total})
                               </button>
                             )}
                             <div className="flex gap-1">
                               <button onClick={() => handleDelete(tx.id)} disabled={isPending}
-                                className="rounded-lg border border-[oklch(0.577_0.245_27.325/0.4)] bg-[oklch(0.577_0.245_27.325/0.12)] px-2.5 py-1 text-[11px] font-medium text-[oklch(0.78_0.16_27)] transition-all hover:bg-[oklch(0.577_0.245_27.325/0.2)] disabled:opacity-50 whitespace-nowrap">
+                                className="whitespace-nowrap rounded-lg border border-[oklch(0.577_0.245_27.325/0.4)] bg-[oklch(0.577_0.245_27.325/0.12)] px-2 py-1 text-[10px] font-medium text-[oklch(0.78_0.16_27)] disabled:opacity-50">
                                 {tx.installment_group_id ? t.deleteThisInstallment : t.delete}
                               </button>
                               <button onClick={() => { setDeletingId(null); setDeleteGroupId(null); }}
-                                className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] text-white/50 transition-all hover:text-white/80">
+                                className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1 text-[10px] text-white/50">
                                 {t.cancel}
                               </button>
                             </div>
@@ -415,12 +394,93 @@ export default function TransactionsClient({
                           </>
                         )}
                       </div>
-                    </td>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Desktop table (hidden on mobile) ── */}
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.03]">
+                    {[t.date, t.description, t.installments, t.category, t.account, t.amount, ""].map((h, i) => (
+                      <th key={i} className={cn("px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-white/30", i >= 5 ? "text-end" : "text-start")}>
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filtered.map((tx, i) => (
+                    <tr key={tx.id} className={cn("border-b border-white/[0.04] transition-colors hover:bg-white/[0.03]", i === filtered.length - 1 && "border-none")}>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-white/40">{fmtDate(tx.date)}</td>
+                      <td className="max-w-[180px] truncate px-4 py-3.5 text-[13px] text-white/80">{tx.description}</td>
+                      <td className="whitespace-nowrap px-4 py-3.5">
+                        {tx.installment_total && tx.installment_current ? (
+                          <span className="inline-flex items-center rounded-full border border-white/[0.12] bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium tabular-nums text-white/50">
+                            {tx.installment_current}/{tx.installment_total}
+                          </span>
+                        ) : (
+                          <span className="text-white/10">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <CategoryDropdown
+                          tx={tx}
+                          categories={categories}
+                          locale={locale}
+                          noCategory={t.noCategory}
+                          override={categoryOverrides[tx.id] ?? { categoryId: undefined, saving: false }}
+                          onCategoryChange={handleCategoryChange}
+                        />
+                      </td>
+                      <td className="px-4 py-3.5 text-[13px] text-white/40">{tx.account ?? "—"}</td>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-end text-[13px] font-medium">
+                        <span className={tx.type === "income" ? "text-[oklch(0.80_0.14_142)]" : "text-[oklch(0.78_0.16_27)]"}>
+                          {tx.type === "income" ? "+" : "-"}{fmtCurrency(tx.amount)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {deletingId === tx.id ? (
+                            <div className="flex flex-col items-end gap-1">
+                              {tx.installment_group_id && tx.installment_total && tx.installment_total > 1 && (
+                                <button onClick={() => handleDelete(tx.id, true)} disabled={isPending}
+                                  className="whitespace-nowrap rounded-lg border border-[oklch(0.577_0.245_27.325/0.6)] bg-[oklch(0.577_0.245_27.325/0.2)] px-2.5 py-1 text-[11px] font-medium text-[oklch(0.78_0.16_27)] transition-all hover:bg-[oklch(0.577_0.245_27.325/0.3)] disabled:opacity-50">
+                                  {t.deleteAllInstallments} ({tx.installment_total})
+                                </button>
+                              )}
+                              <div className="flex gap-1">
+                                <button onClick={() => handleDelete(tx.id)} disabled={isPending}
+                                  className="whitespace-nowrap rounded-lg border border-[oklch(0.577_0.245_27.325/0.4)] bg-[oklch(0.577_0.245_27.325/0.12)] px-2.5 py-1 text-[11px] font-medium text-[oklch(0.78_0.16_27)] transition-all hover:bg-[oklch(0.577_0.245_27.325/0.2)] disabled:opacity-50">
+                                  {tx.installment_group_id ? t.deleteThisInstallment : t.delete}
+                                </button>
+                                <button onClick={() => { setDeletingId(null); setDeleteGroupId(null); }}
+                                  className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] text-white/50 transition-all hover:text-white/80">
+                                  {t.cancel}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <button onClick={() => openEdit(tx)} className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-white/40 transition-all hover:bg-white/[0.09] hover:text-white/80">
+                                <PencilIcon />
+                              </button>
+                              <button onClick={() => { setDeletingId(tx.id); setDeleteGroupId(tx.installment_group_id); }} className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-white/40 transition-all hover:border-[oklch(0.577_0.245_27.325/0.3)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)]">
+                                <TrashIcon />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -452,9 +512,9 @@ export default function TransactionsClient({
 
       {/* ── Transaction Add/Edit Modal ──────────────────────────────────────── */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-          <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/[0.12] bg-[oklch(0.10_0.02_260)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+          <div className="relative z-10 max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-white/[0.12] bg-[oklch(0.10_0.02_260)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:max-h-[90vh] sm:max-w-md sm:rounded-3xl">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-[18px] font-semibold text-white">
                 {editingTx ? t.editTransaction : t.addTransaction}

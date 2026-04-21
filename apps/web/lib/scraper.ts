@@ -128,9 +128,9 @@ async function runScrape(
         const date = txn.date.slice(0, 10); // YYYY-MM-DD
         const categoryId = categoryRules.get(txn.description.trim()) ?? null;
 
-        // Check for installment info from the bank (e.g. Max credit card)
-        const inst = (txn as Record<string, unknown>).installments as
-          | { number: number; total: number } | undefined;
+        // Installment info — present on Max (and other) credit card transactions
+        // txn.type === "installments" and txn.installments = { number, total }
+        const inst = txn.installments;
 
         try {
           if (inst && inst.total > 1) {

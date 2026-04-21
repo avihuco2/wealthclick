@@ -131,6 +131,7 @@ export default async function DashboardPage({
             monthlyTotals={monthlyTotals}
             categoryBreakdown={categoryBreakdown}
             locale={typedLocale}
+            currentMonth={currentMonth}
             t={{
               chartCashFlow:      t.chartCashFlow,
               chartSpending:      t.chartSpending,

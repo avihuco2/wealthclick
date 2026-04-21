@@ -201,8 +201,9 @@ export async function converseWithGoogleAI(opts: {
   messages: Message[];
   systemPrompt?: string;
   supportsTools?: boolean;
+  supportsSystem?: boolean;
 }): Promise<ConverseTurnResult> {
-  const { userId, modelId, messages, systemPrompt, supportsTools = true } = opts;
+  const { userId, modelId, messages, systemPrompt, supportsTools = true, supportsSystem = true } = opts;
 
   const apiKey = process.env.GOOGLE_AI_API_KEY ?? process.env.GOOGLE_AI_KEY;
   if (!apiKey) throw new Error("GOOGLE_AI_API_KEY env var not set");
@@ -216,8 +217,9 @@ export async function converseWithGoogleAI(opts: {
     .map((b) => b.text)
     .join("\n");
 
-  const effectiveSystem = systemPrompt
-    || (supportsTools ? DEFAULT_SYSTEM_WITH_TOOLS : DEFAULT_SYSTEM_CHAT_ONLY);
+  const effectiveSystem = supportsSystem
+    ? (systemPrompt || (supportsTools ? DEFAULT_SYSTEM_WITH_TOOLS : DEFAULT_SYSTEM_CHAT_ONLY))
+    : undefined;
 
   // Tool use loop — max 5 rounds
   const conversationContents: Content[] = [...history];
@@ -230,7 +232,7 @@ export async function converseWithGoogleAI(opts: {
       model: modelId,
       contents: conversationContents,
       config: {
-        systemInstruction: effectiveSystem,
+        ...(effectiveSystem ? { systemInstruction: effectiveSystem } : {}),
         ...(supportsTools ? { tools: [{ functionDeclarations: GOOGLE_TOOL_DECLARATIONS }] } : {}),
         temperature: 0.3,
         maxOutputTokens: 1024,

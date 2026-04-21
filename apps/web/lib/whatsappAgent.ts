@@ -86,11 +86,12 @@ export async function handleWhatsAppMessage(opts: {
   // Route to correct provider
   const provider = getModelProvider(modelId);
   const modelEntry = ALL_MODELS.find((m) => m.id === modelId);
-  const supportsTools = modelEntry?.supportsTools ?? (provider === "bedrock");
+  const supportsTools  = modelEntry?.supportsTools  ?? (provider === "bedrock");
+  const supportsSystem = (modelEntry as { supportsSystem?: boolean } | undefined)?.supportsSystem ?? true;
   let result: ConverseTurnResult;
   try {
     if (provider === "google") {
-      result = await converseWithGoogleAI({ userId, modelId, messages: updatedHistory, systemPrompt, supportsTools });
+      result = await converseWithGoogleAI({ userId, modelId, messages: updatedHistory, systemPrompt, supportsTools, supportsSystem });
     } else {
       result = await converseWithTools({ userId, modelId, messages: updatedHistory, systemPrompt });
     }
@@ -98,7 +99,7 @@ export async function handleWhatsAppMessage(opts: {
     const errMsg = e instanceof Error ? e.message : String(e);
     const errName = e instanceof Error ? e.constructor.name : "Unknown";
     console.error(`[whatsappAgent] ${provider} error:`, errName, errMsg, JSON.stringify(e, null, 2));
-    await sendTextMessage(evolutionCfg, phone, `⚠️ Error (${modelId}): ${errMsg}`);
+    await sendTextMessage(evolutionCfg, phone, "Sorry, I ran into an error. Please try again.");
     return;
   }
 

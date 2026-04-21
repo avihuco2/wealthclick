@@ -204,8 +204,8 @@ export async function converseWithGoogleAI(opts: {
 }): Promise<ConverseTurnResult> {
   const { userId, modelId, messages, systemPrompt, supportsTools = true } = opts;
 
-  const apiKey = process.env.GOOGLE_AI_KEY;
-  if (!apiKey) throw new Error("GOOGLE_AI_KEY env var not set");
+  const apiKey = process.env.GOOGLE_AI_API_KEY ?? process.env.GOOGLE_AI_KEY;
+  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY env var not set");
 
   const ai = new GoogleGenAI({ apiKey });
 

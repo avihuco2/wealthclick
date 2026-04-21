@@ -3,6 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { NavBar } from "@/components/NavBar";
 import { getTransactionStats } from "@/lib/transactions";
+import { getMonthlyTotals, getCategoryBreakdown } from "@/lib/insights";
+import DashboardCharts from "./DashboardCharts";
 
 export default async function DashboardPage({
   params,
@@ -22,12 +24,14 @@ export default async function DashboardPage({
 
   const userId = session.user.id;
   const currentMonth = new Date().toISOString().slice(0, 7);
-  const [allTimeStats, monthStats] = userId
+  const [allTimeStats, monthStats, monthlyTotals, categoryBreakdown] = userId
     ? await Promise.all([
         getTransactionStats(userId),
         getTransactionStats(userId, currentMonth),
+        getMonthlyTotals(userId, 6),
+        getCategoryBreakdown(userId, currentMonth),
       ])
-    : [null, null];
+    : [null, null, [], []];
 
   const fmt = (val: string | null | undefined, signed = false) =>
     val == null
@@ -121,28 +125,23 @@ export default async function DashboardPage({
           />
         </div>
 
-        {/* Coming soon */}
-        <div className="mt-8 rounded-3xl border border-white/[0.08] bg-white/[0.03] px-8 py-12 text-center backdrop-blur-md">
-          <div className="relative mx-auto mb-6 flex h-16 w-16 items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-[oklch(0.5706_0.2236_258.71)] opacity-30 blur-[20px]" />
-            <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.08] backdrop-blur-md">
-              <SparkleIcon />
-            </div>
-          </div>
-          <h2 className="text-[20px] font-semibold text-white">{t.comingSoonTitle}</h2>
-          <p className="mx-auto mt-2 max-w-sm text-[14px] leading-relaxed text-white/40">
-            {t.comingSoonDescription}
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            {t.features.map((feature) => (
-              <span
-                key={feature}
-                className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[12px] text-white/40"
-              >
-                {feature}
-              </span>
-            ))}
-          </div>
+        {/* Charts carousel */}
+        <div className="mt-6">
+          <DashboardCharts
+            monthlyTotals={monthlyTotals}
+            categoryBreakdown={categoryBreakdown}
+            locale={typedLocale}
+            t={{
+              chartCashFlow:      t.chartCashFlow,
+              chartSpending:      t.chartSpending,
+              chartIncome:        t.chartIncome,
+              chartExpenses:      t.chartExpenses,
+              chartNet:           t.chartNet,
+              chartNoData:        t.chartNoData,
+              chartNoExpenses:    t.chartNoExpenses,
+              chartUncategorized: t.chartUncategorized,
+            }}
+          />
         </div>
 
         {/* Quick actions */}
@@ -230,14 +229,8 @@ function SpendingIcon() {
 function SavingsIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>;
 }
-function SparkleIcon() {
-  return <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" opacity="0.7"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" /></svg>;
-}
 function BankIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></svg>;
-}
-function TargetIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>;
 }
 function InsightsIcon() {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 20h20" /><path d="m5 17 4-5 4 3 4-6 4 5" /></svg>;

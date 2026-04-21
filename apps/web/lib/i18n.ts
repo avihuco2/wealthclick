@@ -86,6 +86,15 @@ const dictionaries = {
       comingSoon: "Coming soon",
       transactions: "Transactions",
       dashboardNav: "Dashboard",
+      // Charts
+      chartCashFlow: "Cash Flow",
+      chartSpending: "Spending Breakdown",
+      chartIncome: "Income",
+      chartExpenses: "Expenses",
+      chartNet: "Net",
+      chartNoData: "No data yet — add transactions to get started",
+      chartNoExpenses: "No expenses this month",
+      chartUncategorized: "Uncategorized",
     },
     transactions: {
       title: "Transactions",
@@ -346,6 +355,15 @@ const dictionaries = {
       comingSoon: "בקרוב",
       transactions: "עסקאות",
       dashboardNav: "לוח בקרה",
+      // Charts
+      chartCashFlow: "תזרים מזומנים",
+      chartSpending: "פירוט הוצאות",
+      chartIncome: "הכנסות",
+      chartExpenses: "הוצאות",
+      chartNet: "נטו",
+      chartNoData: "אין נתונים עדיין — הוסף עסקאות כדי להתחיל",
+      chartNoExpenses: "אין הוצאות החודש",
+      chartUncategorized: "ללא קטגוריה",
     },
     transactions: {
       title: "עסקאות",

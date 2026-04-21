@@ -1,161 +1,44 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with code in this repository.
 
 ---
 
 ## Project Overview
 
-**WealthClick** — A modern, personal finance management application inspired by Apple's design language. Users authenticate with Google accounts and track their financial transactions with beautiful visualizations, smart categorization, and actionable insights.
+**WealthClick** — Personal finance management app for Israeli users. Scrapes bank and credit card transactions from Israeli financial institutions, categorizes them with AI, and presents them in a Hebrew/English dashboard with budgets, insights, and a WhatsApp bot.
 
-**Design Philosophy:** Young, clean, modern (Apple-inspired), delightful micro-interactions, minimalist interface with maximum clarity.
-
----
-
-## Phase 1 Architecture (Current)
-
-**Goal:** MVP hobby project with minimal complexity. Auto-deploy on every push.
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ GitHub Repository                                       │
-│ (Push triggers GitHub Actions)                         │
-└──────────────────┬──────────────────────────────────────┘
-                   │
-                   │ OIDC Token
-                   ▼
-        ┌──────────────────────┐
-        │  GitHub Actions      │
-        │  (OIDC to AWS)       │
-        └──────────┬───────────┘
-                   │
-                   │ Deploy via SSM/EC2
-                   ▼
-┌──────────────────────────────────────────────────────────┐
-│ AWS VPC                                                  │
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│  Public Subnet                                           │
-│  ┌────────────────────────────────┐                     │
-│  │ Application Load Balancer      │                     │
-│  │ (Your custom domain + cert)    │                     │
-│  └────────────┬───────────────────┘                     │
-│               │                                          │
-│  Private Subnet                                          │
-│  ┌────────────▼───────────────────┐                     │
-│  │ EC2 Instance (t3.micro)        │                     │
-│  │ ┌─────────────────────────────┐│                     │
-│  │ │ Frontend (Next.js)          ││                     │
-│  │ ├─────────────────────────────┤│                     │
-│  │ │ Backend (Node.js API)       ││                     │
-│  │ ├─────────────────────────────┤│                     │
-│  │ │ Workers (Job processing)    ││                     │
-│  │ ├─────────────────────────────┤│                     │
-│  │ │ PostgreSQL Database         ││                     │
-│  │ └─────────────────────────────┘│                     │
-│  └────────────────────────────────┘                     │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
-```
-
-### Infrastructure
-
-| Component | Technology | Details |
-|-----------|-----------|---------|
-| **CDN** | Route 53 + Custom Domain | Your registered domain + SSL certificate |
-| **Load Balancer** | Application Load Balancer | Public subnet, SSL/TLS termination |
-| **Compute** | EC2 t3.micro | Private subnet, single instance (can scale later) |
-| **Database** | PostgreSQL (local on EC2) | Single-node, file-based backups |
-| **Frontend** | Next.js 15 (App Router) | SSR/SSG rendering, served via Express.js |
-| **Backend** | Node.js 22 + Express/Fastify | REST API, business logic |
-| **Auth** | Google OAuth 2.0 | Via Passport.js or Clerk |
-| **Jobs/Queues** | Bull (Redis) | Local Redis on EC2 |
-| **CI/CD** | GitHub Actions + OIDC | Auto-deploy on push via SSM/EC2 Instance Connect |
+**Design Philosophy:** Apple Glass UI — dark navy background, frosted glass cards, colored ambient glows, Geist + Heebo fonts.
 
 ---
 
-## Development Setup
+## Architecture
 
-### Prerequisites
+Single Next.js app deployed on EC2, no separate worker process.
 
-- Node.js 22+
-- Docker (for local testing)
-- Git
-
-### Installation
-
-```bash
-# Clone repository
-git clone https://github.com/avihuco2/wealthclick.git
-cd wealthclick
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env.local
+```
+Browser
+  └── Next.js 16 (App Router) on EC2 t3.micro (il-central-1)
+        ├── PostgreSQL (local on EC2) via postgres.js
+        ├── israeli-bank-scrapers (Puppeteer, dynamic import, runs in-process)
+        ├── AWS Bedrock — Claude, Nova, Llama, Mistral, Cohere, Gemma
+        ├── Google AI — Gemma 4/3 models via @google/genai
+        ├── AWS Secrets Manager — runtime env vars
+        └── Evolution API — WhatsApp bot integration
 ```
 
-### Environment Variables
-
-```bash
-# Authentication
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-NEXTAUTH_SECRET=random_secret_key
-
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/wealthclick
-
-# Redis (for job queue)
-REDIS_URL=redis://localhost:6379
-
-# AWS (for GitHub Actions OIDC)
-AWS_ROLE_TO_ASSUME=arn:aws:iam::ACCOUNT_ID:role/GitHubActionsRole
-AWS_REGION=us-east-1
-
-# Application
-NODE_ENV=development
-NEXT_PUBLIC_API_URL=http://localhost:3000
-```
-
-### Local Development
-
-```bash
-# Start PostgreSQL (Docker)
-docker run --name wealthclick-pg -e POSTGRES_PASSWORD=password -d -p 5432:5432 postgres:15
-
-# Start Redis (Docker)
-docker run --name wealthclick-redis -d -p 6379:6379 redis:7-alpine
-
-# Run migrations
-npm run db:migrate
-
-# Start dev server (Next.js + API)
-npm run dev
-
-# In another terminal, start worker
-npm run worker:dev
-```
-
-**Access:** http://localhost:3000
-
-### Testing
-
-```bash
-# Unit tests
-npm run test
-
-# E2E tests (Playwright)
-npm run e2e
-
-# Linting & formatting
-npm run lint
-npm run format
-
-# Type checking
-npm run type-check
-```
+| Component | Technology |
+|-----------|------------|
+| Framework | Next.js 16 App Router, React 19 |
+| Styling | Tailwind CSS v4 + shadcn/ui + Base UI |
+| Auth | NextAuth v5 beta, Google OAuth only |
+| Database | PostgreSQL (local EC2) via `postgres.js` (no ORM) |
+| AI | AWS Bedrock (multi-model) + Google AI |
+| Bank scraping | `israeli-bank-scrapers` v6, Puppeteer, dynamic import |
+| WhatsApp | Evolution API + custom agent loop |
+| Deployment | EC2 il-central-1 via PM2, GitHub Actions → SSM |
+| Secrets | AWS Secrets Manager (loaded at startup) |
+| i18n | Custom `lib/i18n.ts`, routes under `app/[locale]/` (en, he) |
 
 ---
 
@@ -163,477 +46,288 @@ npm run type-check
 
 ```
 wealthclick/
-├── .github/
-│   └── workflows/
-│       ├── lint.yml              # ESLint + Prettier
-│       ├── test.yml              # Unit + integration tests
-│       ├── e2e.yml               # Playwright E2E tests
-│       ├── build.yml             # Build Docker image
-│       └── deploy.yml            # Deploy to EC2 via OIDC
-│
+├── CLAUDE.md
 ├── apps/
-│   ├── web/                      # Next.js frontend + API routes
-│   │   ├── app/                  # App Router
-│   │   │   ├── page.tsx          # Home page
-│   │   │   ├── dashboard/        # Dashboard (protected)
-│   │   │   ├── api/              # API routes
-│   │   │   │   ├── auth/         # OAuth endpoints
-│   │   │   │   ├── transactions/ # Transaction CRUD
-│   │   │   │   ├── categories/   # Category CRUD
-│   │   │   │   └── ...
-│   │   │   └── layout.tsx        # Root layout (auth wrapper)
-│   │   ├── components/           # React components
-│   │   ├── lib/                  # Utilities, hooks
-│   │   ├── public/               # Static assets
-│   │   └── package.json
-│   │
-│   └── worker/                   # Background job processor
-│       ├── jobs/                 # Job handlers
-│       ├── src/
-│       │   └── index.ts          # Worker entry point
-│       └── package.json
-│
-├── packages/
-│   ├── db/                       # Database utilities
-│   │   ├── schema.ts             # Database schema types
-│   │   ├── migrations/           # SQL migrations
-│   │   └── migrations.ts         # Migration runner
-│   │
-│   └── types/                    # Shared TypeScript types
-│
-├── scripts/
-│   └── deploy.sh                 # Deploy script (runs on EC2)
-│
-├── docker-compose.yml            # Local dev environment
-├── Dockerfile                    # Multi-stage build for EC2
-├── package.json                  # Monorepo root
-└── CLAUDE.md                     # This file
+│   └── web/                          # The entire application
+│       ├── app/
+│       │   ├── [locale]/             # Localized pages (en, he)
+│       │   │   ├── dashboard/        # Main dashboard
+│       │   │   ├── transactions/     # Transaction CRUD + mobile cards
+│       │   │   ├── budgets/          # Category budgets by month
+│       │   │   ├── insights/         # Spending breakdown + trends
+│       │   │   ├── bank-accounts/    # Connect/manage bank accounts
+│       │   │   ├── settings/         # App settings
+│       │   │   ├── admin/            # Admin-only user management
+│       │   │   ├── login/
+│       │   │   └── unauthorized/
+│       │   └── api/
+│       │       ├── auth/             # NextAuth handlers
+│       │       ├── bank-accounts/    # Scrape trigger endpoints
+│       │       ├── budgets/          # Budget CRUD
+│       │       ├── transactions/     # Transaction API
+│       │       ├── settings/         # Settings CRUD
+│       │       ├── scrape-jobs/      # Job status polling
+│       │       ├── whatsapp/         # Webhook + Evolution API
+│       │       ├── admin/            # Admin-only endpoints (clear-data, etc.)
+│       │       ├── mcp/              # MCP server endpoint
+│       │       └── v1/               # REST API v1 (keys, transactions, categories, budgets, openapi, docs)
+│       ├── components/
+│       │   ├── NavBar.tsx
+│       │   ├── BankAccountsClient.tsx
+│       │   ├── LanguageSwitcher.tsx
+│       │   └── ui/                   # shadcn/ui + Base UI components
+│       ├── lib/
+│       │   ├── auth.ts               # NextAuth config
+│       │   ├── db.ts                 # postgres.js singleton + shared DB types
+│       │   ├── transactions.ts       # Transaction queries
+│       │   ├── categories.ts         # Category queries + seeding
+│       │   ├── categoryRules.ts      # Auto-categorization rules
+│       │   ├── budgets.ts            # Budget queries
+│       │   ├── insights.ts           # Insights aggregation queries
+│       │   ├── bankAccounts.ts       # Bank account CRUD + scrape job management
+│       │   ├── scraper.ts            # Scrape runner (Puppeteer, installment logic)
+│       │   ├── scraperCron.ts        # In-process cron (setTimeout loop, no Redis)
+│       │   ├── scraperConfig.ts      # Scraper settings helpers
+│       │   ├── bedrock.ts            # Bedrock conversation + tool-use loop
+│       │   ├── bedrockModels.ts      # Model list (Bedrock + Google AI)
+│       │   ├── googleAI.ts           # Google AI client
+│       │   ├── whatsappAgent.ts      # WhatsApp AI agent, history management
+│       │   ├── agentTools.ts         # Tool definitions for AI agent
+│       │   ├── evolutionApi.ts       # Evolution API client
+│       │   ├── whatsappCrypto.ts     # Webhook signature verification
+│       │   ├── apiAuth.ts            # API key auth for v1 endpoints
+│       │   ├── settings.ts           # Settings DB helpers
+│       │   ├── crypto.ts             # AES-256-GCM encrypt/decrypt
+│       │   ├── i18n.ts               # EN + HE dictionaries
+│       │   └── utils.ts              # cn(), formatCurrency(), etc.
+│       ├── migrations/               # SQL migration files (001–015)
+│       ├── scripts/
+│       │   └── migrate.mjs           # Migration runner (tracks applied in _migrations table)
+│       └── public/
+│           └── icon.svg
+└── .github/
+    └── workflows/
+        └── deploy.yml                # GitHub Actions → SSM → EC2
 ```
 
 ---
 
-## Tech Stack
+## Database
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| **Frontend** | Next.js 15 + React 19 | SSR, App Router, API routes, edge functions |
-| **Styling** | Tailwind CSS + shadcn/ui | Apple-inspired design system, accessibility |
-| **State** | TanStack Query + Zustand | Server state, client state management |
-| **Auth** | Google OAuth 2.0 + NextAuth | Simple, secure, no password management |
-| **Backend** | Node.js 22 + Express | Simple, fast, JavaScript full-stack |
-| **Database** | PostgreSQL 15 | Reliable, free, good for finance data |
-| **Jobs** | Bull (Redis queue) | Simple background jobs, retry logic |
-| **Testing** | Vitest + Playwright | Fast unit tests, realistic E2E tests |
-| **Deployment** | GitHub Actions → EC2 | Simple, OIDC-based, no long-lived tokens |
+**postgres.js** (no ORM). All queries are tagged template literals via `getDb()`.
 
----
+### Key Tables
 
-## Design System (Apple-Inspired)
+| Table | Purpose |
+|-------|---------|
+| `users` | Email + Google profile + `role` ("admin"/"user") + `active` flag |
+| `categories` | Per-user, `name_en`, `name_he`, `color`, `emoji`, `icon` |
+| `category_rules` | `description → category_id` mapping for auto-categorization |
+| `transactions` | All transactions; `external_id` for dedup; installment fields |
+| `bank_accounts` | Encrypted credentials, `company_id`, `status`, `scrape_enabled` |
+| `scrape_history` | Per-account scrape runs with status + error |
+| `category_budgets` | Monthly budget amounts per category |
+| `budget_income` | Monthly income budget |
+| `whatsapp_conversations` | Per-user conversation history (JSON) |
+| `api_keys` | Hashed API keys for v1 REST access |
+| `settings` | Per-key app settings (scrape interval, history months, model, etc.) |
+| `_migrations` | Tracks applied migration filenames |
 
-### Colors
-- **Primary:** `#007AFF` (Apple blue)
-- **Success:** `#34C759` (Apple green)
-- **Warning:** `#FF9500` (Apple orange)
-- **Danger:** `#FF3B30` (Apple red)
-- **Background:** `#F5F5F7` (Neutral light)
-- **Text:** `#1D1D1D` (Neutral dark)
+### Transactions — Installment Fields
 
-### Typography
-- **Font:** System font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto`)
-- **Headlines:** SF Pro Display (or system default)
-- **Body:** SF Pro Text (or system default)
+Added in migrations 014 + 015:
+- `installment_total INT` — total number of payments
+- `installment_current INT` — this payment's position (1-based)
+- `installment_group_id UUID` — links all payments in a series
 
-### Components
-- **Buttons:** Rounded corners (8px), subtle shadows, minimal borders
-- **Cards:** Clean white/translucent backgrounds, soft shadows
-- **Input:** Minimalist, focus state with blue accent
-- **Spacing:** 8px grid system (8, 16, 24, 32, 40px)
-- **Animations:** Subtle transitions (200-300ms), easing `ease-in-out`
+Unique index: `(user_id, installment_group_id, installment_current) WHERE installment_group_id IS NOT NULL`
 
-### Examples
-- Inspired by Apple's [Financial Health](https://support.apple.com/en-us/118308) in Wallet
-- Inspired by Apple's [Money in Mail](https://www.apple.com/newsroom/pdfs/Apple-Personal-Finance-Setup-Guide.pdf) design
+Scraper upserts real rows and inserts synthetic future rows with `DO NOTHING` — real rows replace synthetic as months progress.
+
+### Migrations
+
+Add a new migration file: `apps/web/migrations/NNN_description.sql`
+
+Run: `node scripts/migrate.mjs` (also runs automatically on deploy)
 
 ---
 
-## Deployment: Phase 1
+## Auth
 
-### Prerequisites
+NextAuth v5 beta (`next-auth@^5.0.0-beta`). Google OAuth only.
 
-1. **AWS Account** with permissions to create ALB, EC2, IAM roles
-2. **GitHub Repository** with OIDC provider configured
-3. **Custom Domain** registered (e.g., wealthclick.com)
-4. **SSL Certificate** created in AWS Certificate Manager (free)
+- Users must exist in the `users` table with `active = true` to sign in
+- JWT embeds `id` and `role` from DB on first login
+- Admin check: `session.user.role === "admin"`
+- Server: `const session = await auth()` (from `@/lib/auth`)
+- Route protection: redirect to `/${locale}/login` if no session
 
-### Step 1: AWS Setup (One-time)
+---
+
+## Hebrew / RTL Rules (Non-Negotiable)
+
+- Root layout: `<html lang="he" dir="rtl">` (default locale)
+- Tailwind: logical properties ONLY — `ms-`, `me-`, `ps-`, `pe-`, `text-start`, `border-e`
+- **NEVER** use: `ml-`, `mr-`, `pl-`, `pr-`, `text-left`, `text-right`, `border-l`, `border-r`
+- Currency: `new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' })`
+- Dates: `new Intl.DateTimeFormat('he-IL')`
+- All user-facing strings in both `en` and `he` inside `lib/i18n.ts`
+
+---
+
+## Bank Scraping
+
+- Library: `israeli-bank-scrapers` v6 (Puppeteer + Chromium)
+- Dynamic import inside `scraper.ts` — keeps Puppeteer out of Next.js client bundle
+- Runs in-process on EC2 (no separate worker, no Redis/Bull)
+- Cron: in-process `setTimeout` loop in `scraperCron.ts`, interval configurable via DB settings
+- Installment detection: `txn.installments = { number, total }` — Max credit card parses "תשלום X מתוך Y" from comments
+- Dedup for regular txns: `external_id` (base64url hash of identifier/date/desc/amount)
+- Dedup for installments: partial unique index on `(user_id, installment_group_id, installment_current)`
+- Group ID: deterministic UUID from SHA256 of `installment:companyId:accountNumber:description:amount:total`
+
+---
+
+## AI / WhatsApp Bot
+
+- **Bedrock models**: Claude 4.x/3.x, Amazon Nova, Llama 3, Mistral, Cohere, Gemma 3
+- **Google AI models**: Gemma 4/3 via `@google/genai`
+- Model selection: stored in DB `settings` table, hot-switchable without restart
+- WhatsApp: Evolution API webhook → `whatsappAgent.ts` → Bedrock tool-use loop
+- Agent tools: defined in `agentTools.ts` (query transactions, budgets, etc.)
+- History: stored per-user in `whatsapp_conversations` as JSON
+- History safety: orphaned `tool_use` blocks trimmed from history end before each Bedrock call; incomplete assistant turns not saved after max_tokens cutoff
+
+---
+
+## REST API v1
+
+Endpoints under `/api/v1/` authenticated via API keys (`api_keys` table, bcrypt-hashed).
+
+| Endpoint | Resource |
+|----------|---------|
+| `GET /api/v1/transactions` | List transactions |
+| `GET /api/v1/categories` | List categories |
+| `GET /api/v1/budgets` | Budget data |
+| `GET /api/v1/keys` | API key management |
+| `GET /api/v1/openapi` | OpenAPI spec |
+| `GET /api/v1/docs` | API docs UI |
+
+MCP server: `/api/mcp/` (for Claude Desktop integration)
+
+---
+
+## Deployment
+
+```
+Push to main
+  → GitHub Actions (deploy.yml)
+  → OIDC assume AWS role
+  → SSM SendCommand to EC2 i-0f345bf0dc26ae184 (il-central-1)
+      → cd apps/web && git pull
+      → npm ci
+      → node scripts/migrate.mjs
+      → pm2 restart wealthclick
+```
+
+EC2 serves Next.js directly via PM2. ALB (public subnet) → EC2 port 3000 (private subnet).
+
+**Secrets:** AWS Secrets Manager. App fetches secrets at startup and injects into `process.env`.
+
+**Cannot SSM from local machine.** Only GitHub Actions has SSM access. Use EC2 Instance Connect for interactive debugging if needed.
+
+---
+
+## Development Setup
 
 ```bash
-# Create IAM role for GitHub Actions (OIDC)
-# Trust policy: GitHub Actions OIDC provider
-
-# Create VPC with public/private subnets
-# - Public: ALB (0.0.0.0/0)
-# - Private: EC2 (restricted)
-
-# Create ALB in public subnet
-# - Listener: 443 (HTTPS) → Target group port 3000
-# - Listener: 80 (HTTP) → Redirect to HTTPS
-# - Attach SSL certificate
-
-# Create EC2 instance (t3.micro) in private subnet
-# - Security group: Allow 3000 from ALB, 22 from GitHub Actions
-# - IAM role: Allow SSM access for GitHub Actions deployment
-# - AMI: Ubuntu 22.04
-# - Install: Node.js 22, PostgreSQL, Redis, Docker
-
-# Create security groups:
-# - ALB-SG: Allow 80, 443 from 0.0.0.0/0
-# - EC2-SG: Allow 3000 from ALB-SG, 22 from GitHub Actions
+cd apps/web
+cp .env.example .env.local        # fill DATABASE_URL, auth vars, AWS keys
+npm install
+node scripts/migrate.mjs          # apply migrations
+npm run dev
 ```
 
-### Step 2: GitHub Actions OIDC
+Access: http://localhost:3000
 
-```yaml
-# .github/workflows/deploy.yml
+---
 
-name: Deploy to EC2
-
-on:
-  push:
-    branches: [main]
-
-permissions:
-  contents: read
-  id-token: write
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Assume AWS role (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: us-east-1
-      
-      - name: Build Docker image
-        run: docker build -t wealthclick:${{ github.sha }} .
-      
-      - name: Deploy to EC2
-        run: |
-          aws ssm send-command \
-            --instance-ids i-xxxxx \
-            --document-name "AWS-RunShellScript" \
-            --parameters 'commands=[
-              "cd /home/ubuntu/wealthclick",
-              "git pull origin main",
-              "npm ci",
-              "npm run build",
-              "npm run db:migrate",
-              "pm2 restart wealthclick"
-            ]'
-```
-
-### Step 3: EC2 Bootstrap Script
+## Key Environment Variables
 
 ```bash
-#!/bin/bash
-# Run once on EC2 instance creation
+# Auth
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+AUTH_SECRET=
 
-# Install dependencies
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y nodejs npm postgresql postgresql-contrib redis-server git curl
+# Database
+DATABASE_URL=postgresql://...
 
-# Clone repository
-git clone https://github.com/avihuco2/wealthclick.git /home/ubuntu/wealthclick
-cd /home/ubuntu/wealthclick
+# AWS
+AWS_REGION=il-central-1
+# Bedrock + Secrets Manager use EC2 instance role in prod; use local credentials locally
 
-# Install Node modules
-npm install -g pm2
-npm ci
+# Scraper (defaults; overridden by DB settings)
+SCRAPE_INTERVAL_HOURS=6
+SCRAPER_DEBUG=false               # set true temporarily for verbose Puppeteer logs
 
-# Initialize database
-npm run db:migrate
+# WhatsApp
+EVOLUTION_API_URL=
+EVOLUTION_API_KEY=
+EVOLUTION_INSTANCE=
 
-# Start application with PM2
-pm2 start npm --name "wealthclick" -- run start
-pm2 save
-pm2 startup
-```
-
-### Deployment Flow
-
-```
-1. Push to main branch
-   ↓
-2. GitHub Actions triggers deploy.yml
-   ↓
-3. OIDC token obtained (no long-lived credentials)
-   ↓
-4. Docker image built
-   ↓
-5. SSM SendCommand to EC2:
-   - git pull (latest code)
-   - npm ci (install)
-   - npm run build (compile)
-   - npm run db:migrate (schema updates)
-   - pm2 restart (zero-downtime reload)
-   ↓
-6. Application running on EC2 (port 3000)
-   ↓
-7. ALB routes traffic to EC2
-   ↓
-8. Users access via custom domain (HTTPS)
+# Google AI
+GOOGLE_AI_API_KEY=
 ```
 
 ---
 
-## Security Model
+## Common Tasks
 
-### Authentication & Authorization
-- **Google OAuth 2.0** — User identity via Google
-- **NextAuth.js** — Session management, CSRF protection
-- **JWT in HTTP-only cookies** — Secure token storage
+### Add a page
 
-### Data Protection
-- **HTTPS everywhere** — TLS 1.3+ via ALB certificate
-- **Row-Level Security (RLS)** — Each user sees only their own transactions
-- **Encrypted credentials** — Bank/API credentials encrypted at rest (AES-256-GCM)
-- **Environment variables** — Secrets never committed to git
+Create `app/[locale]/my-page/page.tsx`. Follow existing pattern: validate locale, auth check, fetch data server-side, pass to `'use client'` component.
 
-### Multi-Tenancy
-- Every table has `user_id` foreign key
-- Database queries automatically filtered by `user_id`
-- No data leakage between users (enforced at application layer)
+### Add a migration
 
-### Compliance
-- GDPR-ready: Users can export/delete their data
-- No third-party tracking
-- Minimal data collection
+Create `apps/web/migrations/NNN_description.sql`. Runs automatically on next deploy; or `node scripts/migrate.mjs` locally.
+
+### Add i18n strings
+
+Add to both `en` and `he` objects in `lib/i18n.ts`. Access via `getDictionary(locale).section.key`.
+
+### Add an API route
+
+Create route under `app/api/`. Use `const session = await auth()` for session auth. Use `apiAuth()` from `lib/apiAuth.ts` for API key auth (v1 endpoints).
+
+### Add an AI agent tool
+
+Add tool definition to `lib/agentTools.ts` and implement handler in `lib/whatsappAgent.ts`.
 
 ---
 
-## Common Development Tasks
+## Admin Features
 
-### Adding a New API Endpoint
+- Role: `users.role = "admin" | "user"`
+- Admin-only pages: `/[locale]/admin/` (user management)
+- Admin-only API: `/api/admin/` (clear-data, etc.)
+- NavBar shows admin link only when `isAdmin={true}`
 
-```typescript
-// app/api/transactions/[id]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]/route';
-import db from '@/lib/db';
+---
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+## Design System
 
-  // Fetch transaction (filtered by user_id automatically)
-  const transaction = await db.transaction.findUnique({
-    where: { id: params.id, user_id: session.user.id },
-  });
-
-  return NextResponse.json(transaction);
-}
-```
-
-### Adding a New React Component
-
-```typescript
-// components/TransactionList.tsx
-'use client';
-
-import { useQuery } from '@tanstack/react-query';
-import Card from './Card';
-
-export default function TransactionList() {
-  const { data: transactions, isLoading } = useQuery({
-    queryKey: ['transactions'],
-    queryFn: async () => {
-      const res = await fetch('/api/transactions');
-      if (!res.ok) throw new Error('Failed to fetch');
-      return res.json();
-    },
-  });
-
-  if (isLoading) return <div>Loading...</div>;
-
-  return (
-    <div className="space-y-2">
-      {transactions?.map((tx) => (
-        <Card key={tx.id} transaction={tx} />
-      ))}
-    </div>
-  );
-}
-```
-
-### Running a Single Test
-
-```bash
-# Unit test
-npm run test -- TransactionList.test.ts
-
-# E2E test
-npm run e2e -- login.spec.ts
-
-# Watch mode
-npm run test -- --watch
-```
-
-### Debugging
-
-```bash
-# Enable Node.js debugging
-node --inspect-brk dist/index.js
-
-# Chrome DevTools: chrome://inspect
-```
+**Apple Glass UI:**
+- Background: dark navy (`oklch` ≈ 0.13 lightness)
+- Cards: `bg-white/[0.06]` + `backdrop-blur` + subtle `border-white/[0.08]`
+- Glows: large blurred circles in background, `oklch` colors, 10–18% opacity, 120–140px blur
+- Fonts: Geist (Latin), Heebo (Hebrew)
+- Accent colors: blue `#007AFF`, green `#34C759`, red `#FF3B30`, orange `#FF9500`
+- Mobile: card view on `sm:hidden`, table on `hidden sm:block`; modals are bottom-sheet on mobile
 
 ---
 
 ## Git Workflow
 
-### Branch Strategy
-
-- **main** — Production-ready code
-- **develop** — Integration branch
-- **feature/name** — Feature branches
-
-### Commit Messages
-
-```
-<type>: <subject>
-
-<body>
-
-<footer>
-```
-
-**Types:** `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
-
-**Example:**
-```
-feat: add transaction categorization
-
-- Implement AI-powered category suggestions
-- Add manual category override UI
-- Update transaction schema with category_id
-
-Closes #42
-```
-
-### Pull Request Flow
-
-1. Create feature branch from `develop`
-2. Implement feature
-3. Push and create PR
-4. GitHub Actions runs: lint, test, e2e
-5. Code review
-6. Merge to `develop`
-7. Merge `develop` → `main` for release
-
----
-
-## Agents
-
-### 🔒 Security Agent — `.claude/agents/security.md`
-Identifies vulnerabilities—Google OAuth flows, data isolation, encryption, RLS policies, OWASP Top 10. Use before merging code handling sensitive data or authentication.
-
-### 🗄️ Database Agent — `.claude/agents/database.md`
-Designs Postgres schemas, migrations, RLS policies, query optimization. Use when creating tables or optimizing performance.
-
-### ☁️ AWS Agent — `.claude/agents/aws.md`
-Configures ALB, EC2, OIDC, auto-scaling (for future phases). Use when setting up infrastructure or planning Phase 2+ architecture.
-
-### 📚 Documentation Agent — `.claude/agents/documentation.md`
-Creates API docs, developer guides, ADRs, deployment runbooks. Use before releasing features.
-
-### 🔧 Git & GitHub Actions Agent — `.claude/agents/git.md`
-Writes GitHub Actions workflows, OIDC setup, auto-deployment scripts. Use when configuring CI/CD or automation.
-
-### ⚙️ Backend Agent — `.claude/agents/backend.md`
-Builds API routes, database queries, business logic. Use when implementing endpoints or backend features.
-
-### 🎨 Frontend Design Agent — `.claude/agents/frontend-design.md`
-Creates Apple-inspired interfaces—clean, modern, delightful. Use when building UI components or designing screens.
-
-### 🧪 Webapp Testing Agent — `.claude/agents/webapp-testing.md`
-Writes Playwright E2E tests, component testing, visual regression. Use when testing features or debugging UI issues.
-
----
-
-## Deployment Checklist (Before Production)
-
-- [ ] Google OAuth credentials configured
-- [ ] SSL certificate installed on ALB
-- [ ] Database backups automated
-- [ ] Environment variables set on EC2
-- [ ] GitHub Actions OIDC role created
-- [ ] Security headers configured (CSP, X-Frame-Options)
-- [ ] Error logging enabled
-- [ ] Monitoring/alerting set up
-- [ ] All tests passing
-- [ ] Security agent approved code
-
----
-
-## Deployment Approach
-
-### Phase 1: Direct Node.js (Current)
-- ✅ Applications run directly on EC2 via PM2
-- ✅ No Docker overhead
-- ✅ Fast deployment (3-5 minutes)
-- ✅ Easy debugging and monitoring
-- ✅ Simple SSM SendCommand approach
-
-### Phase 2: Containers (When Ready to Scale)
-- Migrate to Docker containers on EC2
-- ECR (Elastic Container Registry) for image storage
-- Multi-instance EC2 with load balancing
-- Easier rollbacks and environment consistency
-
-**Why Phase 1 skips containers:**
-- MVP simplicity (fewer moving parts)
-- Faster iteration and debugging
-- Direct file access when needed
-- Can migrate without changing core application code
-
-**Migration to Phase 2 (Container):**
-- Add Dockerfile (minimal changes to app)
-- Configure ECR repository
-- Update GitHub Actions to build/push images
-- Switch EC2 deployment to pull/run Docker
-- Everything else stays the same
-
----
-
-## Next Steps (Phase 2+)
-
-When MVP is stable:
-- **Containerization** — Docker + ECR for multi-instance support
-- **Auto-scaling** — Multiple EC2 instances behind ALB
-- **Separate database** — AWS RDS PostgreSQL
-- **CDN** — CloudFront for static assets
-- **Real-time sync** — WebSockets or Server-Sent Events
-- **Monitoring** — CloudWatch dashboards and alerts
-- **Mobile app** — React Native client
-- **Advanced analytics** — Spending trends, forecasting
-
----
-
-## References
-
-- [Next.js 15 Docs](https://nextjs.org)
-- [Tailwind CSS](https://tailwindcss.com)
-- [shadcn/ui](https://ui.shadcn.com)
-- [NextAuth.js](https://next-auth.js.org)
-- [PostgreSQL](https://www.postgresql.org/docs/)
-- [Apple Design Guidelines](https://developer.apple.com/design/)
-- [AWS ALB Documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/)
-- [GitHub Actions OIDC](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
+- **main** — production branch, direct push deploys
+- Commit types: `feat`, `fix`, `refactor`, `docs`, `chore`

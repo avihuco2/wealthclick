@@ -99,7 +99,53 @@ async function getPeriodComparison(
   return row;
 }
 
-async function getCategoryBreakdown(
+// ─── Monthly Totals (for dashboard cash flow chart) ───────────────────────
+
+export type MonthlyTotals = {
+  month: string; // YYYY-MM
+  income: string;
+  expenses: string;
+  net: string;
+};
+
+export async function getMonthlyTotals(
+  userId: string,
+  months = 6,
+): Promise<MonthlyTotals[]> {
+  const sql = getDb();
+  const start = new Date();
+  start.setDate(1);
+  start.setMonth(start.getMonth() - (months - 1));
+  const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-01`;
+
+  const rows = await sql<MonthlyTotals[]>`
+    SELECT
+      to_char(date, 'YYYY-MM') AS month,
+      COALESCE(SUM(amount) FILTER (WHERE type = 'income'),  0)::text AS income,
+      COALESCE(SUM(amount) FILTER (WHERE type = 'expense'), 0)::text AS expenses,
+      COALESCE(
+        SUM(amount) FILTER (WHERE type = 'income') -
+        SUM(amount) FILTER (WHERE type = 'expense'),
+        0
+      )::text AS net
+    FROM transactions
+    WHERE user_id = ${userId}
+      AND date >= ${startStr}::date
+    GROUP BY to_char(date, 'YYYY-MM')
+    ORDER BY month ASC
+  `;
+
+  // Fill in missing months so the caller always gets exactly `months` entries
+  const filled: MonthlyTotals[] = [];
+  for (let i = 0; i < months; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    filled.push(rows.find((r) => r.month === m) ?? { month: m, income: "0", expenses: "0", net: "0" });
+  }
+  return filled;
+}
+
+export async function getCategoryBreakdown(
   userId: string,
   month: string,
 ): Promise<CategoryBreakdown[]> {

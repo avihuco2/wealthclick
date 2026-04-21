@@ -20,6 +20,7 @@ type Props = {
   locale: Locale;
   month: string;
   t: Dictionary["transactions"];
+  isAdmin?: boolean;
   createAction: (formData: FormData) => Promise<void>;
   updateAction: (formData: FormData) => Promise<void>;
   deleteAction: (formData: FormData) => Promise<void>;
@@ -33,6 +34,7 @@ export default function TransactionsClient({
   locale,
   month,
   t,
+  isAdmin,
   createAction,
   updateAction,
   deleteAction,
@@ -57,6 +59,18 @@ export default function TransactionsClient({
   // Auto-categorize
   const [autoCatting, setAutoCatting] = useState(false);
   const [autoCatResult, setAutoCatResult] = useState<number | null>(null);
+
+  // Admin: clear all data
+  const [clearConfirm, setClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  async function handleClearData() {
+    setClearing(true);
+    const res = await fetch("/api/admin/clear-data", { method: "POST" });
+    if (res.ok) { router.refresh(); }
+    setClearing(false);
+    setClearConfirm(false);
+  }
 
   async function handleAutoCategorize() {
     setAutoCatting(true);
@@ -220,6 +234,28 @@ export default function TransactionsClient({
       <div className="mb-8 flex items-center justify-between gap-3">
         <h1 className="text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
         <div className="flex items-center gap-2">
+          {/* Admin: clear all data */}
+          {isAdmin && (
+            clearConfirm ? (
+              <div className="flex items-center gap-1.5">
+                <button onClick={handleClearData} disabled={clearing}
+                  className="flex items-center gap-1.5 rounded-xl border border-[oklch(0.577_0.245_27.325/0.5)] bg-[oklch(0.577_0.245_27.325/0.15)] px-3 py-2 text-[13px] font-medium text-[oklch(0.78_0.16_27)] transition-all hover:bg-[oklch(0.577_0.245_27.325/0.25)] disabled:opacity-50">
+                  {clearing ? <SpinnerIcon /> : <TrashIcon />}
+                  Confirm clear
+                </button>
+                <button onClick={() => setClearConfirm(false)}
+                  className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-[13px] text-white/50 transition-all hover:text-white/80">
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setClearConfirm(true)}
+                className="flex items-center gap-1.5 rounded-xl border border-[oklch(0.577_0.245_27.325/0.25)] bg-white/[0.04] px-3 py-2 text-[13px] text-white/30 transition-all hover:border-[oklch(0.577_0.245_27.325/0.5)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)]">
+                <TrashIcon />
+                Clear all data
+              </button>
+            )
+          )}
           {/* Auto-categorize */}
           <div className="flex items-center gap-2">
             <button

@@ -207,6 +207,7 @@ export default async function TransactionsPage({
           locale={typedLocale}
           month={month}
           t={t}
+          isAdmin={session.user.role === "admin"}
           createAction={createTransaction}
           updateAction={updateTransaction}
           deleteAction={deleteTransaction}

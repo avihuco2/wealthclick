@@ -13,6 +13,14 @@ import { decryptApiKey } from "@/lib/whatsappCrypto";
 import { handleWhatsAppMessage } from "@/lib/whatsappAgent";
 import { sendTextMessage, type EvolutionConfig } from "@/lib/evolutionApi";
 
+// ─── Bot trigger ─────────────────────────────────────────────────────────────
+const BOT_NAMES = ["boti", "בוטי"];
+
+function mentionsBotName(text: string): boolean {
+  const lower = text.toLowerCase();
+  return BOT_NAMES.some((name) => lower.includes(name));
+}
+
 // ─── Rate limiting ────────────────────────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 const RATE_LIMIT_MAX   = 20;
@@ -172,6 +180,7 @@ export async function POST(request: Request) {
     if (!text?.trim()) continue;
     if (!replyTo) continue;
     if (msgId && isDuplicate(msgId)) { console.log("[whatsapp] duplicate, skipping"); continue; }
+    if (!mentionsBotName(text)) { console.log(`[whatsapp] no bot mention, skipping`); continue; }
 
     // v1 may use LID format (@lid) for remoteJid — phone extraction only works for @s.whatsapp.net
     const phone = normalizePhone(remoteJid);

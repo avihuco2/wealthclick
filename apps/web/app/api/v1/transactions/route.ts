@@ -17,6 +17,7 @@ export async function GET(request: Request) {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const typeParam = searchParams.get("type");
+  const accountParam = searchParams.get("account") ?? undefined;
   const limitParam = searchParams.get("limit");
 
   if (!from || !to) {
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "limit must be a positive integer" }, { status: 400 });
   }
 
-  const rows = await getTransactionsByDateRange(userId, from, to, type, undefined, limit);
+  const rows = await getTransactionsByDateRange(userId, from, to, type, accountParam, limit);
 
   const transactions = rows.map((t) => ({
     id: t.id,

@@ -138,6 +138,23 @@ export async function GET() {
             },
           },
         },
+        Account: {
+          type: "object",
+          properties: {
+            account:              { type: "string", example: "Visa" },
+            transaction_count:    { type: "integer", example: 42 },
+            total_income:         { type: "number", example: 0 },
+            total_expenses:       { type: "number", example: 8430.5 },
+            last_transaction_date: { type: "string", format: "date", example: "2025-04-20" },
+          },
+        },
+        AccountListResponse: {
+          type: "object",
+          properties: {
+            data:  { type: "array", items: { $ref: "#/components/schemas/Account" } },
+            count: { type: "integer" },
+          },
+        },
         BudgetCategoryInput: {
           type: "object",
           required: ["category_id", "monthly_amount"],
@@ -175,6 +192,7 @@ export async function GET() {
             { name: "from", in: "query", required: true, schema: { type: "string", format: "date" }, example: "2025-03-01", description: "Start date (inclusive), YYYY-MM-DD" },
             { name: "to", in: "query", required: true, schema: { type: "string", format: "date" }, example: "2025-03-31", description: "End date (inclusive), YYYY-MM-DD" },
             { name: "type", in: "query", required: false, schema: { type: "string", enum: ["income", "expense"] }, description: "Filter by transaction type" },
+            { name: "account", in: "query", required: false, schema: { type: "string" }, example: "Visa", description: "Filter by account name (partial, case-insensitive). Use GET /accounts to list available accounts." },
             { name: "limit", in: "query", required: false, schema: { type: "integer", default: 100, minimum: 1, maximum: 500 }, description: "Max results (default 100, max 500)" },
           ],
           responses: {
@@ -281,6 +299,17 @@ export async function GET() {
             "200": { description: "Income saved", content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" } } } } } },
             "400": { description: "Validation error", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
             "401": { description: "Unauthorized", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          },
+        },
+      },
+      "/accounts": {
+        get: {
+          summary: "List accounts",
+          description: "Returns all bank/credit card accounts that have transactions, with counts and totals.",
+          operationId: "listAccounts",
+          responses: {
+            "200": { description: "List of accounts", content: { "application/json": { schema: { $ref: "#/components/schemas/AccountListResponse" } } } },
+            "401": { description: "Missing or invalid API key", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
           },
         },
       },

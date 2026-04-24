@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "limit must be a positive integer" }, { status: 400 });
   }
 
-  const rows = await getTransactionsByDateRange(userId, from, to, type, limit);
+  const rows = await getTransactionsByDateRange(userId, from, to, type, undefined, limit);
 
   const transactions = rows.map((t) => ({
     id: t.id,

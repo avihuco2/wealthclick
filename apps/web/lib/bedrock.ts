@@ -31,15 +31,16 @@ const AGENT_TOOLS: Tool[] = [
   {
     toolSpec: {
       name: "get_transactions",
-      description: "List financial transactions for a date range.",
+      description: "List financial transactions for a date range. Each result includes the account name if available.",
       inputSchema: {
         json: {
           type: "object",
           properties: {
-            from:  { type: "string", description: "Start date YYYY-MM-DD (inclusive)" },
-            to:    { type: "string", description: "End date YYYY-MM-DD (inclusive)" },
-            type:  { type: "string", enum: ["income", "expense"], description: "Filter by type (optional)" },
-            limit: { type: "number", description: "Max results, default 100, max 500 (optional)" },
+            from:    { type: "string", description: "Start date YYYY-MM-DD (inclusive)" },
+            to:      { type: "string", description: "End date YYYY-MM-DD (inclusive)" },
+            type:    { type: "string", enum: ["income", "expense"], description: "Filter by type (optional)" },
+            account: { type: "string", description: "Filter by account name (partial match, optional). Use list_accounts to see available accounts." },
+            limit:   { type: "number", description: "Max results, default 100, max 500 (optional)" },
           },
           required: ["from", "to"],
         },
@@ -59,6 +60,13 @@ const AGENT_TOOLS: Tool[] = [
           required: ["month"],
         },
       },
+    },
+  },
+  {
+    toolSpec: {
+      name: "list_accounts",
+      description: "List all bank/credit card accounts that have transactions, with transaction count and total amount.",
+      inputSchema: { json: { type: "object", properties: {} } },
     },
   },
   {
@@ -179,6 +187,7 @@ const AGENT_TOOLS: Tool[] = [
 import {
   toolGetTransactions,
   toolGetSpendingSummary,
+  toolListAccounts,
   toolListCategories,
   toolCreateTransaction,
   toolUpdateTransaction,
@@ -196,6 +205,7 @@ async function executeTool(
   switch (name) {
     case "get_transactions":     return toolGetTransactions(userId, input as Parameters<typeof toolGetTransactions>[1]);
     case "get_spending_summary": return toolGetSpendingSummary(userId, input as { month: string });
+    case "list_accounts":        return toolListAccounts(userId);
     case "list_categories":      return toolListCategories(userId);
     case "create_transaction":   return toolCreateTransaction(userId, input as Parameters<typeof toolCreateTransaction>[1]);
     case "update_transaction":   return toolUpdateTransaction(userId, input as Parameters<typeof toolUpdateTransaction>[1]);
@@ -212,8 +222,9 @@ async function executeTool(
 const DEFAULT_SYSTEM = `You are a personal finance assistant for WealthClick, a private finance app.
 You are speaking with the app's owner — you have full permission to access and manage their financial data.
 You have tools to:
-- Retrieve and manage transactions (list, create, update, delete)
+- Retrieve and manage transactions (list, create, update, delete); each transaction may include an account name
 - Get monthly spending summaries with category breakdowns and trends
+- List accounts (bank/credit cards): use list_accounts to see all accounts with transactions
 - List spending categories
 - View and manage monthly budgets: get_budget, set_category_budget, set_forecasted_income
 ALWAYS use the available tools to answer questions about money, spending, income, transactions, or budgets.

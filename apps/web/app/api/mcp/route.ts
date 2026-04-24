@@ -50,13 +50,19 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        from: { type: "string", description: "Start date, format YYYY-MM-DD (inclusive)" },
-        to:   { type: "string", description: "End date, format YYYY-MM-DD (inclusive)" },
-        type: { type: "string", enum: ["income", "expense"], description: "Filter by transaction type (optional)" },
-        limit: { type: "number", description: "Max results, default 100, max 500 (optional)" },
+        from:    { type: "string", description: "Start date, format YYYY-MM-DD (inclusive)" },
+        to:      { type: "string", description: "End date, format YYYY-MM-DD (inclusive)" },
+        type:    { type: "string", enum: ["income", "expense"], description: "Filter by transaction type (optional)" },
+        account: { type: "string", description: "Filter by account name (partial match, optional). Use list_accounts to see available accounts." },
+        limit:   { type: "number", description: "Max results, default 100, max 500 (optional)" },
       },
       required: ["from", "to"],
     },
+  },
+  {
+    name: "list_accounts",
+    description: "List all bank/credit card accounts that have transactions, with transaction count and total amount.",
+    inputSchema: { type: "object", properties: {} },
   },
   {
     name: "get_spending_summary",
@@ -162,15 +168,16 @@ async function callTool(name: string, args: Record<string, unknown>, userId: str
   switch (name) {
 
     case "get_transactions": {
-      const from  = args.from as string;
-      const to    = args.to as string;
-      const type  = args.type as "income" | "expense" | undefined;
-      const limit = typeof args.limit === "number" ? args.limit : 100;
+      const from    = args.from as string;
+      const to      = args.to as string;
+      const type    = args.type as "income" | "expense" | undefined;
+      const account = args.account as string | undefined;
+      const limit   = typeof args.limit === "number" ? args.limit : 100;
 
       if (!from || !to) return errorContent("from and to are required");
       if (from > to)    return errorContent("from must be before or equal to to");
 
-      const rows = await getTransactionsByDateRange(userId, from, to, type, limit);
+      const rows = await getTransactionsByDateRange(userId, from, to, type, account, limit);
       if (rows.length === 0) return textContent(`No transactions found between ${from} and ${to}.`);
 
       const fmt = (n: string | number) =>
@@ -236,6 +243,19 @@ async function callTool(name: string, args: Record<string, unknown>, userId: str
       ];
 
       return textContent(lines.join("\n"));
+    }
+
+    case "list_accounts": {
+      const sql  = getDb();
+      const rows = await sql<{ account: string; count: string; total: string }[]>`
+        SELECT account, COUNT(*)::text AS count, SUM(amount)::text AS total
+        FROM transactions WHERE user_id = ${userId} AND account IS NOT NULL AND account <> ''
+        GROUP BY account ORDER BY SUM(amount) DESC
+      `;
+      if (rows.length === 0) return textContent("No accounts found (transactions may not have account info).");
+      const fmtAmt = (n: string) => new Intl.NumberFormat("he-IL", { style: "currency", currency: "ILS", minimumFractionDigits: 0 }).format(Number(n));
+      const lines = rows.map((r) => `• ${r.account} — ${r.count} transactions, total ${fmtAmt(r.total)}`);
+      return textContent(`Your accounts:\n\n${lines.join("\n")}`);
     }
 
     case "list_categories": {

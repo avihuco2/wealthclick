@@ -9,6 +9,7 @@ import type { ConverseTurnResult } from "./bedrock";
 import {
   toolGetTransactions,
   toolGetSpendingSummary,
+  toolListAccounts,
   toolListCategories,
   toolCreateTransaction,
   toolUpdateTransaction,
@@ -23,17 +24,23 @@ import {
 const GOOGLE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
   {
     name: "get_transactions",
-    description: "List financial transactions for a date range.",
+    description: "List financial transactions for a date range. Each result includes the account name if available.",
     parameters: {
       type: Type.OBJECT,
       properties: {
-        from:  { type: Type.STRING, description: "Start date YYYY-MM-DD (inclusive)" },
-        to:    { type: Type.STRING, description: "End date YYYY-MM-DD (inclusive)" },
-        type:  { type: Type.STRING, description: "Filter by type: income or expense (optional)" },
-        limit: { type: Type.NUMBER, description: "Max results, default 100 (optional)" },
+        from:    { type: Type.STRING, description: "Start date YYYY-MM-DD (inclusive)" },
+        to:      { type: Type.STRING, description: "End date YYYY-MM-DD (inclusive)" },
+        type:    { type: Type.STRING, description: "Filter by type: income or expense (optional)" },
+        account: { type: Type.STRING, description: "Filter by account name (partial match, optional). Use list_accounts to see available accounts." },
+        limit:   { type: Type.NUMBER, description: "Max results, default 100 (optional)" },
       },
       required: ["from", "to"],
     },
+  },
+  {
+    name: "list_accounts",
+    description: "List all bank/credit card accounts that have transactions, with transaction count and total amount.",
+    parameters: { type: Type.OBJECT, properties: {} },
   },
   {
     name: "get_spending_summary",
@@ -139,6 +146,7 @@ async function executeTool(name: string, args: Record<string, unknown>, userId: 
   switch (name) {
     case "get_transactions":      return toolGetTransactions(userId, args as Parameters<typeof toolGetTransactions>[1]);
     case "get_spending_summary":  return toolGetSpendingSummary(userId, args as { month: string });
+    case "list_accounts":         return toolListAccounts(userId);
     case "list_categories":       return toolListCategories(userId);
     case "create_transaction":    return toolCreateTransaction(userId, args as Parameters<typeof toolCreateTransaction>[1]);
     case "update_transaction":    return toolUpdateTransaction(userId, args as Parameters<typeof toolUpdateTransaction>[1]);
@@ -177,8 +185,9 @@ function bedrockToGoogleContent(messages: Message[]): Content[] {
 const DEFAULT_SYSTEM_WITH_TOOLS = `You are a personal finance assistant for WealthClick, a private finance app.
 You are speaking with the app's owner — you have full permission to access and manage their financial data.
 You have tools to:
-- Retrieve and manage transactions (list, create, update, delete)
+- Retrieve and manage transactions (list, create, update, delete); each transaction may include an account name
 - Get monthly spending summaries with category breakdowns and trends
+- List accounts (bank/credit cards): use list_accounts to see all accounts with transactions
 - List spending categories
 - View and manage monthly budgets: get_budget, set_category_budget, set_forecasted_income
 ALWAYS use the available tools to answer questions about money, spending, income, transactions, or budgets.

@@ -21,15 +21,28 @@ function fmt(n: string | number): string {
 
 // ─── Tool implementations ─────────────────────────────────────────────────────
 
+export async function toolListAccounts(userId: string): Promise<string> {
+  const sql = getDb();
+  const rows = await sql<{ account: string; count: string; total: string }[]>`
+    SELECT account, COUNT(*)::text AS count, SUM(amount)::text AS total
+    FROM transactions
+    WHERE user_id = ${userId} AND account IS NOT NULL AND account <> ''
+    GROUP BY account ORDER BY SUM(amount) DESC
+  `;
+  if (rows.length === 0) return "No accounts found (transactions may not have account info).";
+  const lines = rows.map((r) => `• ${r.account} — ${r.count} transactions, total ${fmt(r.total)}`);
+  return `Your accounts:\n\n${lines.join("\n")}`;
+}
+
 export async function toolGetTransactions(
   userId: string,
-  args: { from: string; to: string; type?: "income" | "expense"; limit?: number },
+  args: { from: string; to: string; type?: "income" | "expense"; account?: string; limit?: number },
 ): Promise<string> {
-  const { from, to, type, limit = 100 } = args;
+  const { from, to, type, account, limit = 100 } = args;
   if (!from || !to) throw new Error("from and to are required");
   if (from > to) throw new Error("from must be before or equal to to");
 
-  const rows = await getTransactionsByDateRange(userId, from, to, type, limit);
+  const rows = await getTransactionsByDateRange(userId, from, to, type, account, limit);
   if (rows.length === 0) return `No transactions found between ${from} and ${to}.`;
 
   const lines = rows.map((t) => {
@@ -42,7 +55,8 @@ export async function toolGetTransactions(
 
   const total = rows.reduce((s, t) => s + (t.type === "income" ? 1 : -1) * parseFloat(t.amount), 0);
   const summary = `${rows.length} transactions, net: ${total >= 0 ? "+" : ""}${fmt(total)}`;
-  return `Transactions from ${from} to ${to} (${summary}):\n\n${lines.join("\n")}`;
+  const accountNote = account ? ` (account filter: "${account}")` : "";
+  return `Transactions from ${from} to ${to}${accountNote} (${summary}):\n\n${lines.join("\n")}`;
 }
 
 export async function toolGetSpendingSummary(userId: string, args: { month: string }): Promise<string> {

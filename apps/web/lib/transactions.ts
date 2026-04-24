@@ -52,10 +52,12 @@ export async function getTransactionsByDateRange(
   from: string,   // YYYY-MM-DD
   to: string,     // YYYY-MM-DD
   type?: "income" | "expense",
+  account?: string,
   limit = 100,
 ): Promise<DbTransaction[]> {
   const sql = getDb();
-  const typeFilter = type ? sql`AND t.type = ${type}` : sql``;
+  const typeFilter    = type    ? sql`AND t.type = ${type}`                                    : sql``;
+  const accountFilter = account ? sql`AND LOWER(t.account) LIKE ${"%" + account.toLowerCase() + "%"}` : sql``;
   const safeLimit = Math.min(Math.max(1, limit), 500);
   return sql<DbTransaction[]>`
     SELECT
@@ -70,6 +72,7 @@ export async function getTransactionsByDateRange(
       AND t.date >= ${from}::date
       AND t.date <= ${to}::date
       ${typeFilter}
+      ${accountFilter}
     ORDER BY t.date DESC, t.created_at DESC
     LIMIT ${safeLimit}
   `;

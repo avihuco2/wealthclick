@@ -87,15 +87,6 @@ async function runScrape(
     // Dynamic import keeps Puppeteer/Chromium out of the Next.js client bundle
     const { createScraper, CompanyTypes } = await import("israeli-bank-scrapers");
 
-    // Launch stealth browser — bypasses Cloudflare Bot Management (e.g. Isracard)
-    const puppeteerExtra = (await import("puppeteer-extra")).default;
-    const StealthPlugin = (await import("puppeteer-extra-plugin-stealth")).default;
-    puppeteerExtra.use(StealthPlugin());
-    const stealthBrowser = await puppeteerExtra.launch({
-      headless: true,
-      args: PUPPETEER_ARGS,
-    });
-
     const companyType = CompanyTypes[companyId as keyof typeof CompanyTypes];
     if (!companyType) throw new Error(`Unknown companyId: ${companyId}`);
 
@@ -110,9 +101,37 @@ async function runScrape(
       companyId: companyType,
       startDate,
       verbose: SCRAPER_DEBUG,
-      // Pass stealth browser — skips internal puppeteer launch, uses our stealth instance
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      browser: stealthBrowser as any,
+      browserLaunchOptions: { args: PUPPETEER_ARGS },
+      preparePage: async (page) => {
+        // Manual stealth patches — applied before any navigation
+        await page.evaluateOnNewDocument(() => {
+          // 1. Hide webdriver flag
+          Object.defineProperty(navigator, "webdriver", { get: () => false });
+
+          // 2. Fake plugins (real Chrome has plugins; headless has none)
+          Object.defineProperty(navigator, "plugins", {
+            get: () => [1, 2, 3, 4, 5],
+          });
+
+          // 3. Fake languages
+          Object.defineProperty(navigator, "languages", {
+            get: () => ["he-IL", "he", "en-US", "en"],
+          });
+
+          // 4. Restore chrome runtime object (removed in headless)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).chrome = { runtime: {} };
+
+          // 5. Fix permissions query (headless returns "denied" for notifications which leaks)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const originalQuery = (window.navigator.permissions as any).query;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window.navigator.permissions as any).query = (parameters: any) =>
+            parameters.name === "notifications"
+              ? Promise.resolve({ state: Notification.permission } as PermissionStatus)
+              : originalQuery(parameters);
+        });
+      },
     } as Parameters<typeof createScraper>[0]);
 
     console.log(`[scraper] job ${jobId} — browser launched, logging in…`);

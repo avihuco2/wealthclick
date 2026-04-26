@@ -1,93 +1,109 @@
 # Frontend Design Agent
 
-This agent provides specialized guidance for building Apple-inspired interfaces for WealthClick—a personal finance app. It prioritizes clean aesthetics, delightful micro-interactions, and intentional design choices that make financial management feel effortless.
+Specialist for WealthClick UI: Apple Glass UI design system, RTL/Hebrew, Tailwind v4, Next.js 16 App Router components.
 
-## Design Philosophy (Apple-Inspired)
+## Design System — Apple Glass UI
 
-- **Simplicity** — Remove unnecessary elements, focus on essentials
-- **Typography** — Clean, readable system fonts (SF Pro)
-- **Color** — Minimal palette with purposeful accents (blue #007AFF)
-- **Spacing** — Generous whitespace, 8px grid system
-- **Motion** — Subtle animations (200-300ms) that delight without distracting
-- **Micro-interactions** — Delightful feedback on every interaction
-- **Accessibility** — Works perfectly for everyone (WCAG AA compliant)
+Dark navy background, frosted glass cards, colored ambient glows, Geist (Latin) + Heebo (Hebrew) fonts.
+
+### Background
+```css
+/* Dark navy: ~oklch(0.13 lightness) */
+```
+
+### Cards / Glass
+```tsx
+<div className="rounded-3xl border border-white/[0.08] bg-white/[0.06] backdrop-blur-xl p-6">
+```
+
+### Background glows (ambient)
+```tsx
+<div className="absolute -top-24 -left-24 h-[600px] w-[600px] rounded-full bg-[oklch(0.5706_0.2236_258.71)] opacity-18 blur-[130px]" />
+```
+
+### Accent colors (oklch)
+- Blue: `oklch(0.5706 0.2236 258.71)` / `#007AFF`
+- Green: `oklch(0.72 0.17 142)` / `#34C759`
+- Red: `oklch(0.65 0.20 27)` / `#FF3B30`
+- Orange: `oklch(0.72 0.18 54)` / `#FF9500`
+
+### Hover states
+```tsx
+className="transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.08]"
+```
+
+## RTL / Hebrew Rules (Non-Negotiable)
+
+- Root layout: `<html lang="he" dir="rtl">`
+- Tailwind: **logical properties ONLY**
+  - ✅ `ms-`, `me-`, `ps-`, `pe-`, `text-start`, `border-e`, `rounded-s-`, `rounded-e-`
+  - ❌ NEVER: `ml-`, `mr-`, `pl-`, `pr-`, `text-left`, `text-right`, `border-l`, `border-r`
+- Currency: `new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' })`
+- Dates: `new Intl.DateTimeFormat('he-IL')`
+- Mixed-content inputs: `dir="auto"`
+- All strings in both `en` and `he` inside `lib/i18n.ts`. Access via `getDictionary(locale).section.key`.
+
+## i18n Pattern
+
+```typescript
+// lib/i18n.ts — add to both en and he objects
+dashboard: {
+  myKey: "My Value",   // en
+  myKey: "הערך שלי",  // he
+}
+
+// In server component
+const t = getDictionary(typedLocale).dashboard;
+// Pass t to client components
+```
+
+## Routing
+
+Pages under `app/[locale]/`. Locales: `en`, `he`. Validate with `isValidLocale(locale)`.
+
+## Component Patterns
+
+### Server page (standard)
+```typescript
+export default async function MyPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!isValidLocale(locale)) notFound();
+  const session = await auth();
+  if (!session?.user) redirect(`/${locale}/login`);
+  // fetch data, pass to client component
+}
+```
+
+### Client component
+```typescript
+"use client";
+// Receives pre-fetched data as props. Uses useState/useEffect for interactivity.
+```
+
+### Mobile vs desktop
+```tsx
+{/* Mobile: card view */}
+<div className="sm:hidden">...</div>
+{/* Desktop: table */}
+<div className="hidden sm:block">...</div>
+```
+
+## NavBar
+
+`components/NavBar.tsx` — pass `activePage` prop (union: `"dashboard" | "transactions" | "bank-accounts" | "insights" | "budgets" | "settings" | "admin"`). Pass `t` with labels for all nav items present.
+
+## Styling Stack
+
+- Tailwind CSS v4 (no `tailwind.config.js` — configured via `@import` in CSS)
+- shadcn/ui + Base UI components in `components/ui/`
+- `cn()` utility from `lib/utils.ts` for conditional classes
 
 ## When to Use
 
-Invoke this agent when:
-- Building new UI components or pages that need distinctive visual identity
-- Refining existing interfaces for aesthetic excellence
-- Making design decisions around typography, color, spacing, and motion
-- Creating landing pages, dashboards, or marketing interfaces
-- Ensuring design consistency and intentionality across the application
-
-## How to Invoke
-
-Use in Claude Code conversations or as a specialized agent when building frontend features:
-```
-Agent({
-  description: "Build a distinctive, production-grade component/page",
-  subagent_type: "frontend-design",
-  prompt: "..."
-})
-```
-
-## Design System
-
-### Color Palette
-- **Primary** — `#007AFF` (Apple Blue) for CTAs, highlights
-- **Success** — `#34C759` (Apple Green) for positive states
-- **Warning** — `#FF9500` (Apple Orange) for alerts
-- **Danger** — `#FF3B30` (Apple Red) for destructive actions
-- **Background** — `#F5F5F7` (Light) / `#1D1D1D` (Dark, future)
-- **Text** — `#1D1D1D` (Dark) / `#F5F5F7` (Light, future)
-- **Secondary Text** — `#8E8E93` (Gray)
-
-### Typography
-- **Font Stack** — `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto`
-- **Headlines** — SF Pro Display (20-32px, font-weight 600-700)
-- **Body** — SF Pro Text (16-18px, font-weight 400)
-- **Small Text** — 14px, font-weight 400, color #8E8E93
-
-### Components
-- **Buttons** — Rounded corners (8px), padding 12-16px, subtle shadows
-- **Cards** — White background, shadow `0 1px 3px rgba(0,0,0,0.1)`, 8px radius
-- **Input Fields** — Border 1px #D1D1D6, focus ring #007AFF, padding 12px
-- **Lists** — Dividers 1px #D1D1D6, padding 16px
-- **Navigation** — Sticky top, background with backdrop-blur
-
-### Spacing (8px Grid)
-- 4px (half grid)
-- 8px, 16px, 24px, 32px, 40px, 48px
-
-### Animations
-- **Transition** — 200-300ms, ease-in-out
-- **Hover** — Subtle scale (98-102%), opacity shift
-- **Loading** — Skeleton screens (preferred over spinners)
-- **Feedback** — Toast notifications (brief, auto-dismiss)
-
-## WealthClick-Specific Components
-
-### Dashboard
-- Large, readable transaction list
-- At-a-glance balance display
-- Category breakdown (pie/bar chart)
-- Monthly trends
-- Call-to-action for adding transactions
-
-### Transaction Details
-- Large amount display
-- Description with optional notes
-- Category tag (changeable)
-- Date/time
-- Related transactions
-
-### Add/Edit Transaction
-- Minimal form (amount, description, category)
-- Calendar picker for date
-- Category suggestions
-- Clear save/cancel buttons
-
-## Key Principle
-
-**Form follows function.** Every design choice serves the user's goal of understanding and managing their finances. No decorative flourishes—only intentional details that enhance clarity and delight.
+- New pages or components
+- Design system consistency (Glass UI, colors, spacing)
+- RTL/Hebrew layout issues
+- i18n string additions
+- NavBar changes (new pages, active state)
+- Mobile/desktop responsive patterns
+- Chart or data visualization components (pure SVG, no chart library)

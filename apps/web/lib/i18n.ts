@@ -60,13 +60,13 @@ const dictionaries = {
       overviewSubtitle: "Your financial overview is ready. More features coming soon.",
       signOut: "Sign out",
       userManagement: "User Management",
-      // Metric cards
-      totalBalance: "Total Balance",
-      totalBalanceSub: "Connect accounts to get started",
-      thisMonth: "This Month",
-      thisMonthSub: "Spending overview",
+      // Metric cards (all scoped to selected month)
+      totalBalance: "Net",
+      totalBalanceSub: "Income minus expenses",
+      thisMonth: "Spending",
+      thisMonthSub: "Total expenses",
       savingsRate: "Savings Rate",
-      savingsRateSub: "Track your goals",
+      savingsRateSub: "Net as % of income",
       // Coming soon
       comingSoonTitle: "Your dashboard is being built",
       comingSoonDescription:
@@ -329,13 +329,13 @@ const dictionaries = {
       overviewSubtitle: "הסקירה הפיננסית שלך מוכנה. פיצ׳רים נוספים בקרוב.",
       signOut: "התנתקות",
       userManagement: "ניהול משתמשים",
-      // Metric cards
-      totalBalance: "יתרה כוללת",
-      totalBalanceSub: "חבר חשבונות כדי להתחיל",
-      thisMonth: "החודש",
-      thisMonthSub: "סקירת הוצאות",
+      // Metric cards (all scoped to selected month)
+      totalBalance: "נטו",
+      totalBalanceSub: "הכנסות פחות הוצאות",
+      thisMonth: "הוצאות",
+      thisMonthSub: "סך ההוצאות",
       savingsRate: "שיעור חיסכון",
-      savingsRateSub: "עקוב אחר המטרות שלך",
+      savingsRateSub: "נטו כאחוז מהכנסה",
       // Coming soon
       comingSoonTitle: "הלוח שלך נמצא בבנייה",
       comingSoonDescription:

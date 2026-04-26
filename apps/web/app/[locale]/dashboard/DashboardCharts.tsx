@@ -322,6 +322,7 @@ export default function DashboardCharts({ monthlyTotals, categoryBreakdown, loca
   const [slide, setSlide] = useState(0);
   const SLIDES = 2;
   const touchStartX = useRef<number | null>(null);
+  const todayMonth = new Date().toISOString().slice(0, 7);
 
   // Donut month state
   const [donutMonth, setDonutMonth]       = useState(currentMonth);
@@ -393,7 +394,7 @@ export default function DashboardCharts({ monthlyTotals, categoryBreakdown, loca
               <button
                 onClick={() => changeDonutMonth(shiftMonth(donutMonth, 1))}
                 aria-label="Next month"
-                disabled={donutMonth >= currentMonth}
+                disabled={donutMonth >= todayMonth}
                 className="flex h-6 w-6 items-center justify-center rounded-full text-white/35 transition-all hover:bg-white/[0.08] hover:text-white/70 disabled:opacity-25 disabled:cursor-not-allowed"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>

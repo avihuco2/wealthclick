@@ -5,11 +5,14 @@ import { NavBar } from "@/components/NavBar";
 import { getTransactionStats } from "@/lib/transactions";
 import { getMonthlyTotals, getCategoryBreakdown } from "@/lib/insights";
 import DashboardCharts from "./DashboardCharts";
+import DashboardMonthNav from "./DashboardMonthNav";
 
 export default async function DashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ month?: string }>;
 }) {
   const { locale } = await params;
   if (!isValidLocale(locale)) notFound();
@@ -22,16 +25,19 @@ export default async function DashboardPage({
 
   const firstName = session.user.name?.split(" ")[0] ?? null;
 
+  const { month: monthParam } = await searchParams;
+  const todayMonth = new Date().toISOString().slice(0, 7);
+  const selectedMonth =
+    monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : todayMonth;
+
   const userId = session.user.id;
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const [allTimeStats, monthStats, monthlyTotals, categoryBreakdown] = userId
+  const [monthStats, monthlyTotals, categoryBreakdown] = userId
     ? await Promise.all([
-        getTransactionStats(userId),
-        getTransactionStats(userId, currentMonth),
+        getTransactionStats(userId, selectedMonth),
         getMonthlyTotals(userId, 6),
-        getCategoryBreakdown(userId, currentMonth),
+        getCategoryBreakdown(userId, selectedMonth),
       ])
-    : [null, null, [], []];
+    : [null, [], []];
 
   const fmt = (val: string | null | undefined, signed = false) =>
     val == null
@@ -43,9 +49,9 @@ export default async function DashboardPage({
           maximumFractionDigits: 0,
         }).format(signed ? parseFloat(val) : Math.abs(parseFloat(val)));
 
-  const balanceNet = allTimeStats ? parseFloat(allTimeStats.net) : null;
-  const balanceValue = allTimeStats ? fmt(allTimeStats.net, true) : "—";
-  const balanceColor = balanceNet === null ? "text-white" : balanceNet >= 0 ? "oklch(0.80 0.14 142)" : "oklch(0.78 0.16 27)";
+  const netVal = monthStats ? parseFloat(monthStats.net) : null;
+  const balanceValue = monthStats ? fmt(monthStats.net, true) : "—";
+  const balanceColor = netVal === null ? "white" : netVal >= 0 ? "oklch(0.80 0.14 142)" : "oklch(0.78 0.16 27)";
   const spendingValue = monthStats ? fmt(monthStats.total_expenses) : "—";
   const savingsRate =
     monthStats && parseFloat(monthStats.total_income) > 0
@@ -97,6 +103,11 @@ export default async function DashboardPage({
           <p className="mt-2 text-[15px] text-white/45">{t.overviewSubtitle}</p>
         </div>
 
+        {/* Month navigator */}
+        <div className="mb-6 flex items-center justify-center">
+          <DashboardMonthNav month={selectedMonth} locale={typedLocale} />
+        </div>
+
         {/* Metric cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <a href={`/${typedLocale}/transactions`} className="block">
@@ -131,7 +142,7 @@ export default async function DashboardPage({
             monthlyTotals={monthlyTotals}
             categoryBreakdown={categoryBreakdown}
             locale={typedLocale}
-            currentMonth={currentMonth}
+            currentMonth={selectedMonth}
             t={{
               chartCashFlow:      t.chartCashFlow,
               chartSpending:      t.chartSpending,

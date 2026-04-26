@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import type { Locale } from "@/lib/i18n";
-import type { MonthlyTotals, CategoryBreakdown } from "@/lib/insights";
+import type { MonthlyTotals, CategoryBreakdown, AccountBreakdown } from "@/lib/insights";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,31 +15,17 @@ type ChartT = {
   chartNoData: string;
   chartNoExpenses: string;
   chartUncategorized: string;
+  chartByAccount: string;
+  chartNoAccounts: string;
 };
 
 type Props = {
   monthlyTotals: MonthlyTotals[];
   categoryBreakdown: CategoryBreakdown[];
+  accountBreakdown: AccountBreakdown[];
   locale: Locale;
-  currentMonth: string; // YYYY-MM
   t: ChartT;
 };
-
-// ─── Month helpers ────────────────────────────────────────────────────────────
-
-function shiftMonth(month: string, delta: number): string {
-  const [y, m] = month.split("-").map(Number);
-  const d = new Date(y, m - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function fmtMonthLabel(month: string, locale: Locale): string {
-  const [y, m] = month.split("-").map(Number);
-  return new Intl.DateTimeFormat(locale === "he" ? "he-IL" : "en-US", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(y, m - 1, 1));
-}
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
@@ -293,6 +279,46 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
   );
 }
 
+// ─── Account Bars ─────────────────────────────────────────────────────────────
+
+function AccountBars({ data, t }: { data: AccountBreakdown[]; t: ChartT }) {
+  if (!data.length) {
+    return (
+      <div className="flex h-[155px] items-center justify-center text-[12px] text-white/25">
+        {t.chartNoAccounts}
+      </div>
+    );
+  }
+
+  const ACCOUNT_PALETTE = ["#007AFF","#5856D6","#FF9500","#34C759","#FF2D55","#00C7BE","#30B0C7","#FF6B6B"];
+
+  return (
+    <div className="flex flex-col gap-3">
+      {data.map((row, i) => (
+        <div key={row.account} className="flex items-center gap-3 min-w-0">
+          <span
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: ACCOUNT_PALETTE[i % ACCOUNT_PALETTE.length] }}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline justify-between gap-2 mb-1">
+              <span className="text-[12px] text-white/60 truncate">{row.account}</span>
+              <span className="text-[11px] text-white/40 shrink-0">{fmtILS(row.total)}</span>
+            </div>
+            <div className="h-[4px] w-full overflow-hidden rounded-full bg-white/[0.07]">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${row.pct}%`, backgroundColor: ACCOUNT_PALETTE[i % ACCOUNT_PALETTE.length] }}
+              />
+            </div>
+          </div>
+          <span className="text-[10px] text-white/30 w-7 text-end shrink-0">{row.pct.toFixed(0)}%</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Slide header ─────────────────────────────────────────────────────────────
 
 function SlideHeader({ title, legend }: {
@@ -318,26 +344,10 @@ function SlideHeader({ title, legend }: {
 
 // ─── Main Carousel ────────────────────────────────────────────────────────────
 
-export default function DashboardCharts({ monthlyTotals, categoryBreakdown, locale, currentMonth, t }: Props) {
+export default function DashboardCharts({ monthlyTotals, categoryBreakdown, accountBreakdown, locale, t }: Props) {
   const [slide, setSlide] = useState(0);
-  const SLIDES = 2;
+  const SLIDES = 3;
   const touchStartX = useRef<number | null>(null);
-  const todayMonth = new Date().toISOString().slice(0, 7);
-
-  // Donut month state
-  const [donutMonth, setDonutMonth]       = useState(currentMonth);
-  const [donutData,  setDonutData]        = useState<CategoryBreakdown[]>(categoryBreakdown);
-  const [donutLoading, setDonutLoading]   = useState(false);
-
-  const changeDonutMonth = useCallback(async (month: string) => {
-    setDonutMonth(month);
-    setDonutLoading(true);
-    try {
-      const res = await fetch(`/api/dashboard/spending?month=${month}`);
-      if (res.ok) setDonutData(await res.json());
-    } catch { /* keep previous data */ }
-    finally { setDonutLoading(false); }
-  }, []);
 
   const prev = () => setSlide((s) => Math.max(0, s - 1));
   const next = () => setSlide((s) => Math.min(SLIDES - 1, s + 1));
@@ -375,33 +385,14 @@ export default function DashboardCharts({ monthlyTotals, categoryBreakdown, loca
 
         {/* Slide 1 — Spending Donut */}
         <div className="min-w-full px-5 pt-5 pb-11">
-          <div className="mb-4 flex items-center gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/35">
-              {t.chartSpending}
-            </p>
-            {/* Month navigator */}
-            <div className="ms-auto flex items-center gap-1">
-              <button
-                onClick={() => changeDonutMonth(shiftMonth(donutMonth, -1))}
-                aria-label="Previous month"
-                className="flex h-6 w-6 items-center justify-center rounded-full text-white/35 transition-all hover:bg-white/[0.08] hover:text-white/70"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
-              <span className="min-w-[90px] text-center text-[11px] text-white/50">
-                {donutLoading ? "…" : fmtMonthLabel(donutMonth, locale)}
-              </span>
-              <button
-                onClick={() => changeDonutMonth(shiftMonth(donutMonth, 1))}
-                aria-label="Next month"
-                disabled={donutMonth >= todayMonth}
-                className="flex h-6 w-6 items-center justify-center rounded-full text-white/35 transition-all hover:bg-white/[0.08] hover:text-white/70 disabled:opacity-25 disabled:cursor-not-allowed"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-            </div>
-          </div>
-          <SpendingDonut data={donutData} locale={locale} t={t} />
+          <SlideHeader title={t.chartSpending} />
+          <SpendingDonut data={categoryBreakdown} locale={locale} t={t} />
+        </div>
+
+        {/* Slide 2 — Spending by Account */}
+        <div className="min-w-full px-5 pt-5 pb-11">
+          <SlideHeader title={t.chartByAccount} />
+          <AccountBars data={accountBreakdown} t={t} />
         </div>
       </div>
 

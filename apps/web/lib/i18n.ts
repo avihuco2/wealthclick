@@ -95,6 +95,8 @@ const dictionaries = {
       chartNoData: "No data yet — add transactions to get started",
       chartNoExpenses: "No expenses this month",
       chartUncategorized: "Uncategorized",
+      chartByAccount: "Spending by Account",
+      chartNoAccounts: "No account data this month",
     },
     transactions: {
       title: "Transactions",
@@ -364,6 +366,8 @@ const dictionaries = {
       chartNoData: "אין נתונים עדיין — הוסף עסקאות כדי להתחיל",
       chartNoExpenses: "אין הוצאות החודש",
       chartUncategorized: "ללא קטגוריה",
+      chartByAccount: "הוצאות לפי חשבון",
+      chartNoAccounts: "אין נתוני חשבון החודש",
     },
     transactions: {
       title: "עסקאות",

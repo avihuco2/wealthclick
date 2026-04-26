@@ -99,6 +99,12 @@ async function getPeriodComparison(
   return row;
 }
 
+export type AccountBreakdown = {
+  account: string;
+  total: string;
+  pct: number;
+};
+
 // ─── Monthly Totals (for dashboard cash flow chart) ───────────────────────
 
 export type MonthlyTotals = {
@@ -269,6 +275,32 @@ async function getCategoryTrends(
        COALESCE(pri.category_id::text, 'uncategorized')
     ORDER BY COALESCE(cur.total, 0) DESC
   `;
+}
+
+export async function getAccountBreakdown(
+  userId: string,
+  month: string,
+): Promise<AccountBreakdown[]> {
+  const sql = getDb();
+
+  const rows = await sql<{ account: string | null; total: string }[]>`
+    SELECT
+      COALESCE(account, 'Other') AS account,
+      SUM(amount)::text AS total
+    FROM transactions
+    WHERE user_id = ${userId}
+      AND type = 'expense'
+      AND to_char(date, 'YYYY-MM') = ${month}
+    GROUP BY COALESCE(account, 'Other')
+    ORDER BY SUM(amount) DESC
+  `;
+
+  const grandTotal = rows.reduce((s, r) => s + parseFloat(r.total), 0);
+  return rows.map((r) => ({
+    account: r.account!,
+    total: r.total,
+    pct: grandTotal > 0 ? (parseFloat(r.total) / grandTotal) * 100 : 0,
+  }));
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────

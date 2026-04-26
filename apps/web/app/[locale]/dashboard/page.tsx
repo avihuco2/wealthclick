@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { NavBar } from "@/components/NavBar";
 import { getTransactionStats } from "@/lib/transactions";
-import { getMonthlyTotals, getCategoryBreakdown } from "@/lib/insights";
+import { getMonthlyTotals, getCategoryBreakdown, getAccountBreakdown } from "@/lib/insights";
 import DashboardCharts from "./DashboardCharts";
 import DashboardMonthNav from "./DashboardMonthNav";
 
@@ -31,13 +31,14 @@ export default async function DashboardPage({
     monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : todayMonth;
 
   const userId = session.user.id;
-  const [monthStats, monthlyTotals, categoryBreakdown] = userId
+  const [monthStats, monthlyTotals, categoryBreakdown, accountBreakdown] = userId
     ? await Promise.all([
         getTransactionStats(userId, selectedMonth),
         getMonthlyTotals(userId, 6),
         getCategoryBreakdown(userId, selectedMonth),
+        getAccountBreakdown(userId, selectedMonth),
       ])
-    : [null, [], []];
+    : [null, [], [], []];
 
   const fmt = (val: string | null | undefined, signed = false) =>
     val == null
@@ -141,8 +142,8 @@ export default async function DashboardPage({
           <DashboardCharts
             monthlyTotals={monthlyTotals}
             categoryBreakdown={categoryBreakdown}
+            accountBreakdown={accountBreakdown}
             locale={typedLocale}
-            currentMonth={selectedMonth}
             t={{
               chartCashFlow:      t.chartCashFlow,
               chartSpending:      t.chartSpending,
@@ -152,6 +153,8 @@ export default async function DashboardPage({
               chartNoData:        t.chartNoData,
               chartNoExpenses:    t.chartNoExpenses,
               chartUncategorized: t.chartUncategorized,
+              chartByAccount:     t.chartByAccount,
+              chartNoAccounts:    t.chartNoAccounts,
             }}
           />
         </div>

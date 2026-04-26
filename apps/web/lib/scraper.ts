@@ -107,17 +107,14 @@ async function runScrape(
       startDate,
       verbose: SCRAPER_DEBUG,
       browserLaunchOptions: { args: PUPPETEER_ARGS },
-      prepareBrowser: async (browser) => {
-        // Hide automation signals on every new page — defeats navigator.webdriver checks
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        browser.on("targetcreated", async (target: any) => {
-          const page = await target.page();
-          if (!page) return;
-          await page.evaluateOnNewDocument(() => {
-            Object.defineProperty(navigator, "webdriver", { get: () => false });
-          });
-          await page.setUserAgent(REAL_USER_AGENT);
+      preparePage: async (page) => {
+        // Hide automation signals before any navigation — defeats navigator.webdriver checks
+        await page.evaluateOnNewDocument(() => {
+          Object.defineProperty(navigator, "webdriver", { get: () => false });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          delete (window as any).chrome;
         });
+        await page.setUserAgent(REAL_USER_AGENT);
       },
     } as Parameters<typeof createScraper>[0]);
 

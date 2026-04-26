@@ -363,7 +363,7 @@ export default function DashboardCharts({ monthlyTotals, categoryBreakdown, acco
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl">
+    <div dir="ltr" className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl">
       {/* Slide strip */}
       <div
         className="flex transition-transform duration-300 ease-out"

@@ -13,6 +13,8 @@ const PUPPETEER_ARGS = [
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
   "--disable-gpu",
+  // Residential proxy — bypasses Cloudflare TLS fingerprint block on Israeli bank sites
+  ...(process.env.SCRAPER_PROXY_URL ? [`--proxy-server=${process.env.SCRAPER_PROXY_URL}`] : []),
 ];
 
 // Set DEBUG=israeli-bank-scrapers:* in the environment to enable verbose library logs

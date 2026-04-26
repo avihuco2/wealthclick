@@ -13,12 +13,7 @@ const PUPPETEER_ARGS = [
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
   "--disable-gpu",
-  // Anti-bot-detection: removes navigator.webdriver flag that sites like Isracard check
-  "--disable-blink-features=AutomationControlled",
 ];
-
-const REAL_USER_AGENT =
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 // Set DEBUG=israeli-bank-scrapers:* in the environment to enable verbose library logs
 const SCRAPER_DEBUG = process.env.SCRAPER_DEBUG === "true";
@@ -92,6 +87,15 @@ async function runScrape(
     // Dynamic import keeps Puppeteer/Chromium out of the Next.js client bundle
     const { createScraper, CompanyTypes } = await import("israeli-bank-scrapers");
 
+    // Launch stealth browser — bypasses Cloudflare Bot Management (e.g. Isracard)
+    const puppeteerExtra = (await import("puppeteer-extra")).default;
+    const StealthPlugin = (await import("puppeteer-extra-plugin-stealth")).default;
+    puppeteerExtra.use(StealthPlugin());
+    const stealthBrowser = await puppeteerExtra.launch({
+      headless: true,
+      args: PUPPETEER_ARGS,
+    });
+
     const companyType = CompanyTypes[companyId as keyof typeof CompanyTypes];
     if (!companyType) throw new Error(`Unknown companyId: ${companyId}`);
 
@@ -106,16 +110,9 @@ async function runScrape(
       companyId: companyType,
       startDate,
       verbose: SCRAPER_DEBUG,
-      browserLaunchOptions: { args: PUPPETEER_ARGS },
-      preparePage: async (page) => {
-        // Hide automation signals before any navigation — defeats navigator.webdriver checks
-        await page.evaluateOnNewDocument(() => {
-          Object.defineProperty(navigator, "webdriver", { get: () => false });
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          delete (window as any).chrome;
-        });
-        await page.setUserAgent(REAL_USER_AGENT);
-      },
+      // Pass stealth browser — skips internal puppeteer launch, uses our stealth instance
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      browser: stealthBrowser as any,
     } as Parameters<typeof createScraper>[0]);
 
     console.log(`[scraper] job ${jobId} — browser launched, logging in…`);

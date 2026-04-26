@@ -13,7 +13,7 @@ export async function POST() {
 
   const txns   = await sql`DELETE FROM transactions WHERE user_id = ${userId} RETURNING id`;
   await sql`DELETE FROM whatsapp_conversations WHERE user_id = ${userId}`;
-  await sql`DELETE FROM scrape_history WHERE bank_account_id IN (SELECT id FROM bank_accounts WHERE user_id = ${userId})`;
+  await sql`DELETE FROM scrape_jobs WHERE user_id = ${userId}`;
 
   console.log(`[admin/clear-data] cleared ${txns.length} transactions for user ${userId}`);
   return NextResponse.json({ ok: true, transactions_deleted: txns.length });

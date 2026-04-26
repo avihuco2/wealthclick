@@ -163,6 +163,8 @@ async function runScrape(
       for (const txn of account.txns) {
         const externalId = makeExternalId(companyId, account.accountNumber, txn);
         const amount = Math.abs(txn.chargedAmount);
+        // DB constraint: amount > 0. Skip zero-value txns (canceled, fees, loan placeholders).
+        if (amount === 0) continue;
         const type = txn.chargedAmount < 0 ? "expense" : "income";
         const date = txn.date.slice(0, 10); // YYYY-MM-DD
         const categoryId = categoryRules.get(txn.description.trim()) ?? null;

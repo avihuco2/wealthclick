@@ -223,11 +223,12 @@ MCP server: `/api/mcp/` (for Claude Desktop integration)
 Push to main
   → GitHub Actions (deploy.yml)
   → OIDC assume AWS role
-  → SSM SendCommand to EC2 i-0f345bf0dc26ae184 (il-central-1)
-      → cd apps/web && git pull
-      → npm ci
-      → node scripts/migrate.mjs
-      → pm2 restart wealthclick
+  → SSM SendCommand to EC2 i-09cf3d240fcbc0123 (il-central-1)
+      → write /opt/wealthclick/apps/web/.env from Secrets Manager (wealthclick/app)
+      → cd /opt/wealthclick && git pull
+      → cd apps/web && npm ci && npm run build
+      → npm run db:migrate
+      → pm2 restart wealthclick --update-env  (runs as ubuntu user)
 ```
 
 EC2 serves Next.js directly via PM2. ALB (public subnet) → EC2 port 3000 (private subnet).

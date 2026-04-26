@@ -13,7 +13,12 @@ const PUPPETEER_ARGS = [
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
   "--disable-gpu",
+  // Anti-bot-detection: removes navigator.webdriver flag that sites like Isracard check
+  "--disable-blink-features=AutomationControlled",
 ];
+
+const REAL_USER_AGENT =
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 // Set DEBUG=israeli-bank-scrapers:* in the environment to enable verbose library logs
 const SCRAPER_DEBUG = process.env.SCRAPER_DEBUG === "true";
@@ -102,6 +107,18 @@ async function runScrape(
       startDate,
       verbose: SCRAPER_DEBUG,
       browserLaunchOptions: { args: PUPPETEER_ARGS },
+      prepareBrowser: async (browser) => {
+        // Hide automation signals on every new page — defeats navigator.webdriver checks
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        browser.on("targetcreated", async (target: any) => {
+          const page = await target.page();
+          if (!page) return;
+          await page.evaluateOnNewDocument(() => {
+            Object.defineProperty(navigator, "webdriver", { get: () => false });
+          });
+          await page.setUserAgent(REAL_USER_AGENT);
+        });
+      },
     } as Parameters<typeof createScraper>[0]);
 
     console.log(`[scraper] job ${jobId} — browser launched, logging in…`);

@@ -8,7 +8,7 @@ import {
 import { getScrapeHistoryMonths } from "./settings";
 import { loadCategoryRules, applyRulesToUncategorized } from "./categoryRules";
 
-const PUPPETEER_ARGS = [
+const BASE_PUPPETEER_ARGS = [
   "--no-sandbox",
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
@@ -16,6 +16,14 @@ const PUPPETEER_ARGS = [
   // Residential proxy — bypasses Cloudflare TLS fingerprint block on Israeli bank sites
   ...(process.env.SCRAPER_PROXY_URL ? [`--proxy-server=${process.env.SCRAPER_PROXY_URL}`] : []),
 ];
+
+/** Per-company user-data-dir → persists __cf_bm cookie across runs (avoids parallel-scrape conflict) */
+function puppeteerArgsForCompany(companyId: string): string[] {
+  return [
+    ...BASE_PUPPETEER_ARGS,
+    `--user-data-dir=/tmp/wealthclick-chrome-${companyId.replace(/[^a-z0-9_-]/gi, "")}`,
+  ];
+}
 
 // Set DEBUG=israeli-bank-scrapers:* in the environment to enable verbose library logs
 const SCRAPER_DEBUG = process.env.SCRAPER_DEBUG === "true";
@@ -104,7 +112,7 @@ async function runScrape(
       startDate,
       verbose: SCRAPER_DEBUG,
       browserLaunchOptions: {
-        args: PUPPETEER_ARGS,
+        args: puppeteerArgsForCompany(companyId),
         // Use real Chrome/Edge binary if SCRAPER_BROWSER_PATH is set — bypasses
         // Cloudflare's bundled-Chromium fingerprint detection (e.g. Isracard)
         ...(process.env.SCRAPER_BROWSER_PATH

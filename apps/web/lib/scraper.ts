@@ -103,7 +103,14 @@ async function runScrape(
       companyId: companyType,
       startDate,
       verbose: SCRAPER_DEBUG,
-      browserLaunchOptions: { args: PUPPETEER_ARGS },
+      browserLaunchOptions: {
+        args: PUPPETEER_ARGS,
+        // Use real Chrome/Edge binary if SCRAPER_BROWSER_PATH is set — bypasses
+        // Cloudflare's bundled-Chromium fingerprint detection (e.g. Isracard)
+        ...(process.env.SCRAPER_BROWSER_PATH
+          ? { executablePath: process.env.SCRAPER_BROWSER_PATH }
+          : {}),
+      },
       preparePage: async (page) => {
         // Manual stealth patches — applied before any navigation
         await page.evaluateOnNewDocument(() => {

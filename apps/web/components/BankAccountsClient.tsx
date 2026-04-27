@@ -284,20 +284,9 @@ export default function BankAccountsClient({
             ))}
             {savingInterval && <SpinnerIcon />}
           </div>
-          <div className="ms-auto flex items-center gap-2">
-            <span className={`text-[12px] font-medium ${autoSync ? "text-[#34C759]" : "text-amber-400"}`}>
-              {autoSync ? "On" : "Off"}
-            </span>
-            <button
-              onClick={handleAutoSyncToggle}
-              disabled={savingAutoSync}
-              role="switch"
-              aria-checked={autoSync}
-              className={`relative inline-flex h-6 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 disabled:opacity-50 ${autoSync ? "bg-[#34C759]" : "bg-white/20"}`}
-            >
-              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${autoSync ? "translate-x-4" : "translate-x-0"}`} />
-            </button>
-          </div>
+          <span className="ms-auto text-[12px] text-white/30">
+            {enabledCount}/{accounts.length} auto-sync
+          </span>
         </div>
         {/* Divider */}
         <div className="mx-4 h-px bg-white/[0.05]" />
@@ -397,7 +386,7 @@ export default function BankAccountsClient({
                 {/* Actions */}
                 <div className="flex shrink-0 flex-col items-end gap-2">
                   <div className="flex items-center gap-2">
-                    {!isDisabled && (
+                    {(
                       <button
                         onClick={() => handleScrape(account)}
                         disabled={isRunning}

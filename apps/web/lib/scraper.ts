@@ -13,6 +13,12 @@ const BASE_PUPPETEER_ARGS = [
   "--disable-setuid-sandbox",
   "--disable-dev-shm-usage",
   "--disable-gpu",
+  // Critical: removes the CDP automation fingerprint that bank sites detect
+  "--disable-blink-features=AutomationControlled",
+  // Use new headless mode (Chrome 112+) — behaves closer to real browser
+  "--headless=new",
+  // Mimic a real user-agent window size
+  "--window-size=1280,800",
   // Residential proxy — bypasses Cloudflare TLS fingerprint block on Israeli bank sites
   ...(process.env.SCRAPER_PROXY_URL ? [`--proxy-server=${process.env.SCRAPER_PROXY_URL}`] : []),
 ];
@@ -120,9 +126,15 @@ async function runScrape(
           : {}),
       },
       preparePage: async (page) => {
+        // Set a realistic user-agent matching the real Chrome binary version
+        await page.setUserAgent(
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
+        );
+        await page.setViewport({ width: 1280, height: 800 });
+
         // Manual stealth patches — applied before any navigation
         await page.evaluateOnNewDocument(() => {
-          // 1. Hide webdriver flag
+          // 1. Hide webdriver flag (belt-and-suspenders alongside --disable-blink-features)
           Object.defineProperty(navigator, "webdriver", { get: () => false });
 
           // 2. Fake plugins (real Chrome has plugins; headless has none)

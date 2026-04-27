@@ -192,68 +192,71 @@ async function runScrape(
               : originalQuery(parameters);
         });
 
-        // OTP relay — Hapoalim is a SPA, OTP form appears via DOM mutation with no URL change.
-        // exposeFunction bridges Node → browser: when DOM polling detects the OTP input,
-        // it calls __otpDetected(), we notify WhatsApp, poll DB for the code, then fill the form.
-        let otpHandled = false;
-        await page.exposeFunction("__otpDetected", async () => {
-          if (otpHandled) return;
-          otpHandled = true;
-          console.log(`[scraper] job ${jobId} — OTP input detected in DOM`);
-          await notifyOtpViaWhatsApp(userId, jobId, companyId);
-          const code = await pollJobOtp(jobId, 120_000);
-          if (!code) {
-            console.warn(`[scraper] job ${jobId} — OTP timeout after 120s`);
-            return;
+        // Extend waitForRedirect timeout: it calls page.waitForFunction({timeout:20000}).
+        // Monkey-patch the instance method to raise any short timeout to 3 minutes.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const _origWFF = (page as any).waitForFunction.bind(page);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (page as any).waitForFunction = (fn: unknown, opts: Record<string, unknown> = {}, ...args: unknown[]) => {
+          if (opts && typeof opts.timeout === "number" && opts.timeout > 0 && opts.timeout <= 30000) {
+            opts = { ...opts, timeout: 180_000 };
           }
-          console.log(`[scraper] job ${jobId} — OTP received, filling form`);
-          const filled = await page.evaluate((otpCode: string) => {
-            const selectors = [
-              "input[type='tel']", "input[type='number']",
-              "input[name='otp']", "input[id*='otp']", "input[id*='sms']",
-              "input[placeholder*='קוד']", "input[autocomplete='one-time-code']",
-            ];
-            for (const sel of selectors) {
-              const el = document.querySelector<HTMLInputElement>(sel);
-              if (el) {
-                el.focus();
-                el.value = otpCode;
-                el.dispatchEvent(new Event("input", { bubbles: true }));
-                el.dispatchEvent(new Event("change", { bubbles: true }));
-                return sel;
-              }
-            }
-            return null;
-          }, code);
-          if (filled) {
-            console.log(`[scraper] job ${jobId} — filled OTP into "${filled}", submitting`);
-            await page.keyboard.press("Enter");
-          } else {
-            console.warn(`[scraper] job ${jobId} — OTP input selector not found`);
-          }
-        });
+          return _origWFF(fn, opts, ...args);
+        };
 
-        // Inject DOM observer that fires __otpDetected when OTP input appears
-        await page.evaluateOnNewDocument(() => {
-          const OTP_SELECTORS = [
-            "input[type='tel']", "input[type='number']",
-            "input[name='otp']", "input[id*='otp']", "input[id*='sms']",
-            "input[placeholder*='קוד']", "input[autocomplete='one-time-code']",
-          ];
-          function checkForOtp() {
-            for (const sel of OTP_SELECTORS) {
-              if (document.querySelector(sel)) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (window as any).__otpDetected?.();
+        // OTP relay — Node-side polling detects when password field disappears (OTP screen).
+        // Runs in background; fills OTP form once code arrives via WhatsApp.
+        let otpHandled = false;
+        (async () => {
+          // Wait for login form submission before polling
+          await new Promise((r) => setTimeout(r, 6000));
+          const deadline = Date.now() + 170_000;
+          while (Date.now() < deadline && !otpHandled) {
+            try {
+              const state = await page.evaluate(() => {
+                const inputs = Array.from(document.querySelectorAll("input"));
+                const hasPassword = inputs.some((i) => i.type === "password");
+                const visibleInputs = inputs.filter(
+                  (i) => i.type !== "hidden" && i.offsetParent !== null,
+                );
+                return { hasPassword, visibleCount: visibleInputs.length };
+              });
+              // OTP page: password field gone, at least one visible input remains
+              if (!state.hasPassword && state.visibleCount > 0 && !otpHandled) {
+                otpHandled = true;
+                console.log(`[scraper] job ${jobId} — OTP screen detected (no password field, ${state.visibleCount} input(s))`);
+                await notifyOtpViaWhatsApp(userId, jobId, companyId);
+                const code = await pollJobOtp(jobId, 120_000);
+                if (!code) {
+                  console.warn(`[scraper] job ${jobId} — OTP timeout after 120s`);
+                  return;
+                }
+                console.log(`[scraper] job ${jobId} — OTP received, filling form`);
+                // Type into whichever visible input is focused / first
+                const filled = await page.evaluate((otpCode: string) => {
+                  const inputs = Array.from(document.querySelectorAll("input")).filter(
+                    (i) => i.type !== "hidden" && i.offsetParent !== null,
+                  );
+                  const el = (inputs.find((i) => i === document.activeElement) ?? inputs[0]) as HTMLInputElement | undefined;
+                  if (!el) return null;
+                  el.focus();
+                  el.value = otpCode;
+                  el.dispatchEvent(new Event("input", { bubbles: true }));
+                  el.dispatchEvent(new Event("change", { bubbles: true }));
+                  return el.outerHTML.slice(0, 80);
+                }, code);
+                if (filled) {
+                  console.log(`[scraper] job ${jobId} — filled OTP into: ${filled}`);
+                  await page.keyboard.press("Enter");
+                } else {
+                  console.warn(`[scraper] job ${jobId} — no visible input found for OTP`);
+                }
                 return;
               }
-            }
+            } catch { /* page navigating, ignore */ }
+            await new Promise((r) => setTimeout(r, 2000));
           }
-          const observer = new MutationObserver(checkForOtp);
-          observer.observe(document, { childList: true, subtree: true });
-          // Also check on DOMContentLoaded in case form is already there
-          document.addEventListener("DOMContentLoaded", checkForOtp);
-        });
+        })().catch((e) => console.warn(`[scraper] job ${jobId} — OTP polling error:`, e));
       },
     } as Parameters<typeof createScraper>[0]);
 

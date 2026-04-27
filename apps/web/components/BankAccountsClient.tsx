@@ -578,7 +578,31 @@ function ConnectBankModal({
 
 // ─── Bank Logos ───────────────────────────────────────────────────────────────
 
+// Map companyId → public/banks/<filename> (add entry as you drop files in)
+const BANK_LOGO_FILES: Record<string, string> = {
+  hapoalim: "/banks/hapoalim.png",
+};
+
 function BankLogo({ companyId, size = 40 }: { companyId: string; size?: number }) {
+  const logoFile = BANK_LOGO_FILES[companyId];
+  if (logoFile) {
+    return (
+      <div
+        style={{ width: size, height: size }}
+        className="shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logoFile}
+          alt={companyId}
+          width={size}
+          height={size}
+          style={{ width: size, height: size, objectFit: "contain", padding: size * 0.08 }}
+        />
+      </div>
+    );
+  }
+
   const logos: Record<string, React.ReactNode> = {
     hapoalim: (
       // Bank Hapoalim — red square with white "פ" / stylised H

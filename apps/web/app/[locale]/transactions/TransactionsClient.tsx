@@ -104,7 +104,18 @@ export default function TransactionsClient({
 
   // Filters
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterAccount, setFilterAccount] = useState<string>("all");
   const [search, setSearch] = useState("");
+
+  // Derived filter options from transactions list
+  const accountOptions = useMemo(() => {
+    const seen = new Set<string>();
+    for (const tx of transactions) {
+      if (tx.account) seen.add(tx.account);
+    }
+    return Array.from(seen).sort();
+  }, [transactions]);
 
   useEffect(() => {
     setFormType(editingTx?.type ?? "expense");
@@ -168,6 +179,20 @@ export default function TransactionsClient({
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       if (filterType !== "all" && tx.type !== filterType) return false;
+      if (filterCategory !== "all") {
+        if (filterCategory === "__none__") {
+          if (tx.category_id !== null) return false;
+        } else {
+          if (tx.category_id !== filterCategory) return false;
+        }
+      }
+      if (filterAccount !== "all") {
+        if (filterAccount === "__none__") {
+          if (tx.account) return false;
+        } else {
+          if (tx.account !== filterAccount) return false;
+        }
+      }
       if (search) {
         const q = search.toLowerCase();
         const cat = locale === "he" ? tx.category_name_he : tx.category_name_en;
@@ -179,7 +204,7 @@ export default function TransactionsClient({
       }
       return true;
     });
-  }, [transactions, filterType, search, locale]);
+  }, [transactions, filterType, filterCategory, filterAccount, search, locale]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -301,19 +326,51 @@ export default function TransactionsClient({
       </div>
 
       {/* Filter + Search */}
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-1 rounded-xl border border-white/[0.08] bg-white/[0.04] p-1">
-          {(["all", "income", "expense"] as const).map((ft) => (
-            <button key={ft} onClick={() => setFilterType(ft)}
-              className={cn("flex-1 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all",
-                filterType === ft ? "bg-white/[0.12] text-white" : "text-white/40 hover:text-white/70")}>
-              {ft === "all" ? t.filterAll : ft === "income" ? t.filterIncome : t.filterExpense}
-            </button>
-          ))}
+      <div className="mb-4 flex flex-col gap-2">
+        {/* Row 1: type toggle + search */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-1 rounded-xl border border-white/[0.08] bg-white/[0.04] p-1">
+            {(["all", "income", "expense"] as const).map((ft) => (
+              <button key={ft} onClick={() => setFilterType(ft)}
+                className={cn("flex-1 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all",
+                  filterType === ft ? "bg-white/[0.12] text-white" : "text-white/40 hover:text-white/70")}>
+                {ft === "all" ? t.filterAll : ft === "income" ? t.filterIncome : t.filterExpense}
+              </button>
+            ))}
+          </div>
+          <input type="text" placeholder={`${t.description}...`} value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2 text-[13px] text-white placeholder-white/25 outline-none backdrop-blur-md transition-all focus:border-white/25 focus:bg-white/[0.09] sm:w-48" />
         </div>
-        <input type="text" placeholder={`${t.description}...`} value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2 text-[13px] text-white placeholder-white/25 outline-none backdrop-blur-md transition-all focus:border-white/25 focus:bg-white/[0.09] sm:w-48" />
+        {/* Row 2: category + account dropdowns */}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="flex-1 rounded-xl border border-white/10 bg-[oklch(0.12_0.02_260)] px-4 py-2 text-[13px] text-white/70 outline-none transition-all focus:border-white/25"
+          >
+            <option value="all">{t.allCategories}</option>
+            <option value="__none__">{t.noCategory}</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.emoji} {locale === "he" ? cat.name_he : cat.name_en}
+              </option>
+            ))}
+          </select>
+          {accountOptions.length > 0 && (
+            <select
+              value={filterAccount}
+              onChange={(e) => setFilterAccount(e.target.value)}
+              className="flex-1 rounded-xl border border-white/10 bg-[oklch(0.12_0.02_260)] px-4 py-2 text-[13px] text-white/70 outline-none transition-all focus:border-white/25"
+            >
+              <option value="all">{t.allAccounts}</option>
+              <option value="__none__">—</option>
+              {accountOptions.map((acc) => (
+                <option key={acc} value={acc}>{acc}</option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
       {/* Transaction list */}

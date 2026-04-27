@@ -3,8 +3,10 @@ import { redirect, notFound } from "next/navigation";
 import { getDictionary, isValidLocale, type Locale } from "@/lib/i18n";
 import { NavBar } from "@/components/NavBar";
 import { getDb } from "@/lib/db";
+import { getAutoSyncEnabled } from "@/lib/settings";
 import ApiKeysClient from "./ApiKeysClient";
 import WhatsAppSection from "./WhatsAppSection";
+import ScraperSettingsSection from "./ScraperSettingsSection";
 
 export default async function SettingsPage({
   params,
@@ -22,12 +24,15 @@ export default async function SettingsPage({
   if (!session?.user?.id) redirect(`/${locale}/login`);
 
   const sql = getDb();
-  const keys = await sql<{ id: string; name: string; created_at: string; last_used_at: string | null }[]>`
-    SELECT id, name, created_at::text, last_used_at::text
-    FROM api_keys
-    WHERE user_id = ${session.user.id}
-    ORDER BY created_at DESC
-  `;
+  const [keys, autoSyncEnabled] = await Promise.all([
+    sql<{ id: string; name: string; created_at: string; last_used_at: string | null }[]>`
+      SELECT id, name, created_at::text, last_used_at::text
+      FROM api_keys
+      WHERE user_id = ${session.user.id}
+      ORDER BY created_at DESC
+    `,
+    getAutoSyncEnabled(),
+  ]);
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
@@ -62,6 +67,7 @@ export default async function SettingsPage({
 
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="mb-8 text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
+        <ScraperSettingsSection initialEnabled={autoSyncEnabled} t={t.scraper} />
         <ApiKeysClient initialKeys={keys} locale={typedLocale} t={t} />
         <WhatsAppSection t={t.whatsapp} />
       </main>

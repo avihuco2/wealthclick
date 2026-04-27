@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getScrapeIntervalHours, getScrapeHistoryMonths, setSetting } from "@/lib/settings";
+import { getScrapeIntervalHours, getScrapeHistoryMonths, getAutoSyncEnabled, setSetting } from "@/lib/settings";
 
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [scrapeIntervalHours, scrapeHistoryMonths] = await Promise.all([
+  const [scrapeIntervalHours, scrapeHistoryMonths, autoSyncEnabled] = await Promise.all([
     getScrapeIntervalHours(),
     getScrapeHistoryMonths(),
+    getAutoSyncEnabled(),
   ]);
-  return NextResponse.json({ scrapeIntervalHours, scrapeHistoryMonths });
+  return NextResponse.json({ scrapeIntervalHours, scrapeHistoryMonths, autoSyncEnabled });
 }
 
 export async function PATCH(req: Request) {
@@ -35,6 +36,12 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Invalid period (1–24 months)" }, { status: 400 });
     await setSetting("scrape_history_months", String(months));
     return NextResponse.json({ scrapeHistoryMonths: months });
+  }
+
+  if ("autoSyncEnabled" in body) {
+    const enabled = body.autoSyncEnabled === true || body.autoSyncEnabled === "true";
+    await setSetting("auto_sync_enabled", String(enabled));
+    return NextResponse.json({ autoSyncEnabled: enabled });
   }
 
   return NextResponse.json({ error: "No valid setting provided" }, { status: 400 });

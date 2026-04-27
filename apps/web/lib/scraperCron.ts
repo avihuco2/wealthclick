@@ -1,7 +1,7 @@
 import { getDb } from "./db";
 import { createScrapeJob } from "./bankAccounts";
 import { startScrapeJob } from "./scraper";
-import { getScrapeIntervalHours } from "./settings";
+import { getScrapeIntervalHours, getAutoSyncEnabled } from "./settings";
 
 // Fallback used before DB is reachable (e.g. during startup)
 export const SCRAPE_INTERVAL_HOURS = Math.max(
@@ -17,11 +17,16 @@ export function initScraperCron(): void {
 
   console.log(`[scraperCron] Auto-sync initialized — default interval ${SCRAPE_INTERVAL_HOURS}h`);
 
-  // Re-reads interval from DB on every tick so changes take effect without restart
+  // Re-reads interval and enabled flag from DB on every tick
   async function tick() {
     const intervalHours = await getScrapeIntervalHours();
-    await runScheduledScrapes();
-    console.log(`[scraperCron] Next run in ${intervalHours}h`);
+    const enabled = await getAutoSyncEnabled();
+    if (enabled) {
+      await runScheduledScrapes();
+    } else {
+      console.log("[scraperCron] Auto-sync disabled — skipping scheduled scrape");
+    }
+    console.log(`[scraperCron] Next check in ${intervalHours}h`);
     setTimeout(tick, intervalHours * 3600 * 1000);
   }
 

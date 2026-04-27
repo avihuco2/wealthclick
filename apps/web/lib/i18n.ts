@@ -287,6 +287,13 @@ const dictionaries = {
         statusDisconnected: "Disconnected",
         statusError: "Error",
       },
+      scraper: {
+        title: "Auto Sync",
+        autoSyncLabel: "Automatic scheduled sync",
+        autoSyncDesc: "When disabled, sync only runs when triggered manually.",
+        enabled: "Enabled",
+        disabled: "Disabled",
+      },
     },
   },
   he: {
@@ -561,6 +568,13 @@ const dictionaries = {
         statusConnected: "מחובר",
         statusDisconnected: "מנותק",
         statusError: "שגיאה",
+      },
+      scraper: {
+        title: "סנכרון אוטומטי",
+        autoSyncLabel: "סנכרון מתוזמן אוטומטי",
+        autoSyncDesc: "כשמושבת, הסנכרון יפעל רק בהפעלה ידנית.",
+        enabled: "פעיל",
+        disabled: "מושבת",
       },
     },
   },

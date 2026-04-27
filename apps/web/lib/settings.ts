@@ -30,3 +30,8 @@ export async function getScrapeHistoryMonths(): Promise<number> {
   const val = await getSetting("scrape_history_months", "3");
   return Math.max(1, Math.min(24, parseInt(val, 10)));
 }
+
+export async function getAutoSyncEnabled(): Promise<boolean> {
+  const val = await getSetting("auto_sync_enabled", "true");
+  return val !== "false";
+}

@@ -154,7 +154,7 @@ export async function setJobAwaitingOtp(jobId: string): Promise<void> {
   await sql`
     UPDATE scrape_jobs
     SET status = 'awaiting_otp', otp_requested_at = now()
-    WHERE id = ${jobId}
+    WHERE id = ${jobId} AND status = 'running'
   `;
 }
 

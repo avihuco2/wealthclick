@@ -219,9 +219,16 @@ async function runScrape(
         (async () => {
           // Brief wait for login form to render before polling starts
           await new Promise((r) => setTimeout(r, 2000));
+          // Capture the login page URL — for SPAs (e.g. Hapoalim) the URL doesn't change
+          // during OTP, only on successful login redirect. If URL changes, login succeeded
+          // without OTP and we can stop watching.
+          const loginUrl = page.url();
           const deadline = Date.now() + 170_000;
           while (Date.now() < deadline && !otpHandled) {
             try {
+              // URL changed → login succeeded without OTP (navigated to banking dashboard)
+              if (page.url() !== loginUrl) break;
+
               const state = await page.evaluate(() => {
                 const inputs = Array.from(document.querySelectorAll("input"));
                 const hasPassword = inputs.some((i) => i.type === "password");

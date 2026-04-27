@@ -320,8 +320,8 @@ export default function BankAccountsClient({
                 }`}
               >
                 {/* Bank icon */}
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] text-2xl">
-                  {config?.emoji ?? "🏦"}
+                <div className="shrink-0">
+                  <BankLogo companyId={account.company_id} size={48} />
                 </div>
 
                 {/* Info */}
@@ -421,7 +421,9 @@ function EmptyState({ t, onConnect }: { t: T; onConnect: () => void }) {
     <div className="flex flex-col items-center justify-center rounded-3xl border border-white/[0.08] bg-white/[0.03] px-8 py-16 text-center backdrop-blur-md">
       <div className="relative mb-5 flex h-16 w-16 items-center justify-center">
         <div className="absolute inset-0 rounded-full bg-[oklch(0.5706_0.2236_258.71)] opacity-25 blur-[20px]" />
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.08] text-3xl">🏦</div>
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.08]">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
+          </div>
       </div>
       <h2 className="text-[18px] font-semibold text-white/80">{t.noAccounts}</h2>
       <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-white/35">{t.noAccountsDesc}</p>
@@ -519,9 +521,9 @@ function ConnectBankModal({
                 <button
                   key={config.companyId}
                   onClick={() => handleSelectBank(config)}
-                  className="flex flex-col items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-4 text-center transition-all hover:border-white/[0.16] hover:bg-white/[0.08] active:scale-95"
+                  className="flex flex-col items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-4 text-center transition-all hover:border-white/[0.16] hover:bg-white/[0.08] active:scale-95"
                 >
-                  <span className="text-2xl">{config.emoji}</span>
+                  <BankLogo companyId={config.companyId} size={36} />
                   <span className="text-[11px] leading-tight text-white/70">{config.label}</span>
                 </button>
               ))}
@@ -532,6 +534,7 @@ function ConnectBankModal({
           <>
             <div className="mb-5 flex items-center gap-3">
               <button onClick={() => setStep("select")} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white/60 transition-all hover:bg-white/[0.10]">‹</button>
+              <BankLogo companyId={selectedConfig!.companyId} size={32} />
               <h2 className="text-[18px] font-semibold text-white">{t.credentialsTitle} {selectedConfig!.label}</h2>
             </div>
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -570,6 +573,110 @@ function ConnectBankModal({
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Bank Logos ───────────────────────────────────────────────────────────────
+
+function BankLogo({ companyId, size = 40 }: { companyId: string; size?: number }) {
+  const logos: Record<string, React.ReactNode> = {
+    hapoalim: (
+      // Bank Hapoalim — red square with white "פ" / stylised H
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <rect width="40" height="40" rx="10" fill="#E2001A" />
+        <text x="20" y="27" textAnchor="middle" fontSize="18" fontWeight="700" fill="white" fontFamily="Arial, sans-serif">פ</text>
+      </svg>
+    ),
+    leumi: (
+      // Bank Leumi — dark green with "ל"
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <rect width="40" height="40" rx="10" fill="#006B3F" />
+        <text x="20" y="27" textAnchor="middle" fontSize="18" fontWeight="700" fill="white" fontFamily="Arial, sans-serif">ל</text>
+      </svg>
+    ),
+    discount: (
+      // Discount Bank — red with "ד"
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <rect width="40" height="40" rx="10" fill="#CC0000" />
+        <text x="20" y="27" textAnchor="middle" fontSize="18" fontWeight="700" fill="white" fontFamily="Arial, sans-serif">ד</text>
+      </svg>
+    ),
+    mizrahi: (
+      // Mizrahi-Tefahot — orange/gold with "מ"
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <rect width="40" height="40" rx="10" fill="#E87722" />
+        <text x="20" y="27" textAnchor="middle" fontSize="18" fontWeight="700" fill="white" fontFamily="Arial, sans-serif">מ</text>
+      </svg>
+    ),
+    beinleumi: (
+      // Bank Beinleumi — blue with "ב"
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <rect width="40" height="40" rx="10" fill="#0057A8" />
+        <text x="20" y="27" textAnchor="middle" fontSize="18" fontWeight="700" fill="white" fontFamily="Arial, sans-serif">ב</text>
+      </svg>
+    ),
+    otzarHahayal: (
+      // Bank Otzar Hahayal — dark blue with "א"
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <rect width="40" height="40" rx="10" fill="#003D7C" />
+        <text x="20" y="27" textAnchor="middle" fontSize="18" fontWeight="700" fill="white" fontFamily="Arial, sans-serif">א</text>
+      </svg>
+    ),
+    isracard: (
+      // Isracard — purple-blue gradient with "IC"
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <defs>
+          <linearGradient id="ic-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#5B2D8E" />
+            <stop offset="100%" stopColor="#3B1F6A" />
+          </linearGradient>
+        </defs>
+        <rect width="40" height="40" rx="10" fill="url(#ic-grad)" />
+        <text x="20" y="26" textAnchor="middle" fontSize="12" fontWeight="800" fill="white" fontFamily="Arial, sans-serif" letterSpacing="0.5">IC</text>
+      </svg>
+    ),
+    max: (
+      // Max (formerly Leumi Card) — teal/green with "max" text
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <defs>
+          <linearGradient id="max-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#00B4A0" />
+            <stop offset="100%" stopColor="#007A6E" />
+          </linearGradient>
+        </defs>
+        <rect width="40" height="40" rx="10" fill="url(#max-grad)" />
+        <text x="20" y="26" textAnchor="middle" fontSize="13" fontWeight="800" fill="white" fontFamily="Arial, sans-serif" letterSpacing="0.5">max</text>
+      </svg>
+    ),
+    visaCal: (
+      // Visa Cal — classic Visa blue/gold stripe
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <rect width="40" height="40" rx="10" fill="#1A1F71" />
+        <text x="20" y="24" textAnchor="middle" fontSize="11" fontWeight="900" fill="#F7B731" fontFamily="Arial, sans-serif" letterSpacing="0.5">VISA</text>
+        <text x="20" y="33" textAnchor="middle" fontSize="8" fontWeight="600" fill="white" fontFamily="Arial, sans-serif">CAL</text>
+      </svg>
+    ),
+    amex: (
+      // American Express — iconic blue with "AMEX"
+      <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+        <rect width="40" height="40" rx="10" fill="#007BC1" />
+        <text x="20" y="24" textAnchor="middle" fontSize="8" fontWeight="800" fill="white" fontFamily="Arial, sans-serif" letterSpacing="0.3">AMERI</text>
+        <text x="20" y="33" textAnchor="middle" fontSize="8" fontWeight="800" fill="white" fontFamily="Arial, sans-serif" letterSpacing="0.3">EXPRESS</text>
+      </svg>
+    ),
+  };
+
+  const logo = logos[companyId];
+  if (logo) return <>{logo}</>;
+
+  // Fallback: first letter of companyId
+  return (
+    <svg viewBox="0 0 40 40" width={size} height={size} aria-hidden="true">
+      <rect width="40" height="40" rx="10" fill="#4B5563" />
+      <text x="20" y="27" textAnchor="middle" fontSize="18" fontWeight="700" fill="white" fontFamily="Arial, sans-serif">
+        {companyId.charAt(0).toUpperCase()}
+      </text>
+    </svg>
   );
 }
 

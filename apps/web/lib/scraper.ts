@@ -192,25 +192,31 @@ async function runScrape(
               : originalQuery(parameters);
         });
 
-        // OTP relay — watch for Hapoalim OTP page navigation
-        page.on("framenavigated", async (frame) => {
-          if (frame !== page.mainFrame()) return;
-          const url = frame.url();
-          if (!url.includes("sms-otp") && !url.includes("otpcode") && !url.includes("otp")) return;
-          console.log(`[scraper] job ${jobId} — OTP page detected: ${url}`);
+        // OTP relay — Hapoalim is a SPA, OTP form appears via DOM mutation with no URL change.
+        // exposeFunction bridges Node → browser: when DOM polling detects the OTP input,
+        // it calls __otpDetected(), we notify WhatsApp, poll DB for the code, then fill the form.
+        let otpHandled = false;
+        await page.exposeFunction("__otpDetected", async () => {
+          if (otpHandled) return;
+          otpHandled = true;
+          console.log(`[scraper] job ${jobId} — OTP input detected in DOM`);
           await notifyOtpViaWhatsApp(userId, jobId, companyId);
           const code = await pollJobOtp(jobId, 120_000);
           if (!code) {
-            console.warn(`[scraper] job ${jobId} — OTP timeout, aborting`);
+            console.warn(`[scraper] job ${jobId} — OTP timeout after 120s`);
             return;
           }
           console.log(`[scraper] job ${jobId} — OTP received, filling form`);
-          // Fill OTP input — try common selectors used by Hapoalim
           const filled = await page.evaluate((otpCode: string) => {
-            const selectors = ["input[type='tel']", "input[type='number']", "input[name='otp']", "input[id*='otp']", "input[id*='sms']", "input[placeholder*='קוד']"];
+            const selectors = [
+              "input[type='tel']", "input[type='number']",
+              "input[name='otp']", "input[id*='otp']", "input[id*='sms']",
+              "input[placeholder*='קוד']", "input[autocomplete='one-time-code']",
+            ];
             for (const sel of selectors) {
               const el = document.querySelector<HTMLInputElement>(sel);
               if (el) {
+                el.focus();
                 el.value = otpCode;
                 el.dispatchEvent(new Event("input", { bubbles: true }));
                 el.dispatchEvent(new Event("change", { bubbles: true }));
@@ -220,11 +226,33 @@ async function runScrape(
             return null;
           }, code);
           if (filled) {
-            console.log(`[scraper] job ${jobId} — filled OTP into ${filled}, submitting`);
+            console.log(`[scraper] job ${jobId} — filled OTP into "${filled}", submitting`);
             await page.keyboard.press("Enter");
           } else {
-            console.warn(`[scraper] job ${jobId} — OTP input not found in DOM`);
+            console.warn(`[scraper] job ${jobId} — OTP input selector not found`);
           }
+        });
+
+        // Inject DOM observer that fires __otpDetected when OTP input appears
+        await page.evaluateOnNewDocument(() => {
+          const OTP_SELECTORS = [
+            "input[type='tel']", "input[type='number']",
+            "input[name='otp']", "input[id*='otp']", "input[id*='sms']",
+            "input[placeholder*='קוד']", "input[autocomplete='one-time-code']",
+          ];
+          function checkForOtp() {
+            for (const sel of OTP_SELECTORS) {
+              if (document.querySelector(sel)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (window as any).__otpDetected?.();
+                return;
+              }
+            }
+          }
+          const observer = new MutationObserver(checkForOtp);
+          observer.observe(document, { childList: true, subtree: true });
+          // Also check on DOMContentLoaded in case form is already there
+          document.addEventListener("DOMContentLoaded", checkForOtp);
         });
       },
     } as Parameters<typeof createScraper>[0]);

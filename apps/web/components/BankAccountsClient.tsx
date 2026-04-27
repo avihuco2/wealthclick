@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import type { Locale } from "@/lib/i18n";
 import type { BankConfig } from "@/lib/scraperConfig";
 import type { DbBankAccount, DbScrapeJob } from "@/lib/bankAccounts";
@@ -589,15 +590,15 @@ function BankLogo({ companyId, size = 40 }: { companyId: string; size?: number }
     return (
       <div
         style={{ width: size, height: size }}
-        className="shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white"
+        className="shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white p-1"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={logoFile}
           alt={companyId}
           width={size}
           height={size}
-          style={{ width: size, height: size, objectFit: "contain", padding: size * 0.08 }}
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          unoptimized
         />
       </div>
     );

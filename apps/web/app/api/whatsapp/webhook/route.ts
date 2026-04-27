@@ -12,6 +12,7 @@ import { getDb } from "@/lib/db";
 import { decryptApiKey } from "@/lib/whatsappCrypto";
 import { handleWhatsAppMessage } from "@/lib/whatsappAgent";
 import { sendTextMessage, type EvolutionConfig } from "@/lib/evolutionApi";
+import { submitJobOtp } from "@/lib/bankAccounts";
 
 // ─── Bot trigger ─────────────────────────────────────────────────────────────
 const BOT_NAMES = ["boti", "בוטי"];
@@ -180,6 +181,32 @@ export async function POST(request: Request) {
     if (!text?.trim()) continue;
     if (!replyTo) continue;
     if (msgId && isDuplicate(msgId)) { console.log("[whatsapp] duplicate, skipping"); continue; }
+
+    // OTP relay — intercept "otiboti <CODE>" before bot name check
+    const otpMatch = text.trim().match(/^otiboti\s+(\S+)$/i);
+    if (otpMatch) {
+      const code = otpMatch[1];
+      console.log(`[whatsapp] OTP relay: code=${code} userId=${config.user_id}`);
+      const sql = getDb();
+      const [job] = await sql<{ id: string }[]>`
+        SELECT id FROM scrape_jobs
+        WHERE user_id = ${config.user_id} AND status = 'awaiting_otp'
+        ORDER BY otp_requested_at DESC LIMIT 1
+      `;
+      if (job) {
+        await submitJobOtp(config.user_id, job.id, code);
+        const evolutionCfg: EvolutionConfig = {
+          url: config.evolution_url,
+          apiKey: decryptApiKey(config.api_key_enc, config.api_key_iv, config.api_key_tag),
+          instance: config.instance_name,
+        };
+        await sendTextMessage(evolutionCfg, replyTo, "✅ קוד האימות התקבל, ממשיך בסנכרון…");
+      } else {
+        console.log("[whatsapp] OTP relay: no awaiting_otp job found");
+      }
+      continue;
+    }
+
     if (!mentionsBotName(text)) { console.log(`[whatsapp] no bot mention, skipping`); continue; }
 
     // v1 may use LID format (@lid) for remoteJid — phone extraction only works for @s.whatsapp.net

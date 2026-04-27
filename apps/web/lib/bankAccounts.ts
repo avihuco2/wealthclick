@@ -17,7 +17,9 @@ export type DbScrapeJob = {
   id: string;
   user_id: string;
   bank_account_id: string;
-  status: "running" | "done" | "failed";
+  status: "running" | "done" | "failed" | "awaiting_otp";
+  otp_code: string | null;
+  otp_requested_at: Date | null;
   imported_count: number | null;
   error: string | null;
   started_at: Date;
@@ -145,4 +147,37 @@ export async function getLatestScrapeJob(
     LIMIT 1
   `;
   return rows[0] ?? null;
+}
+
+export async function setJobAwaitingOtp(jobId: string): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE scrape_jobs
+    SET status = 'awaiting_otp', otp_requested_at = now()
+    WHERE id = ${jobId}
+  `;
+}
+
+export async function submitJobOtp(userId: string, jobId: string, code: string): Promise<boolean> {
+  const sql = getDb();
+  const rows = await sql`
+    UPDATE scrape_jobs
+    SET otp_code = ${code}
+    WHERE id = ${jobId} AND user_id = ${userId} AND status = 'awaiting_otp'
+    RETURNING id
+  `;
+  return rows.length > 0;
+}
+
+export async function pollJobOtp(jobId: string, timeoutMs = 120_000): Promise<string | null> {
+  const deadline = Date.now() + timeoutMs;
+  const sql = getDb();
+  while (Date.now() < deadline) {
+    const [row] = await sql<{ otp_code: string | null }[]>`
+      SELECT otp_code FROM scrape_jobs WHERE id = ${jobId}
+    `;
+    if (row?.otp_code) return row.otp_code;
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+  return null;
 }

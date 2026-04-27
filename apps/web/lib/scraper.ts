@@ -4,9 +4,12 @@ import { decrypt } from "./crypto";
 import {
   setBankAccountStatus,
   finishScrapeJob,
+  setJobAwaitingOtp,
+  pollJobOtp,
 } from "./bankAccounts";
 import { getScrapeHistoryMonths } from "./settings";
 import { loadCategoryRules, applyRulesToUncategorized } from "./categoryRules";
+import { sendTextMessage } from "./evolutionApi";
 
 const BASE_PUPPETEER_ARGS = [
   "--no-sandbox",
@@ -67,6 +70,34 @@ function addMonths(dateStr: string, n: number): string {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1 + n, d));
   return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+}
+
+/** Send WhatsApp OTP request to the user owning this job, set job status to awaiting_otp */
+async function notifyOtpViaWhatsApp(userId: string, jobId: string, companyId: string): Promise<void> {
+  await setJobAwaitingOtp(jobId);
+  const sql = getDb();
+  const [cfg] = await sql<{
+    evolution_url: string; api_key_enc: string; api_key_iv: string;
+    api_key_tag: string; instance_name: string; allowed_numbers: string[] | string;
+  }[]>`
+    SELECT evolution_url, api_key_enc, api_key_iv, api_key_tag, instance_name, allowed_numbers
+    FROM whatsapp_config WHERE user_id = ${userId} LIMIT 1
+  `;
+  if (!cfg) { console.warn(`[scraper] job ${jobId} — no WhatsApp config, OTP relay skipped`); return; }
+
+  const { decryptApiKey } = await import("./whatsappCrypto");
+  const apiKey = decryptApiKey(cfg.api_key_enc, cfg.api_key_iv, cfg.api_key_tag);
+  const numbers: string[] = typeof cfg.allowed_numbers === "string"
+    ? JSON.parse(cfg.allowed_numbers) : (cfg.allowed_numbers ?? []);
+  if (numbers.length === 0) { console.warn(`[scraper] job ${jobId} — no allowed_numbers in WhatsApp config`); return; }
+
+  const phone = numbers[0].replace(/^\+/, "") + "@s.whatsapp.net";
+  await sendTextMessage(
+    { url: cfg.evolution_url, apiKey, instance: cfg.instance_name },
+    phone,
+    `🔐 נדרש קוד אימות לחיבור בנק ${companyId}.\nשלח: *otiboti <קוד>*\n(לדוגמה: otiboti 123456)`,
+  );
+  console.log(`[scraper] job ${jobId} — OTP WhatsApp notification sent to ${numbers[0]}`);
 }
 
 /**
@@ -159,6 +190,41 @@ async function runScrape(
             parameters.name === "notifications"
               ? Promise.resolve({ state: Notification.permission } as PermissionStatus)
               : originalQuery(parameters);
+        });
+
+        // OTP relay — watch for Hapoalim OTP page navigation
+        page.on("framenavigated", async (frame) => {
+          if (frame !== page.mainFrame()) return;
+          const url = frame.url();
+          if (!url.includes("sms-otp") && !url.includes("otpcode") && !url.includes("otp")) return;
+          console.log(`[scraper] job ${jobId} — OTP page detected: ${url}`);
+          await notifyOtpViaWhatsApp(userId, jobId, companyId);
+          const code = await pollJobOtp(jobId, 120_000);
+          if (!code) {
+            console.warn(`[scraper] job ${jobId} — OTP timeout, aborting`);
+            return;
+          }
+          console.log(`[scraper] job ${jobId} — OTP received, filling form`);
+          // Fill OTP input — try common selectors used by Hapoalim
+          const filled = await page.evaluate((otpCode: string) => {
+            const selectors = ["input[type='tel']", "input[type='number']", "input[name='otp']", "input[id*='otp']", "input[id*='sms']", "input[placeholder*='קוד']"];
+            for (const sel of selectors) {
+              const el = document.querySelector<HTMLInputElement>(sel);
+              if (el) {
+                el.value = otpCode;
+                el.dispatchEvent(new Event("input", { bubbles: true }));
+                el.dispatchEvent(new Event("change", { bubbles: true }));
+                return sel;
+              }
+            }
+            return null;
+          }, code);
+          if (filled) {
+            console.log(`[scraper] job ${jobId} — filled OTP into ${filled}, submitting`);
+            await page.keyboard.press("Enter");
+          } else {
+            console.warn(`[scraper] job ${jobId} — OTP input not found in DOM`);
+          }
         });
       },
     } as Parameters<typeof createScraper>[0]);

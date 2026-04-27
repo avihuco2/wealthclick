@@ -26,11 +26,13 @@ const BASE_PUPPETEER_ARGS = [
   ...(process.env.SCRAPER_PROXY_URL ? [`--proxy-server=${process.env.SCRAPER_PROXY_URL}`] : []),
 ];
 
-/** Per-company user-data-dir → persists __cf_bm cookie across runs (avoids parallel-scrape conflict) */
+/** Per-company user-data-dir → persists __cf_bm cookie across runs (avoids parallel-scrape conflict).
+ *  Uses /opt path (survives reboots) instead of /tmp (wiped on restart). */
 function puppeteerArgsForCompany(companyId: string): string[] {
+  const base = process.env.CHROME_PROFILE_DIR ?? "/opt/wealthclick-chrome";
   return [
     ...BASE_PUPPETEER_ARGS,
-    `--user-data-dir=/tmp/wealthclick-chrome-${companyId.replace(/[^a-z0-9_-]/gi, "")}`,
+    `--user-data-dir=${base}/${companyId.replace(/[^a-z0-9_-]/gi, "")}`,
   ];
 }
 

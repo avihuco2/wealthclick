@@ -190,7 +190,10 @@ export async function POST(request: Request) {
       const sql = getDb();
       const [job] = await sql<{ id: string }[]>`
         SELECT id FROM scrape_jobs
-        WHERE user_id = ${config.user_id} AND status = 'awaiting_otp'
+        WHERE user_id = ${config.user_id}
+          AND otp_requested_at IS NOT NULL
+          AND otp_code IS NULL
+          AND otp_requested_at > now() - interval '5 minutes'
         ORDER BY otp_requested_at DESC LIMIT 1
       `;
       if (job) {

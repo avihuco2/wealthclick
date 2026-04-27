@@ -134,6 +134,27 @@ async function runScrape(
     // Dynamic import keeps Puppeteer/Chromium out of the Next.js client bundle
     const { createScraper, CompanyTypes } = await import("israeli-bank-scrapers");
 
+    // Patch waitForRedirect once per process: extend its default 20s timeout to 180s.
+    // The Hapoalim scraper calls waitForRedirect with no timeout arg, so default matters.
+    // We do this by mutating the CommonJS exports object that all scrapers share.
+    if (!(globalThis as Record<string, unknown>).__waitForRedirectPatched) {
+      (globalThis as Record<string, unknown>).__waitForRedirectPatched = true;
+      try {
+        const { createRequire } = await import("module");
+        const req = createRequire(import.meta.url);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const navMod = req("israeli-bank-scrapers/lib/helpers/navigation") as any;
+        if (navMod?.waitForRedirect) {
+          const orig = navMod.waitForRedirect as (...a: unknown[]) => unknown;
+          navMod.waitForRedirect = (pageOrFrame: unknown, timeout = 180_000, ...rest: unknown[]) =>
+            orig(pageOrFrame, timeout, ...rest);
+          console.log("[scraper] waitForRedirect patched: default timeout → 180s");
+        }
+      } catch (e) {
+        console.warn("[scraper] waitForRedirect patch failed:", e);
+      }
+    }
+
     const companyType = CompanyTypes[companyId as keyof typeof CompanyTypes];
     if (!companyType) throw new Error(`Unknown companyId: ${companyId}`);
 
@@ -192,24 +213,12 @@ async function runScrape(
               : originalQuery(parameters);
         });
 
-        // Extend waitForRedirect timeout: it calls page.waitForFunction({timeout:20000}).
-        // Monkey-patch the instance method to raise any short timeout to 3 minutes.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const _origWFF = (page as any).waitForFunction.bind(page);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (page as any).waitForFunction = (fn: unknown, opts: Record<string, unknown> = {}, ...args: unknown[]) => {
-          if (opts && typeof opts.timeout === "number" && opts.timeout > 0 && opts.timeout <= 30000) {
-            opts = { ...opts, timeout: 180_000 };
-          }
-          return _origWFF(fn, opts, ...args);
-        };
-
         // OTP relay — Node-side polling detects when password field disappears (OTP screen).
         // Runs in background; fills OTP form once code arrives via WhatsApp.
         let otpHandled = false;
         (async () => {
-          // Wait for login form submission before polling
-          await new Promise((r) => setTimeout(r, 6000));
+          // Brief wait for login form to render before polling starts
+          await new Promise((r) => setTimeout(r, 2000));
           const deadline = Date.now() + 170_000;
           while (Date.now() < deadline && !otpHandled) {
             try {

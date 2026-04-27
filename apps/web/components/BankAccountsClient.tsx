@@ -54,6 +54,7 @@ type Props = {
   locale: Locale;
   scrapeIntervalHours: number;
   scrapeHistoryMonths: number;
+  autoSyncEnabled: boolean;
   t: T;
 };
 
@@ -71,6 +72,7 @@ export default function BankAccountsClient({
   locale,
   scrapeIntervalHours: initialInterval,
   scrapeHistoryMonths: initialHistory,
+  autoSyncEnabled: initialAutoSync,
   t,
 }: Props) {
   const [accounts, setAccounts] = useState<SafeBankAccount[]>(initialAccounts);
@@ -81,6 +83,8 @@ export default function BankAccountsClient({
   const [savingInterval, setSavingInterval] = useState(false);
   const [historyMonths, setHistoryMonths] = useState(initialHistory);
   const [savingHistory, setSavingHistory] = useState(false);
+  const [autoSync, setAutoSync] = useState(initialAutoSync);
+  const [savingAutoSync, setSavingAutoSync] = useState(false);
 
   const refreshAccounts = useCallback(async () => {
     const res = await fetch("/api/bank-accounts");
@@ -132,6 +136,18 @@ export default function BankAccountsClient({
     });
     if (res.ok) setIntervalHours(hours);
     setSavingInterval(false);
+  }
+
+  async function handleAutoSyncToggle() {
+    setSavingAutoSync(true);
+    const next = !autoSync;
+    const res = await fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ autoSyncEnabled: next }),
+    });
+    if (res.ok) setAutoSync(next);
+    setSavingAutoSync(false);
   }
 
   async function handleHistoryChange(months: number) {
@@ -268,9 +284,20 @@ export default function BankAccountsClient({
             ))}
             {savingInterval && <SpinnerIcon />}
           </div>
-          <span className="ms-auto text-[12px] text-white/30">
-            {enabledCount}/{accounts.length} enabled
-          </span>
+          <div className="ms-auto flex items-center gap-2">
+            <span className={`text-[12px] font-medium ${autoSync ? "text-[#34C759]" : "text-amber-400"}`}>
+              {autoSync ? "On" : "Off"}
+            </span>
+            <button
+              onClick={handleAutoSyncToggle}
+              disabled={savingAutoSync}
+              role="switch"
+              aria-checked={autoSync}
+              className={`relative inline-flex h-6 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 disabled:opacity-50 ${autoSync ? "bg-[#34C759]" : "bg-white/20"}`}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${autoSync ? "translate-x-4" : "translate-x-0"}`} />
+            </button>
+          </div>
         </div>
         {/* Divider */}
         <div className="mx-4 h-px bg-white/[0.05]" />

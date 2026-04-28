@@ -221,12 +221,12 @@ export default function BankAccountsClient({
     }).format(new Date(d));
   };
 
-  const fmtNextSync = (lastSyncedAt: Date | null, enabled: boolean) => {
+  const fmtNextSync = (nextScrapeAt: Date | null, enabled: boolean) => {
     if (!enabled) return null;
-    if (!lastSyncedAt) return null; // never synced — no next sync estimate yet
-    const next = new Date(lastSyncedAt).getTime() + interval * 3600 * 1000;
+    if (!nextScrapeAt) return null;
+    const next = new Date(nextScrapeAt).getTime();
     const hoursLeft = Math.round((next - Date.now()) / 3600000);
-    if (hoursLeft <= 0) return t.overdue; // scheduled time passed, cron will pick it up
+    if (hoursLeft <= 0) return t.overdue;
     return `${t.inLabel} ${hoursLeft}${t.hours}`;
   };
 
@@ -325,7 +325,7 @@ export default function BankAccountsClient({
             const isRunning = scrape?.status === "running" || account.status === "scraping";
             const hasFailed = scrape?.status === "failed" || account.status === "error";
             const isDisabled = !account.scrape_enabled;
-            const nextSync = fmtNextSync(account.last_scraped_at, account.scrape_enabled);
+            const nextSync = fmtNextSync(account.next_scrape_at, account.scrape_enabled);
 
             return (
               <div

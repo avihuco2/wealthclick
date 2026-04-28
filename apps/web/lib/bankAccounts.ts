@@ -10,6 +10,7 @@ export type DbBankAccount = {
   last_error: string | null;
   status: "active" | "error" | "scraping";
   scrape_enabled: boolean;
+  next_scrape_at: Date | null;
   created_at: Date;
 };
 
@@ -55,9 +56,15 @@ export async function createBankAccount(
   nickname?: string,
 ): Promise<DbBankAccount> {
   const sql = getDb();
+
+  // Schedule first scrape between 2-5 AM tomorrow
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(2, Math.floor(Math.random() * 180), 0, 0);
+
   const [row] = await sql<DbBankAccount[]>`
-    INSERT INTO bank_accounts (user_id, company_id, credentials_encrypted, nickname)
-    VALUES (${userId}, ${companyId}, ${credentialsEncrypted}, ${nickname ?? null})
+    INSERT INTO bank_accounts (user_id, company_id, credentials_encrypted, nickname, next_scrape_at)
+    VALUES (${userId}, ${companyId}, ${credentialsEncrypted}, ${nickname ?? null}, ${tomorrow})
     RETURNING *
   `;
   return row;
@@ -121,9 +128,20 @@ export async function toggleBankAccountEnabled(
   enabled: boolean,
 ): Promise<void> {
   const sql = getDb();
+
+  // If enabling, schedule next scrape
+  let nextScrape: Date | null = null;
+  if (enabled) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(2, Math.floor(Math.random() * 180), 0, 0);
+    nextScrape = tomorrow;
+  }
+
   await sql`
     UPDATE bank_accounts
-    SET scrape_enabled = ${enabled}
+    SET scrape_enabled = ${enabled},
+        next_scrape_at = ${nextScrape}
     WHERE id = ${accountId} AND user_id = ${userId}
   `;
 }

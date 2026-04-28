@@ -8,6 +8,8 @@ import { getTransactionsByDateRange } from "./transactions";
 import { getInsightsData } from "./insights";
 import { upsertCategoryRule } from "./categoryRules";
 import { getCategoryBudgets, getBudgetIncome, upsertCategoryBudget, upsertBudgetIncome } from "./budgets";
+import { getBankAccounts, createScrapeJob } from "./bankAccounts";
+import { startScrapeJob } from "./scraper";
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
@@ -248,4 +250,94 @@ export async function toolSetForecastedIncome(
 
   await upsertBudgetIncome(userId, month, forecasted_amount);
   return `Forecasted income for ${month} set to ${fmt(forecasted_amount)}.`;
+}
+
+export async function toolGetScraperStatus(userId: string): Promise<string> {
+  const accounts = await getBankAccounts(userId);
+  if (accounts.length === 0) return "No bank accounts connected.";
+
+  const sql = getDb();
+  const lines: string[] = [];
+
+  for (const acc of accounts) {
+    const [job] = await sql<{
+      status: string;
+      started_at: Date;
+      finished_at: Date | null;
+      error: string | null;
+      imported_count: number | null;
+    }[]>`
+      SELECT status, started_at, finished_at, error, imported_count
+      FROM scrape_jobs
+      WHERE bank_account_id = ${acc.id}
+      ORDER BY created_at DESC LIMIT 1
+    `;
+
+    const nick = acc.nickname || acc.company_id;
+    const enabled = acc.scrape_enabled ? "auto-sync on" : "auto-sync off";
+    const lastSync = acc.last_scraped_at
+      ? new Date(acc.last_scraped_at).toLocaleString("he-IL")
+      : "never";
+
+    let statusLine = `• ${nick} (${enabled}) — last sync: ${lastSync}`;
+
+    if (job) {
+      if (job.status === "running" || job.status === "awaiting_otp") {
+        const elapsed = Math.round((Date.now() - new Date(job.started_at).getTime()) / 1000);
+        statusLine += ` | Current: ${job.status} (${elapsed}s ago)`;
+      } else if (job.status === "done") {
+        statusLine += ` | Status: ✅ success (${job.imported_count || 0} new txns)`;
+      } else if (job.status === "failed") {
+        const err = job.error ? ` — ${job.error.slice(0, 60)}` : "";
+        statusLine += ` | Status: ❌ failed${err}`;
+      }
+    }
+
+    if (acc.status === "error" && acc.last_error) {
+      statusLine += `\n  Error: ${acc.last_error.slice(0, 80)}`;
+    }
+
+    lines.push(statusLine);
+  }
+
+  return `Bank account scraper status:\n\n${lines.join("\n")}`;
+}
+
+export async function toolTriggerScrape(userId: string, args: { company_id?: string }): Promise<string> {
+  const { company_id } = args;
+  const accounts = await getBankAccounts(userId);
+
+  if (accounts.length === 0) return "No bank accounts connected.";
+
+  let targetAccounts = company_id
+    ? accounts.filter((a) => a.company_id === company_id)
+    : accounts;
+
+  if (targetAccounts.length === 0) {
+    const available = accounts.map((a) => a.company_id).join(", ");
+    return `No account found for company_id "${company_id}". Available: ${available}`;
+  }
+
+  const sql = getDb();
+  const started: string[] = [];
+
+  for (const acc of targetAccounts) {
+    // Check if already running
+    const [running] = await sql<{ id: string }[]>`
+      SELECT id FROM scrape_jobs
+      WHERE bank_account_id = ${acc.id} AND status IN ('running', 'awaiting_otp')
+      ORDER BY created_at DESC LIMIT 1
+    `;
+
+    if (running) {
+      started.push(`${acc.nickname || acc.company_id}: already running (job ${running.id})`);
+      continue;
+    }
+
+    const job = await createScrapeJob(userId, acc.id);
+    startScrapeJob(job.id, userId, acc.id, acc.company_id, acc.credentials_encrypted);
+    started.push(`${acc.nickname || acc.company_id}: started (job ${job.id})`);
+  }
+
+  return `Manual scrape triggered:\n\n${started.map(s => `• ${s}`).join("\n")}`;
 }

@@ -180,6 +180,27 @@ const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    toolSpec: {
+      name: "get_scraper_status",
+      description: "Check bank account scraper status: last sync time, current job status, auto-sync enabled/disabled, and any errors.",
+      inputSchema: { json: { type: "object", properties: {} } },
+    },
+  },
+  {
+    toolSpec: {
+      name: "trigger_scrape",
+      description: "Manually trigger a bank account scrape. Optionally specify company_id to sync only that bank (e.g. 'max', 'hapoalim', 'isracard'). Use get_scraper_status first to see available accounts.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            company_id: { type: "string", description: "Bank company ID (optional). If omitted, triggers all accounts." },
+          },
+        },
+      },
+    },
+  },
 ];
 
 // ─── Tool execution router ─────────────────────────────────────────────────────
@@ -195,6 +216,8 @@ import {
   toolGetBudget,
   toolSetCategoryBudget,
   toolSetForecastedIncome,
+  toolGetScraperStatus,
+  toolTriggerScrape,
 } from "./agentTools";
 
 async function executeTool(
@@ -213,6 +236,8 @@ async function executeTool(
     case "get_budget":              return toolGetBudget(userId, input as { month: string });
     case "set_category_budget":     return toolSetCategoryBudget(userId, input as Parameters<typeof toolSetCategoryBudget>[1]);
     case "set_forecasted_income":   return toolSetForecastedIncome(userId, input as Parameters<typeof toolSetForecastedIncome>[1]);
+    case "get_scraper_status":      return toolGetScraperStatus(userId);
+    case "trigger_scrape":          return toolTriggerScrape(userId, input as { company_id?: string });
     default: throw new Error(`Unknown tool: ${name}`);
   }
 }
@@ -224,6 +249,7 @@ You are speaking with the app's owner — you have full permission to access and
 You have tools to:
 - Retrieve and manage transactions (list, create, update, delete); each transaction may include an account name
 - Get monthly spending summaries with category breakdowns and trends
+- Check bank scraper status (last sync time, current job status, errors) and manually trigger scrapes
 - List accounts (bank/credit cards): use list_accounts to see all accounts with transactions
 - List spending categories
 - View and manage monthly budgets: get_budget, set_category_budget, set_forecasted_income

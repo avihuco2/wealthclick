@@ -74,6 +74,31 @@ function addMonths(dateStr: string, n: number): string {
   return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
 }
 
+/**
+ * Extract date as YYYY-MM-DD from library txn.date, fixing timezone offset bug.
+ * israeli-bank-scrapers Max scraper returns ISO from moment(purchaseDate).toISOString(),
+ * which converts Israel local midnight → UTC (e.g. 2027-01-19 → 2027-01-18T22:00Z).
+ * Add Israel offset (+2/+3h depending on DST) to recover original date. Simpler: just
+ * take first 10 chars but check if time < 03:00 UTC (was yesterday in Israel) → add 1 day.
+ */
+function extractLocalDate(isoDate: string): string {
+  const d = new Date(isoDate);
+  const hour = d.getUTCHours();
+  // If UTC time is 21:00-23:59, original Israel date was next day (midnight - 2/3h offset)
+  if (hour >= 21) {
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/** Reverse string — detects Max scraper RTL duplicate merchant names */
+function reverseString(s: string): string {
+  return s.split("").reverse().join("");
+}
+
 /** Send WhatsApp OTP request to the user owning this job, set job status to awaiting_otp */
 async function notifyOtpViaWhatsApp(userId: string, jobId: string, companyId: string): Promise<void> {
   await setJobAwaitingOtp(jobId);
@@ -294,6 +319,10 @@ async function runScrape(
     // Preload category rules so each insert can be auto-categorized inline
     const categoryRules = await loadCategoryRules(userId);
 
+    // Dedup map for Max scraper bug: same txn with reversed merchant name (RTL rendering)
+    // Key: `date:amount:description` — if reversed string already seen, skip this one.
+    const seenReversed = new Map<string, string>();
+
     for (const account of result.accounts ?? []) {
       for (const txn of account.txns) {
         const externalId = makeExternalId(companyId, account.accountNumber, txn);
@@ -301,8 +330,20 @@ async function runScrape(
         // DB constraint: amount > 0. Skip zero-value txns (canceled, fees, loan placeholders).
         if (amount === 0) continue;
         const type = txn.chargedAmount < 0 ? "expense" : "income";
-        const date = txn.date.slice(0, 10); // YYYY-MM-DD
-        const categoryId = categoryRules.get(txn.description.trim()) ?? null;
+        const date = extractLocalDate(txn.date); // Fix timezone offset bug in library
+        const description = txn.description.trim();
+
+        // Max scraper duplicate bug: returns both "FREEBAY ISRAEL" and "LERASI YABEERF"
+        // (reversed Hebrew RTL). Check if reversed version already inserted; skip the wrong one.
+        const reversed = reverseString(description);
+        const dupKey = `${date}:${amount}:${reversed}`;
+        if (seenReversed.has(dupKey)) {
+          console.log(`[scraper] job ${jobId} — skipping duplicate reversed merchant: ${description}`);
+          continue;
+        }
+        seenReversed.set(`${date}:${amount}:${description}`, description);
+
+        const categoryId = categoryRules.get(description) ?? null;
 
         // Installment info — present on Max (and other) credit card transactions
         // txn.type === "installments" and txn.installments = { number, total }

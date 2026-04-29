@@ -160,6 +160,43 @@ const TOOLS = [
       required: ["month", "forecasted_amount"],
     },
   },
+  {
+    name: "list_uncategorized_transactions",
+    description: "List transactions that have no category assigned. Returns up to 100 at a time with pagination.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        limit:  { type: "number", description: "Max results per page (1-100, default 20)" },
+        offset: { type: "number", description: "Skip this many results (default 0)" },
+      },
+    },
+  },
+  {
+    name: "categorize_transaction",
+    description: "Assign a category to a transaction. Creates an auto-categorization rule for future transactions with the same description.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        id:          { type: "string", description: "Transaction UUID" },
+        category_id: { type: "string", description: "Category UUID (use list_categories to find)" },
+      },
+      required: ["id", "category_id"],
+    },
+  },
+  {
+    name: "create_category",
+    description: "Create a new spending category with English and Hebrew names.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name_en: { type: "string", description: "Category name in English" },
+        name_he: { type: "string", description: "Category name in Hebrew" },
+        emoji:   { type: "string", description: "Emoji icon (optional, default 📌)" },
+        color:   { type: "string", description: "Hex color (optional, default #8E8E93)" },
+      },
+      required: ["name_en", "name_he"],
+    },
+  },
 ];
 
 // ─── Tool handlers ────────────────────────────────────────────────────────────
@@ -354,6 +391,44 @@ async function callTool(name: string, args: Record<string, unknown>, userId: str
         return textContent(await toolSetForecastedIncome(userId, {
           month: month as string,
           forecasted_amount: forecasted_amount as number,
+        }));
+      } catch (e) {
+        return errorContent(e instanceof Error ? e.message : "Error");
+      }
+    }
+
+    case "list_uncategorized_transactions": {
+      const { toolListUncategorized } = await import("@/lib/agentTools");
+      try {
+        return textContent(await toolListUncategorized(userId, {
+          limit: typeof args.limit === "number" ? args.limit : 20,
+          offset: typeof args.offset === "number" ? args.offset : 0,
+        }));
+      } catch (e) {
+        return errorContent(e instanceof Error ? e.message : "Error");
+      }
+    }
+
+    case "categorize_transaction": {
+      const { toolCategorizeTransaction } = await import("@/lib/agentTools");
+      try {
+        return textContent(await toolCategorizeTransaction(userId, {
+          id: args.id as string,
+          category_id: args.category_id as string,
+        }));
+      } catch (e) {
+        return errorContent(e instanceof Error ? e.message : "Error");
+      }
+    }
+
+    case "create_category": {
+      const { toolCreateCategory } = await import("@/lib/agentTools");
+      try {
+        return textContent(await toolCreateCategory(userId, {
+          name_en: args.name_en as string,
+          name_he: args.name_he as string,
+          emoji: args.emoji as string | undefined,
+          color: args.color as string | undefined,
         }));
       } catch (e) {
         return errorContent(e instanceof Error ? e.message : "Error");

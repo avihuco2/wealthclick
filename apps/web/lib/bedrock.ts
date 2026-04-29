@@ -201,6 +201,55 @@ const AGENT_TOOLS: Tool[] = [
       },
     },
   },
+  {
+    toolSpec: {
+      name: "list_uncategorized_transactions",
+      description: "List transactions that have no category assigned. Returns up to 100 at a time with pagination. Shows transaction ID, date, description, amount, and account.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            limit:  { type: "number", description: "Max results per page (1-100, default 20)" },
+            offset: { type: "number", description: "Skip this many results (default 0)" },
+          },
+        },
+      },
+    },
+  },
+  {
+    toolSpec: {
+      name: "categorize_transaction",
+      description: "Assign a category to a transaction. This creates an auto-categorization rule so future transactions with the same description will be categorized automatically. Use list_categories to find category IDs.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            id:          { type: "string", description: "Transaction UUID (from list_uncategorized_transactions)" },
+            category_id: { type: "string", description: "Category UUID (from list_categories)" },
+          },
+          required: ["id", "category_id"],
+        },
+      },
+    },
+  },
+  {
+    toolSpec: {
+      name: "create_category",
+      description: "Create a new spending category with English and Hebrew names. Optionally specify emoji and color.",
+      inputSchema: {
+        json: {
+          type: "object",
+          properties: {
+            name_en: { type: "string", description: "Category name in English" },
+            name_he: { type: "string", description: "Category name in Hebrew" },
+            emoji:   { type: "string", description: "Emoji icon (optional, default 📌)" },
+            color:   { type: "string", description: "Hex color code (optional, default #8E8E93)" },
+          },
+          required: ["name_en", "name_he"],
+        },
+      },
+    },
+  },
 ];
 
 // ─── Tool execution router ─────────────────────────────────────────────────────
@@ -218,6 +267,9 @@ import {
   toolSetForecastedIncome,
   toolGetScraperStatus,
   toolTriggerScrape,
+  toolListUncategorized,
+  toolCategorizeTransaction,
+  toolCreateCategory,
 } from "./agentTools";
 
 async function executeTool(
@@ -238,6 +290,9 @@ async function executeTool(
     case "set_forecasted_income":   return toolSetForecastedIncome(userId, input as Parameters<typeof toolSetForecastedIncome>[1]);
     case "get_scraper_status":      return toolGetScraperStatus(userId);
     case "trigger_scrape":          return toolTriggerScrape(userId, input as { company_id?: string });
+    case "list_uncategorized_transactions": return toolListUncategorized(userId, input as Parameters<typeof toolListUncategorized>[1]);
+    case "categorize_transaction":  return toolCategorizeTransaction(userId, input as Parameters<typeof toolCategorizeTransaction>[1]);
+    case "create_category":         return toolCreateCategory(userId, input as Parameters<typeof toolCreateCategory>[1]);
     default: throw new Error(`Unknown tool: ${name}`);
   }
 }
@@ -251,8 +306,18 @@ You have tools to:
 - Get monthly spending summaries with category breakdowns and trends
 - Check bank scraper status (last sync time, current job status, errors) and manually trigger scrapes
 - List accounts (bank/credit cards): use list_accounts to see all accounts with transactions
-- List spending categories
+- List and manage spending categories (list_categories, create_category)
 - View and manage monthly budgets: get_budget, set_category_budget, set_forecasted_income
+- Categorize uncategorized transactions: list_uncategorized_transactions, categorize_transaction, create_category
+
+CATEGORIZATION WORKFLOW — When user asks to categorize transactions:
+1. Call list_uncategorized_transactions (default: first 20)
+2. For EACH transaction shown, ask user which category fits. Present categories clearly with emoji + name.
+3. If no existing category fits, offer to create a new one. Ask for English name, Hebrew name, and emoji.
+4. Use categorize_transaction with the transaction ID + category ID.
+5. Continue to next transaction or next page (use offset parameter).
+6. Guide the user step-by-step. Don't batch-process without confirmation.
+
 ALWAYS use the available tools to answer questions about money, spending, income, transactions, or budgets.
 Never say you cannot access financial data — you have the tools and permission to do so.
 When asked about budgets: use get_budget to show the current budget, actual spending, and remaining amounts.

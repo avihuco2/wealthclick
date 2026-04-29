@@ -303,6 +303,101 @@ export async function toolGetScraperStatus(userId: string): Promise<string> {
   return `Bank account scraper status:\n\n${lines.join("\n")}`;
 }
 
+export async function toolListUncategorized(
+  userId: string,
+  args: { limit?: number; offset?: number },
+): Promise<string> {
+  const { limit = 20, offset = 0 } = args;
+  if (limit < 1 || limit > 100) throw new Error("limit must be 1-100");
+  if (offset < 0) throw new Error("offset must be non-negative");
+
+  const sql = getDb();
+  const rows = await sql<{
+    id: string;
+    date: Date | string;
+    description: string;
+    amount: string;
+    type: string;
+    account: string | null;
+  }[]>`
+    SELECT id, date, description, amount, type, account
+    FROM transactions
+    WHERE user_id = ${userId} AND category_id IS NULL
+    ORDER BY date DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+
+  if (rows.length === 0) {
+    return offset === 0
+      ? "🎉 All transactions are categorized!"
+      : `No more uncategorized transactions (offset ${offset}).`;
+  }
+
+  const [{ count }] = await sql<{ count: string }[]>`
+    SELECT COUNT(*)::text AS count FROM transactions WHERE user_id = ${userId} AND category_id IS NULL
+  `;
+  const total = parseInt(count, 10);
+
+  const lines = rows.map((t, i) => {
+    const dateStr = t.date instanceof Date ? t.date.toISOString().slice(0, 10) : String(t.date).slice(0, 10);
+    const acc = t.account ? ` (${t.account})` : "";
+    const sign = t.type === "income" ? "+" : "-";
+    return `${offset + i + 1}. [ID: ${t.id.slice(0, 8)}] ${dateStr} ${sign}${fmt(t.amount)} — ${t.description}${acc}`;
+  });
+
+  const showing = `Showing ${offset + 1}-${offset + rows.length} of ${total} uncategorized transactions`;
+  return `${showing}\n\n${lines.join("\n")}\n\n💡 Use categorize_transaction with the ID to assign a category, or create_category to add a new one.`;
+}
+
+export async function toolCategorizeTransaction(
+  userId: string,
+  args: { id: string; category_id: string },
+): Promise<string> {
+  const { id, category_id } = args;
+  if (!id || !category_id) throw new Error("id and category_id required");
+
+  const sql = getDb();
+
+  // Verify category belongs to user
+  const [cat] = await sql<{ name_en: string; emoji: string }[]>`
+    SELECT name_en, emoji FROM categories WHERE id = ${category_id} AND user_id = ${userId}
+  `;
+  if (!cat) throw new Error("Category not found");
+
+  // Verify transaction belongs to user
+  const [txn] = await sql<{ description: string; amount: string }[]>`
+    SELECT description, amount FROM transactions WHERE id = ${id} AND user_id = ${userId}
+  `;
+  if (!txn) throw new Error("Transaction not found");
+
+  await sql`
+    UPDATE transactions SET category_id = ${category_id}, updated_at = NOW()
+    WHERE id = ${id} AND user_id = ${userId}
+  `;
+
+  // Create category rule for future auto-categorization
+  await upsertCategoryRule(userId, txn.description, category_id);
+
+  return `✅ Transaction "${txn.description}" (${fmt(txn.amount)}) categorized as ${cat.emoji} ${cat.name_en}`;
+}
+
+export async function toolCreateCategory(
+  userId: string,
+  args: { name_en: string; name_he: string; emoji?: string; color?: string },
+): Promise<string> {
+  const { name_en, name_he, emoji, color } = args;
+  if (!name_en || !name_he) throw new Error("name_en and name_he required");
+
+  const sql = getDb();
+  const [row] = await sql<{ id: string }[]>`
+    INSERT INTO categories (user_id, name_en, name_he, emoji, color, icon)
+    VALUES (${userId}, ${name_en.trim()}, ${name_he.trim()}, ${emoji || "📌"}, ${color || "#8E8E93"}, ${"circle"})
+    RETURNING id
+  `;
+
+  return `✅ Category created: ${emoji || "📌"} ${name_en} / ${name_he} (id: ${row.id})`;
+}
+
 export async function toolTriggerScrape(userId: string, args: { company_id?: string }): Promise<string> {
   const { company_id } = args;
   const accounts = await getBankAccounts(userId);

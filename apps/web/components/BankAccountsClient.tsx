@@ -237,15 +237,15 @@ export default function BankAccountsClient({
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
-          <p className="mt-1 text-[13px] text-white/40">{t.subtitle}</p>
+          <h1 className="text-[28px] font-semibold tracking-tight text-black dark:text-white">{t.title}</h1>
+          <p className="mt-1 text-[13px] text-black/40 dark:text-white/40">{t.subtitle}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {accounts.length > 0 && (
             <button
               onClick={handleSyncAll}
               disabled={syncingAll || enabledCount === 0}
-              className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-[13px] font-medium text-white/60 transition-all hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-xl border border-black/10 bg-black/[0.06] px-3 py-2.5 text-[13px] font-medium text-black/60 transition-all hover:border-black/20 hover:bg-black/[0.10] hover:text-black/90 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/60 dark:hover:border-white/20 dark:hover:bg-white/[0.10] dark:hover:text-white/90"
             >
               {syncingAll ? <SpinnerIcon /> : <RefreshIcon />}
               {t.syncAll}
@@ -262,11 +262,11 @@ export default function BankAccountsClient({
       </div>
 
       {/* Auto-sync + import period banner */}
-      <div className="mb-5 flex flex-col gap-0 rounded-2xl border border-white/[0.07] bg-white/[0.03]">
+      <div className="mb-5 flex flex-col gap-0 rounded-2xl border border-black/[0.07] bg-black/[0.03] dark:border-white/[0.07] dark:bg-white/[0.03]">
         {/* Sync interval row */}
         <div className="flex flex-wrap items-center gap-3 px-4 py-3">
           <ClockIcon />
-          <span className="text-[13px] text-white/50">{t.autoSync}</span>
+          <span className="text-[13px] text-black/50 dark:text-white/50">{t.autoSync}</span>
           <div className="flex items-center gap-1">
             {INTERVAL_OPTIONS.map((h) => (
               <button
@@ -276,7 +276,7 @@ export default function BankAccountsClient({
                 className={`rounded-lg px-2.5 py-1 text-[12px] font-medium transition-all ${
                   interval === h
                     ? "bg-[oklch(0.5706_0.2236_258.71)] text-white shadow-[0_1px_8px_oklch(0.5706_0.2236_258.71/0.4)]"
-                    : "text-white/40 hover:bg-white/[0.07] hover:text-white/70"
+                    : "text-black/40 hover:bg-black/[0.07] hover:text-black/70 dark:text-white/40 dark:hover:bg-white/[0.07] dark:hover:text-white/70"
                 } disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 {h}{t.hours}
@@ -284,16 +284,16 @@ export default function BankAccountsClient({
             ))}
             {savingInterval && <SpinnerIcon />}
           </div>
-          <span className="ms-auto text-[12px] text-white/30">
+          <span className="ms-auto text-[12px] text-black/30 dark:text-white/30">
             {enabledCount}/{accounts.length} auto-sync
           </span>
         </div>
         {/* Divider */}
-        <div className="mx-4 h-px bg-white/[0.05]" />
+        <div className="mx-4 h-px bg-black/[0.05] dark:bg-white/[0.05]" />
         {/* History period row */}
         <div className="flex flex-wrap items-center gap-3 px-4 py-3">
           <CalendarIcon />
-          <span className="text-[13px] text-white/50">{t.importPeriod}</span>
+          <span className="text-[13px] text-black/50 dark:text-white/50">{t.importPeriod}</span>
           <div className="flex items-center gap-1">
             {HISTORY_OPTIONS.map((m) => (
               <button
@@ -303,7 +303,7 @@ export default function BankAccountsClient({
                 className={`rounded-lg px-2.5 py-1 text-[12px] font-medium transition-all ${
                   historyMonths === m
                     ? "bg-[oklch(0.5706_0.2236_258.71)] text-white shadow-[0_1px_8px_oklch(0.5706_0.2236_258.71/0.4)]"
-                    : "text-white/40 hover:bg-white/[0.07] hover:text-white/70"
+                    : "text-black/40 hover:bg-black/[0.07] hover:text-black/70 dark:text-white/40 dark:hover:bg-white/[0.07] dark:hover:text-white/70"
                 } disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 {m}{t.months}
@@ -332,8 +332,8 @@ export default function BankAccountsClient({
                 key={account.id}
                 className={`flex items-start gap-4 rounded-2xl border p-5 backdrop-blur-md transition-all duration-200 ${
                   isDisabled
-                    ? "border-white/[0.05] bg-white/[0.02] opacity-60"
-                    : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.12] hover:bg-white/[0.05]"
+                    ? "border-black/[0.05] bg-black/[0.02] opacity-60 dark:border-white/[0.05] dark:bg-white/[0.02]"
+                    : "border-black/[0.08] bg-black/[0.03] hover:border-black/[0.12] hover:bg-black/[0.05] dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:border-white/[0.12] dark:hover:bg-white/[0.05]"
                 }`}
               >
                 {/* Bank icon */}
@@ -344,11 +344,11 @@ export default function BankAccountsClient({
                 {/* Info */}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[15px] font-medium text-white/85">
+                    <span className="text-[15px] font-medium text-black/85 dark:text-white/85">
                       {config?.label ?? account.company_id}
                     </span>
                     {account.nickname && (
-                      <span className="text-[12px] text-white/40">— {account.nickname}</span>
+                      <span className="text-[12px] text-black/40 dark:text-white/40">— {account.nickname}</span>
                     )}
                     <StatusBadge
                       status={isDisabled ? "disabled" : isRunning ? "scraping" : hasFailed ? "error" : account.status}
@@ -357,7 +357,7 @@ export default function BankAccountsClient({
                   </div>
 
                   <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5">
-                    <p className="text-[12px] text-white/35">
+                    <p className="text-[12px] text-black/35 dark:text-white/35">
                       {t.lastScraped}: {fmtDate(account.last_scraped_at)}
                     </p>
                     {nextSync && (
@@ -390,7 +390,7 @@ export default function BankAccountsClient({
                       <button
                         onClick={() => handleScrape(account)}
                         disabled={isRunning}
-                        className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[12px] font-medium text-white/60 transition-all hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="rounded-xl border border-black/10 bg-black/[0.06] px-3 py-1.5 text-[12px] font-medium text-black/60 transition-all hover:border-black/20 hover:bg-black/[0.10] hover:text-black/90 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/60 dark:hover:border-white/20 dark:hover:bg-white/[0.10] dark:hover:text-white/90"
                       >
                         {isRunning ? <SpinnerIcon /> : t.scrapeNow}
                       </button>
@@ -399,15 +399,15 @@ export default function BankAccountsClient({
                       onClick={() => handleToggleEnabled(account)}
                       className={`rounded-xl border px-3 py-1.5 text-[12px] font-medium transition-all ${
                         isDisabled
-                          ? "border-white/10 bg-white/[0.05] text-white/40 hover:border-white/20 hover:text-white/60"
-                          : "border-white/10 bg-white/[0.05] text-white/50 hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-400"
+                          ? "border-black/10 bg-black/[0.05] text-black/40 hover:border-black/20 hover:text-black/60 dark:border-white/10 dark:bg-white/[0.05] dark:text-white/40 dark:hover:border-white/20 dark:hover:text-white/60"
+                          : "border-black/10 bg-black/[0.05] text-black/50 hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-600 dark:border-white/10 dark:bg-white/[0.05] dark:text-white/50 dark:hover:border-amber-500/30 dark:hover:bg-amber-500/10 dark:hover:text-amber-400"
                       }`}
                     >
                       {isDisabled ? t.enable : t.disable}
                     </button>
                     <button
                       onClick={() => handleRemove(account)}
-                      className="rounded-xl border border-white/[0.07] bg-white/[0.04] px-3 py-1.5 text-[12px] text-white/35 transition-all hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400"
+                      className="rounded-xl border border-black/[0.07] bg-black/[0.04] px-3 py-1.5 text-[12px] text-black/35 transition-all hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-600 dark:border-white/[0.07] dark:bg-white/[0.04] dark:text-white/35 dark:hover:text-red-400"
                     >
                       {t.remove}
                     </button>
@@ -435,15 +435,15 @@ export default function BankAccountsClient({
 
 function EmptyState({ t, onConnect }: { t: T; onConnect: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-white/[0.08] bg-white/[0.03] px-8 py-16 text-center backdrop-blur-md">
+    <div className="flex flex-col items-center justify-center rounded-3xl border border-black/[0.08] bg-black/[0.03] px-8 py-16 text-center backdrop-blur-md dark:border-white/[0.08] dark:bg-white/[0.03]">
       <div className="relative mb-5 flex h-16 w-16 items-center justify-center">
         <div className="absolute inset-0 rounded-full bg-[oklch(0.5706_0.2236_258.71)] opacity-25 blur-[20px]" />
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.08]">
-            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-black/15 bg-black/[0.08] dark:border-white/15 dark:bg-white/[0.08]">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-black/40 dark:text-white/40" aria-hidden="true"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
           </div>
       </div>
-      <h2 className="text-[18px] font-semibold text-white/80">{t.noAccounts}</h2>
-      <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-white/35">{t.noAccountsDesc}</p>
+      <h2 className="text-[18px] font-semibold text-black/80 dark:text-white/80">{t.noAccounts}</h2>
+      <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-black/35 dark:text-white/35">{t.noAccountsDesc}</p>
       <button
         onClick={onConnect}
         className="mt-6 flex items-center gap-2 rounded-xl bg-[oklch(0.5706_0.2236_258.71)] px-5 py-2.5 text-[13px] font-medium text-white shadow-[0_2px_12px_oklch(0.5706_0.2236_258.71/0.4)] transition-all hover:brightness-110"
@@ -527,56 +527,56 @@ function ConnectBankModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-t-3xl border border-white/[0.10] bg-[oklch(0.09_0.02_260)] p-6 shadow-2xl sm:rounded-3xl">
-        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
+      <div className="relative z-10 w-full max-w-md rounded-t-3xl border border-black/[0.10] bg-[oklch(0.97_0.005_260)] p-6 shadow-2xl sm:rounded-3xl dark:border-white/[0.10] dark:bg-[oklch(0.09_0.02_260)]">
+        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-black/20 sm:hidden dark:bg-white/20" />
 
         {step === "select" ? (
           <>
-            <h2 className="mb-5 text-[18px] font-semibold text-white">{t.selectBank}</h2>
+            <h2 className="mb-5 text-[18px] font-semibold text-black dark:text-white">{t.selectBank}</h2>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {bankConfigs.map((config) => (
                 <button
                   key={config.companyId}
                   onClick={() => handleSelectBank(config)}
-                  className="flex flex-col items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.04] px-3 py-4 text-center transition-all hover:border-white/[0.16] hover:bg-white/[0.08] active:scale-95"
+                  className="flex flex-col items-center gap-2.5 rounded-2xl border border-black/[0.08] bg-black/[0.04] px-3 py-4 text-center transition-all hover:border-black/[0.16] hover:bg-black/[0.08] active:scale-95 dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:border-white/[0.16] dark:hover:bg-white/[0.08]"
                 >
                   <BankLogo companyId={config.companyId} size={36} />
-                  <span className="text-[11px] leading-tight text-white/70">{config.label}</span>
+                  <span className="text-[11px] leading-tight text-black/70 dark:text-white/70">{config.label}</span>
                 </button>
               ))}
             </div>
-            <button onClick={onClose} className="mt-5 w-full rounded-xl border border-white/[0.08] py-2.5 text-[13px] text-white/40 transition-all hover:bg-white/[0.05]">✕</button>
+            <button onClick={onClose} className="mt-5 w-full rounded-xl border border-black/[0.08] py-2.5 text-[13px] text-black/40 transition-all hover:bg-black/[0.05] dark:border-white/[0.08] dark:text-white/40 dark:hover:bg-white/[0.05]">✕</button>
           </>
         ) : (
           <>
             <div className="mb-5 flex items-center gap-3">
-              <button onClick={() => setStep("select")} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white/60 transition-all hover:bg-white/[0.10]">‹</button>
+              <button onClick={() => setStep("select")} className="flex h-8 w-8 items-center justify-center rounded-xl border border-black/10 bg-black/[0.06] text-black/60 transition-all hover:bg-black/[0.10] dark:border-white/10 dark:bg-white/[0.06] dark:text-white/60 dark:hover:bg-white/[0.10]">‹</button>
               <BankLogo companyId={selectedConfig!.companyId} size={32} />
-              <h2 className="text-[18px] font-semibold text-white">{t.credentialsTitle} {selectedConfig!.label}</h2>
+              <h2 className="text-[18px] font-semibold text-black dark:text-white">{t.credentialsTitle} {selectedConfig!.label}</h2>
             </div>
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
               {selectedConfig!.fields.map((field) => (
                 <div key={field.name}>
-                  <label className="mb-1.5 block text-[12px] font-medium text-white/50">{field.label}</label>
+                  <label className="mb-1.5 block text-[12px] font-medium text-black/50 dark:text-white/50">{field.label}</label>
                   <input
                     type={field.type}
                     value={fieldValues[field.name] ?? ""}
                     onChange={(e) => setFieldValues((prev) => ({ ...prev, [field.name]: e.target.value }))}
                     required
                     autoComplete={field.type === "password" ? "current-password" : "off"}
-                    className="w-full rounded-xl border border-white/[0.10] bg-white/[0.06] px-4 py-2.5 text-[14px] text-white placeholder-white/25 outline-none transition-all focus:border-[oklch(0.5706_0.2236_258.71/0.6)] focus:ring-1 focus:ring-[oklch(0.5706_0.2236_258.71/0.3)]"
+                    className="w-full rounded-xl border border-black/[0.10] bg-black/[0.06] px-4 py-2.5 text-[14px] text-black placeholder-black/25 outline-none transition-all focus:border-[oklch(0.5706_0.2236_258.71/0.6)] focus:ring-1 focus:ring-[oklch(0.5706_0.2236_258.71/0.3)] dark:border-white/[0.10] dark:bg-white/[0.06] dark:text-white dark:placeholder-white/25"
                   />
                 </div>
               ))}
               <div>
-                <label className="mb-1.5 block text-[12px] font-medium text-white/50">{t.nicknameLabel}</label>
+                <label className="mb-1.5 block text-[12px] font-medium text-black/50 dark:text-white/50">{t.nicknameLabel}</label>
                 <input
                   type="text"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder={t.nicknamePlaceholder}
                   dir="auto"
-                  className="w-full rounded-xl border border-white/[0.10] bg-white/[0.06] px-4 py-2.5 text-[14px] text-white placeholder-white/25 outline-none transition-all focus:border-[oklch(0.5706_0.2236_258.71/0.6)] focus:ring-1 focus:ring-[oklch(0.5706_0.2236_258.71/0.3)]"
+                  className="w-full rounded-xl border border-black/[0.10] bg-black/[0.06] px-4 py-2.5 text-[14px] text-black placeholder-black/25 outline-none transition-all focus:border-[oklch(0.5706_0.2236_258.71/0.6)] focus:ring-1 focus:ring-[oklch(0.5706_0.2236_258.71/0.3)] dark:border-white/[0.10] dark:bg-white/[0.06] dark:text-white dark:placeholder-white/25"
                 />
               </div>
               {error && (
@@ -733,8 +733,8 @@ function SpinnerIcon() {
   return <svg className="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>;
 }
 function ClockIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black/30 dark:text-white/30" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
 }
 function CalendarIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/30" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black/30 dark:text-white/30" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
 }

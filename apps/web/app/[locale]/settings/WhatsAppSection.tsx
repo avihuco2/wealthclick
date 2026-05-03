@@ -280,15 +280,17 @@ export default function WhatsAppSection({ t }: Props) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  if (loading) return <div className="h-6 w-32 animate-pulse rounded bg-white/10" />;
+  if (loading) return <div className="h-6 w-32 animate-pulse rounded bg-black/10 dark:bg-white/10" />;
 
   const isSaveDisabled = saving || !evolutionUrl.trim() || !instanceName.trim() || (!config?.has_api_key && !apiKey.trim());
+
+  const inputClass = "w-full rounded-xl bg-black/[0.06] px-4 py-2.5 text-sm text-black placeholder-black/30 outline-none ring-1 ring-black/10 focus:ring-black/30 dark:bg-white/[0.06] dark:text-white dark:placeholder-white/30 dark:ring-white/10 dark:focus:ring-white/30";
 
   return (
     <section className="mt-10 space-y-6">
       <div>
-        <h2 className="text-lg font-semibold text-white">{t.title}</h2>
-        <p className="mt-1 text-sm text-white/50">{t.desc}</p>
+        <h2 className="text-lg font-semibold text-black dark:text-white">{t.title}</h2>
+        <p className="mt-1 text-sm text-black/50 dark:text-white/50">{t.desc}</p>
       </div>
 
       {/* Connection status + actions */}
@@ -298,14 +300,14 @@ export default function WhatsAppSection({ t }: Props) {
           connState === "connected" ? "bg-green-500/20 text-green-400" :
           connState === "qr"        ? "bg-yellow-500/20 text-yellow-400" :
           connState === "error"     ? "bg-red-500/20 text-red-400" :
-                                      "bg-white/10 text-white/50",
+                                      "bg-black/10 text-black/50 dark:bg-white/10 dark:text-white/50",
         ].join(" ")}>
           <span className={[
             "h-1.5 w-1.5 rounded-full",
             connState === "connected" ? "bg-green-400" :
             connState === "qr"        ? "bg-yellow-400" :
             connState === "error"     ? "bg-red-400" :
-                                        "bg-white/30",
+                                        "bg-black/30 dark:bg-white/30",
           ].join(" ")} />
           {connState === "connected" ? t.statusConnected :
            connState === "qr"        ? t.scanQr :
@@ -334,7 +336,7 @@ export default function WhatsAppSection({ t }: Props) {
         {connState === "qr" && (
           <button
             onClick={handleRefreshQr}
-            className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/20"
+            className="rounded-lg bg-black/10 px-3 py-1.5 text-xs font-medium text-black/70 transition hover:bg-black/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
           >
             {t.refresh}
           </button>
@@ -344,7 +346,7 @@ export default function WhatsAppSection({ t }: Props) {
       {/* QR code */}
       {connState === "qr" && qrBase64 && (
         <div className="flex flex-col items-start gap-2">
-          <p className="text-sm text-white/60">{t.scanQr}</p>
+          <p className="text-sm text-black/60 dark:text-white/60">{t.scanQr}</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qrBase64} alt="WhatsApp QR" className="h-48 w-48 rounded-xl bg-white p-2" />
         </div>
@@ -353,16 +355,16 @@ export default function WhatsAppSection({ t }: Props) {
       {/* Webhook URL (read-only copy) */}
       {config?.webhook_secret && (
         <div className="space-y-1">
-          <label className="block text-xs font-medium text-white/60">{t.webhookUrl}</label>
+          <label className="block text-xs font-medium text-black/60 dark:text-white/60">{t.webhookUrl}</label>
           <div className="flex items-center gap-2">
-            <code className="flex-1 truncate rounded-lg bg-white/[0.06] px-3 py-2 text-xs text-white/70">
+            <code className="flex-1 truncate rounded-lg bg-black/[0.06] px-3 py-2 text-xs text-black/70 dark:bg-white/[0.06] dark:text-white/70">
               {typeof window !== "undefined"
                 ? `${window.location.origin}/api/whatsapp/webhook?key=${config.webhook_secret}`
                 : `/api/whatsapp/webhook?key=${config.webhook_secret}`}
             </code>
             <button
               onClick={handleCopyWebhook}
-              className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/70 transition hover:bg-white/20"
+              className="rounded-lg bg-black/10 px-3 py-2 text-xs text-black/70 transition hover:bg-black/20 dark:bg-white/10 dark:text-white/70 dark:hover:bg-white/20"
             >
               {copied ? t.copied : t.copy}
             </button>
@@ -374,70 +376,70 @@ export default function WhatsAppSection({ t }: Props) {
       <div className="grid gap-4">
         {/* Evolution URL */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-white/70">{t.evolutionUrl}</label>
+          <label className="block text-sm font-medium text-black/70 dark:text-white/70">{t.evolutionUrl}</label>
           <input
             type="url"
             value={evolutionUrl}
             onChange={(e) => setEvolutionUrl(e.target.value)}
             placeholder={t.evolutionUrlPlaceholder}
-            className="w-full rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none ring-1 ring-white/10 focus:ring-white/30"
+            className={inputClass}
           />
         </div>
 
         {/* API Key */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-white/70">{t.apiKey}</label>
+          <label className="block text-sm font-medium text-black/70 dark:text-white/70">{t.apiKey}</label>
           <input
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder={config?.has_api_key ? "••••••••••••••••" : t.apiKeyPlaceholder}
-            className="w-full rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none ring-1 ring-white/10 focus:ring-white/30"
+            className={inputClass}
           />
-          <p className="text-xs text-white/40">{t.apiKeyHint}</p>
+          <p className="text-xs text-black/40 dark:text-white/40">{t.apiKeyHint}</p>
         </div>
 
         {/* Instance name */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-white/70">{t.instanceName}</label>
+          <label className="block text-sm font-medium text-black/70 dark:text-white/70">{t.instanceName}</label>
           <input
             type="text"
             value={instanceName}
             onChange={(e) => setInstanceName(e.target.value)}
             placeholder={t.instanceNamePlaceholder}
-            className="w-full rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none ring-1 ring-white/10 focus:ring-white/30"
+            className={inputClass}
           />
         </div>
 
         {/* Allowed numbers */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-white/70">{t.allowedNumbers}</label>
+          <label className="block text-sm font-medium text-black/70 dark:text-white/70">{t.allowedNumbers}</label>
           <textarea
             rows={3}
             value={allowedNumbers}
             onChange={(e) => setAllowedNumbers(e.target.value)}
             placeholder={t.allowedNumbersPlaceholder}
-            className="w-full resize-none rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none ring-1 ring-white/10 focus:ring-white/30"
+            className={`${inputClass} resize-none`}
           />
-          <p className="text-xs text-white/40">{t.allowedNumbersHint}</p>
+          <p className="text-xs text-black/40 dark:text-white/40">{t.allowedNumbersHint}</p>
         </div>
 
         {/* Model */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-white/70">{t.model}</label>
+          <label className="block text-sm font-medium text-black/70 dark:text-white/70">{t.model}</label>
           <select
             value={model}
             onChange={(e) => setModel(e.target.value as AnyModelId)}
-            className="w-full rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/30"
+            className="w-full rounded-xl bg-[oklch(0.96_0.005_260)] px-4 py-2.5 text-sm text-black/80 outline-none ring-1 ring-black/10 focus:ring-black/30 dark:bg-white/[0.06] dark:text-white dark:ring-white/10 dark:focus:ring-white/30"
           >
             <optgroup label="AWS Bedrock">
               {ALL_MODELS.filter((m) => m.provider === "bedrock").map((m) => (
-                <option key={m.id} value={m.id} className="bg-[#1a1a2e]">{m.label}</option>
+                <option key={m.id} value={m.id} className="bg-[oklch(0.96_0.005_260)] dark:bg-[#1a1a2e]">{m.label}</option>
               ))}
             </optgroup>
             <optgroup label="Google AI (Gemma)">
               {GOOGLE_MODELS.map((m) => (
-                <option key={m.id} value={m.id} className="bg-[#1a1a2e]">{m.label}</option>
+                <option key={m.id} value={m.id} className="bg-[oklch(0.96_0.005_260)] dark:bg-[#1a1a2e]">{m.label}</option>
               ))}
             </optgroup>
           </select>
@@ -445,28 +447,28 @@ export default function WhatsAppSection({ t }: Props) {
 
         {/* System prompt */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-white/70">{t.systemPrompt}</label>
+          <label className="block text-sm font-medium text-black/70 dark:text-white/70">{t.systemPrompt}</label>
           <textarea
             rows={4}
             value={systemPrompt}
             onChange={(e) => setSystemPrompt(e.target.value)}
             placeholder={t.systemPromptPlaceholder}
-            className="w-full resize-none rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none ring-1 ring-white/10 focus:ring-white/30"
+            className={`${inputClass} resize-none`}
           />
         </div>
 
         {/* Max history */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-white/70">{t.maxHistory}</label>
+          <label className="block text-sm font-medium text-black/70 dark:text-white/70">{t.maxHistory}</label>
           <input
             type="number"
             min={1}
             max={200}
             value={maxHistory}
             onChange={(e) => setMaxHistory(Math.max(1, Math.min(200, Number(e.target.value) || 40)))}
-            className="w-32 rounded-xl bg-white/[0.06] px-4 py-2.5 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/30"
+            className="w-32 rounded-xl bg-black/[0.06] px-4 py-2.5 text-sm text-black outline-none ring-1 ring-black/10 focus:ring-black/30 dark:bg-white/[0.06] dark:text-white dark:ring-white/10 dark:focus:ring-white/30"
           />
-          <p className="text-xs text-white/40">{t.maxHistoryHint}</p>
+          <p className="text-xs text-black/40 dark:text-white/40">{t.maxHistoryHint}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -480,7 +482,7 @@ export default function WhatsAppSection({ t }: Props) {
           <button
             onClick={handleClearHistory}
             disabled={clearingHistory}
-            className="rounded-xl bg-red-500/20 px-5 py-2.5 text-sm font-medium text-red-300 ring-1 ring-red-500/30 transition hover:bg-red-500/30 disabled:opacity-40"
+            className="rounded-xl bg-red-500/20 px-5 py-2.5 text-sm font-medium text-red-600 ring-1 ring-red-500/30 transition hover:bg-red-500/30 disabled:opacity-40 dark:text-red-300"
           >
             {clearingHistory ? t.clearingHistory : historyClearedMsg ? t.historyCleared : t.clearHistory}
           </button>

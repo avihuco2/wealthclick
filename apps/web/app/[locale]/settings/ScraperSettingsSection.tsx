@@ -33,18 +33,18 @@ export default function ScraperSettingsSection({
   }
 
   return (
-    <section className="mb-8 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 backdrop-blur">
-      <h2 className="mb-4 text-lg font-semibold text-white">{t.title}</h2>
+    <section className="mb-8 rounded-2xl border border-black/[0.08] bg-black/[0.04] p-6 backdrop-blur dark:border-white/[0.08] dark:bg-white/[0.04]">
+      <h2 className="mb-4 text-lg font-semibold text-black dark:text-white">{t.title}</h2>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-white/90">{t.autoSyncLabel}</p>
-          <p className="mt-0.5 text-xs text-white/50">{t.autoSyncDesc}</p>
+          <p className="text-sm font-medium text-black/90 dark:text-white/90">{t.autoSyncLabel}</p>
+          <p className="mt-0.5 text-xs text-black/50 dark:text-white/50">{t.autoSyncDesc}</p>
         </div>
         <button
           onClick={toggle}
           disabled={saving}
           className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
-            enabled ? "bg-[#34C759]" : "bg-white/20"
+            enabled ? "bg-[#34C759]" : "bg-black/20 dark:bg-white/20"
           }`}
           role="switch"
           aria-checked={enabled}

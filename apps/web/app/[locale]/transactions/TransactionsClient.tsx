@@ -246,10 +246,10 @@ export default function TransactionsClient({
   }
 
   const glassInput =
-    "w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-[14px] text-white placeholder-white/25 outline-none backdrop-blur-md transition-all focus:border-white/25 focus:bg-white/[0.09]";
+    "w-full rounded-xl border border-black/10 bg-black/[0.06] px-4 py-2.5 text-[14px] text-black placeholder-black/25 outline-none backdrop-blur-md transition-all focus:border-black/25 focus:bg-black/[0.09] dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder-white/25 dark:focus:border-white/25 dark:focus:bg-white/[0.09]";
 
   const glassSelect =
-    "w-full rounded-xl border border-white/10 bg-[oklch(0.12_0.02_260)] px-4 py-2.5 text-[14px] text-white/80 outline-none transition-all focus:border-white/25";
+    "w-full rounded-xl border border-black/10 bg-[oklch(0.96_0.005_260)] px-4 py-2.5 text-[14px] text-black/80 outline-none transition-all focus:border-black/25 dark:border-white/10 dark:bg-[oklch(0.12_0.02_260)] dark:text-white/80 dark:focus:border-white/25";
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -257,7 +257,7 @@ export default function TransactionsClient({
     <div>
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[24px] font-semibold tracking-tight text-white sm:text-[28px]">{t.title}</h1>
+        <h1 className="text-[24px] font-semibold tracking-tight text-black sm:text-[28px] dark:text-white">{t.title}</h1>
         <div className="flex items-center gap-2">
           {/* Admin: clear all data */}
           {isAdmin && (
@@ -287,13 +287,13 @@ export default function TransactionsClient({
             onClick={handleAutoCategorize}
             disabled={autoCatting}
             title={t.autoCategorize}
-            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] p-2 text-[14px] font-medium text-white/60 transition-all hover:border-white/20 hover:bg-white/[0.10] hover:text-white/90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2.5"
+            className="flex items-center gap-2 rounded-xl border border-black/10 bg-black/[0.06] p-2 text-[14px] font-medium text-black/60 transition-all hover:border-black/20 hover:bg-black/[0.10] hover:text-black/90 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2.5 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/60 dark:hover:border-white/20 dark:hover:bg-white/[0.10] dark:hover:text-white/90"
           >
             {autoCatting ? <SpinnerIcon /> : <SparklesIcon />}
             <span className="hidden sm:inline">{t.autoCategorize}</span>
           </button>
           {autoCatResult !== null && (
-            <span className="hidden text-[12px] text-white/40 sm:inline">
+            <span className="hidden text-[12px] text-black/40 sm:inline dark:text-white/40">
               {autoCatResult > 0 ? `${autoCatResult} ${t.autoCategorized}` : t.autoCategorizeNone}
             </span>
           )}
@@ -309,11 +309,11 @@ export default function TransactionsClient({
 
       {/* Month navigation */}
       <div className="mb-6 flex items-center justify-center gap-4">
-        <button onClick={() => navigateMonth(-1)} className="rounded-xl border border-white/10 bg-white/[0.06] p-2 text-white/50 transition-all hover:bg-white/[0.10] hover:text-white/80">
+        <button onClick={() => navigateMonth(-1)} className="rounded-xl border border-black/10 bg-black/[0.06] p-2 text-black/50 transition-all hover:bg-black/[0.10] hover:text-black/80 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/50 dark:hover:bg-white/[0.10] dark:hover:text-white/80">
           <ChevronLeftIcon />
         </button>
-        <span className="min-w-[160px] text-center text-[16px] font-medium text-white/80">{fmtMonthLabel()}</span>
-        <button onClick={() => navigateMonth(1)} className="rounded-xl border border-white/10 bg-white/[0.06] p-2 text-white/50 transition-all hover:bg-white/[0.10] hover:text-white/80">
+        <span className="min-w-[160px] text-center text-[16px] font-medium text-black/80 dark:text-white/80">{fmtMonthLabel()}</span>
+        <button onClick={() => navigateMonth(1)} className="rounded-xl border border-black/10 bg-black/[0.06] p-2 text-black/50 transition-all hover:bg-black/[0.10] hover:text-black/80 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/50 dark:hover:bg-white/[0.10] dark:hover:text-white/80">
           <ChevronRightIcon />
         </button>
       </div>
@@ -329,25 +329,25 @@ export default function TransactionsClient({
       <div className="mb-4 flex flex-col gap-2">
         {/* Row 1: type toggle + search */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-1 rounded-xl border border-white/[0.08] bg-white/[0.04] p-1">
+          <div className="flex gap-1 rounded-xl border border-black/[0.08] bg-black/[0.04] p-1 dark:border-white/[0.08] dark:bg-white/[0.04]">
             {(["all", "income", "expense"] as const).map((ft) => (
               <button key={ft} onClick={() => setFilterType(ft)}
                 className={cn("flex-1 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all",
-                  filterType === ft ? "bg-white/[0.12] text-white" : "text-white/40 hover:text-white/70")}>
+                  filterType === ft ? "bg-black/[0.12] text-black dark:bg-white/[0.12] dark:text-white" : "text-black/40 hover:text-black/70 dark:text-white/40 dark:hover:text-white/70")}>
                 {ft === "all" ? t.filterAll : ft === "income" ? t.filterIncome : t.filterExpense}
               </button>
             ))}
           </div>
           <input type="text" placeholder={`${t.description}...`} value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2 text-[13px] text-white placeholder-white/25 outline-none backdrop-blur-md transition-all focus:border-white/25 focus:bg-white/[0.09] sm:w-48" />
+            className="w-full rounded-xl border border-black/10 bg-black/[0.06] px-4 py-2 text-[13px] text-black placeholder-black/25 outline-none backdrop-blur-md transition-all focus:border-black/25 focus:bg-black/[0.09] sm:w-48 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder-white/25 dark:focus:border-white/25 dark:focus:bg-white/[0.09]" />
         </div>
         {/* Row 2: category + account dropdowns */}
         <div className="flex flex-col gap-2 sm:flex-row">
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="flex-1 rounded-xl border border-white/10 bg-[oklch(0.12_0.02_260)] px-4 py-2 text-[13px] text-white/70 outline-none transition-all focus:border-white/25"
+            className="flex-1 rounded-xl border border-black/10 bg-[oklch(0.96_0.005_260)] px-4 py-2 text-[13px] text-black/70 outline-none transition-all focus:border-black/25 dark:border-white/10 dark:bg-[oklch(0.12_0.02_260)] dark:text-white/70 dark:focus:border-white/25"
           >
             <option value="all">{t.allCategories}</option>
             <option value="__none__">{t.noCategory}</option>
@@ -361,7 +361,7 @@ export default function TransactionsClient({
             <select
               value={filterAccount}
               onChange={(e) => setFilterAccount(e.target.value)}
-              className="flex-1 rounded-xl border border-white/10 bg-[oklch(0.12_0.02_260)] px-4 py-2 text-[13px] text-white/70 outline-none transition-all focus:border-white/25"
+              className="flex-1 rounded-xl border border-black/10 bg-[oklch(0.96_0.005_260)] px-4 py-2 text-[13px] text-black/70 outline-none transition-all focus:border-black/25 dark:border-white/10 dark:bg-[oklch(0.12_0.02_260)] dark:text-white/70 dark:focus:border-white/25"
             >
               <option value="all">{t.allAccounts}</option>
               <option value="__none__">—</option>
@@ -374,19 +374,19 @@ export default function TransactionsClient({
       </div>
 
       {/* Transaction list */}
-      <div className="overflow-hidden rounded-2xl border border-white/[0.08] backdrop-blur-md">
+      <div className="overflow-hidden rounded-2xl border border-black/[0.08] backdrop-blur-md dark:border-white/[0.08]">
         {filtered.length === 0 ? (
           <div className="py-16 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-white/30">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-black/10 bg-black/[0.06] text-black/30 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/30">
               <ReceiptIcon />
             </div>
-            <p className="text-[15px] font-medium text-white/50">{t.noTransactions}</p>
-            <p className="mt-1 text-[13px] text-white/25">{t.noTransactionsDesc}</p>
+            <p className="text-[15px] font-medium text-black/50 dark:text-white/50">{t.noTransactions}</p>
+            <p className="mt-1 text-[13px] text-black/25 dark:text-white/25">{t.noTransactionsDesc}</p>
           </div>
         ) : (
           <>
             {/* ── Mobile card list (hidden on sm+) ── */}
-            <div className="divide-y divide-white/[0.04] sm:hidden">
+            <div className="divide-y divide-black/[0.04] sm:hidden dark:divide-white/[0.04]">
               {filtered.map((tx) => {
                 const isDeleting = deletingId === tx.id;
                 return (
@@ -400,9 +400,9 @@ export default function TransactionsClient({
                     </div>
                     {/* Row 2: description + installment badge */}
                     <div className="mb-2 flex items-center gap-2">
-                      <span className="flex-1 truncate text-[14px] font-medium text-white/85">{tx.description}</span>
+                      <span className="flex-1 truncate text-[14px] font-medium text-black/85 dark:text-white/85">{tx.description}</span>
                       {tx.installment_total && tx.installment_current && (
-                        <span className="shrink-0 rounded-full border border-white/[0.12] bg-white/[0.06] px-2 py-0.5 text-[11px] tabular-nums text-white/50">
+                        <span className="shrink-0 rounded-full border border-black/[0.12] bg-black/[0.06] px-2 py-0.5 text-[11px] tabular-nums text-black/50 dark:border-white/[0.12] dark:bg-white/[0.06] dark:text-white/50">
                           {tx.installment_current}/{tx.installment_total}
                         </span>
                       )}
@@ -461,9 +461,9 @@ export default function TransactionsClient({
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.03]">
+                  <tr className="border-b border-black/[0.06] bg-black/[0.03] dark:border-white/[0.06] dark:bg-white/[0.03]">
                     {[t.date, t.description, t.installments, t.category, t.account, t.amount, ""].map((h, i) => (
-                      <th key={i} className={cn("px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-white/30", i >= 5 ? "text-end" : "text-start")}>
+                      <th key={i} className={cn("px-4 py-3 text-[11px] font-medium uppercase tracking-wider text-black/30 dark:text-white/30", i >= 5 ? "text-end" : "text-start")}>
                         {h}
                       </th>
                     ))}
@@ -471,16 +471,16 @@ export default function TransactionsClient({
                 </thead>
                 <tbody>
                   {filtered.map((tx, i) => (
-                    <tr key={tx.id} className={cn("border-b border-white/[0.04] transition-colors hover:bg-white/[0.03]", i === filtered.length - 1 && "border-none")}>
-                      <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-white/40">{fmtDate(tx.date)}</td>
-                      <td className="max-w-[180px] truncate px-4 py-3.5 text-[13px] text-white/80">{tx.description}</td>
+                    <tr key={tx.id} className={cn("border-b border-black/[0.04] transition-colors hover:bg-black/[0.03] dark:border-white/[0.04] dark:hover:bg-white/[0.03]", i === filtered.length - 1 && "border-none")}>
+                      <td className="whitespace-nowrap px-4 py-3.5 text-[13px] text-black/40 dark:text-white/40">{fmtDate(tx.date)}</td>
+                      <td className="max-w-[180px] truncate px-4 py-3.5 text-[13px] text-black/80 dark:text-white/80">{tx.description}</td>
                       <td className="whitespace-nowrap px-4 py-3.5">
                         {tx.installment_total && tx.installment_current ? (
-                          <span className="inline-flex items-center rounded-full border border-white/[0.12] bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium tabular-nums text-white/50">
+                          <span className="inline-flex items-center rounded-full border border-black/[0.12] bg-black/[0.06] px-2 py-0.5 text-[11px] font-medium tabular-nums text-black/50 dark:border-white/[0.12] dark:bg-white/[0.06] dark:text-white/50">
                             {tx.installment_current}/{tx.installment_total}
                           </span>
                         ) : (
-                          <span className="text-white/10">—</span>
+                          <span className="text-black/10 dark:text-white/10">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3.5">
@@ -493,7 +493,8 @@ export default function TransactionsClient({
                           onCategoryChange={handleCategoryChange}
                         />
                       </td>
-                      <td className="px-4 py-3.5 text-[13px] text-white/40">{tx.account ?? "—"}</td>
+                      <td className="px-4 py-3.5 text-[13px] text-black/40 dark:text-white/40">{tx.account ?? "—"}</td>
+
                       <td className="whitespace-nowrap px-4 py-3.5 text-end text-[13px] font-medium">
                         <span className={tx.type === "income" ? "text-[oklch(0.80_0.14_142)]" : "text-[oklch(0.78_0.16_27)]"}>
                           {tx.type === "income" ? "+" : "-"}{fmtCurrency(tx.amount)}
@@ -544,10 +545,10 @@ export default function TransactionsClient({
       {/* ── Categories section ──────────────────────────────────────────────── */}
       <div className="mt-10">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[14px] font-medium uppercase tracking-wider text-white/30">{t.categories}</h2>
+          <h2 className="text-[14px] font-medium uppercase tracking-wider text-black/30 dark:text-white/30">{t.categories}</h2>
           <button
             onClick={() => setCatModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[12px] text-white/50 transition-all hover:border-white/20 hover:bg-white/[0.10] hover:text-white/80"
+            className="flex items-center gap-1.5 rounded-xl border border-black/10 bg-black/[0.06] px-3 py-1.5 text-[12px] text-black/50 transition-all hover:border-black/20 hover:bg-black/[0.10] hover:text-black/80 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/50 dark:hover:border-white/20 dark:hover:bg-white/[0.10] dark:hover:text-white/80"
           >
             <PlusIcon />
             {t.addCategory}
@@ -571,12 +572,12 @@ export default function TransactionsClient({
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal} />
-          <div className="relative z-10 max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-white/[0.12] bg-[oklch(0.10_0.02_260)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-2xl sm:max-h-[90vh] sm:max-w-md sm:rounded-3xl">
+          <div className="relative z-10 max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-black/[0.12] bg-[oklch(0.97_0.005_260)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.2)] backdrop-blur-2xl sm:max-h-[90vh] sm:max-w-md sm:rounded-3xl dark:border-white/[0.12] dark:bg-[oklch(0.10_0.02_260)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-[18px] font-semibold text-white">
+              <h2 className="text-[18px] font-semibold text-black dark:text-white">
                 {editingTx ? t.editTransaction : t.addTransaction}
               </h2>
-              <button onClick={closeModal} className="rounded-lg p-1.5 text-white/40 transition-all hover:bg-white/[0.08] hover:text-white/80">
+              <button onClick={closeModal} className="rounded-lg p-1.5 text-black/40 transition-all hover:bg-black/[0.08] hover:text-black/80 dark:text-white/40 dark:hover:bg-white/[0.08] dark:hover:text-white/80">
                 <XIcon />
               </button>
             </div>
@@ -586,7 +587,7 @@ export default function TransactionsClient({
 
               {/* Type toggle */}
               <div className="mb-4">
-                <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.type}</label>
+                <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.type}</label>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setFormType("expense")}
                     className={cn("flex-1 rounded-xl border py-2.5 text-[13px] font-medium transition-all",
@@ -607,7 +608,7 @@ export default function TransactionsClient({
 
               {/* Date */}
               <div className="mb-4">
-                <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.date}</label>
+                <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.date}</label>
                 <input type="date" name="date" required
                   defaultValue={editingTx ? toDateInputValue(editingTx.date) : todayStr()}
                   className={glassInput} />
@@ -615,7 +616,7 @@ export default function TransactionsClient({
 
               {/* Description */}
               <div className="mb-4">
-                <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.description}</label>
+                <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.description}</label>
                 <input type="text" name="description" required
                   defaultValue={editingTx?.description ?? ""} placeholder={t.description}
                   className={glassInput} />
@@ -623,7 +624,7 @@ export default function TransactionsClient({
 
               {/* Amount */}
               <div className="mb-4">
-                <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.amount}</label>
+                <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.amount}</label>
                 <input type="number" name="amount" required min="0.01" step="0.01"
                   defaultValue={editingTx ? editingTx.amount : ""} placeholder="0.00"
                   className={glassInput} />
@@ -631,7 +632,7 @@ export default function TransactionsClient({
 
               {/* Category */}
               <div className="mb-4">
-                <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.category}</label>
+                <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.category}</label>
                 <select name="category_id" defaultValue={editingTx?.category_id ?? ""} className={glassSelect}>
                   <option value="">{t.noCategory}</option>
                   {categories.map((cat) => (
@@ -644,7 +645,7 @@ export default function TransactionsClient({
 
               {/* Account */}
               <div className="mb-4">
-                <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.account}</label>
+                <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.account}</label>
                 <input type="text" name="account" defaultValue={editingTx?.account ?? ""}
                   placeholder={t.accountPlaceholder} className={glassInput} />
               </div>
@@ -652,7 +653,7 @@ export default function TransactionsClient({
               {/* Installments — only when adding new */}
               {!editingTx && (
                 <div className="mb-6">
-                  <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.installments}</label>
+                  <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.installments}</label>
                   <input type="number" name="installments" min="1" max="360" step="1"
                     placeholder={t.installmentsPlaceholder} className={glassInput} />
                 </div>
@@ -677,10 +678,10 @@ export default function TransactionsClient({
       {catModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeCatModal} />
-          <div className="relative z-10 w-full max-w-sm rounded-3xl border border-white/[0.12] bg-[oklch(0.10_0.02_260)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+          <div className="relative z-10 w-full max-w-sm rounded-3xl border border-black/[0.12] bg-[oklch(0.97_0.005_260)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.2)] backdrop-blur-2xl dark:border-white/[0.12] dark:bg-[oklch(0.10_0.02_260)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-[18px] font-semibold text-white">{t.addCategory}</h2>
-              <button onClick={closeCatModal} className="rounded-lg p-1.5 text-white/40 transition-all hover:bg-white/[0.08] hover:text-white/80">
+              <h2 className="text-[18px] font-semibold text-black dark:text-white">{t.addCategory}</h2>
+              <button onClick={closeCatModal} className="rounded-lg p-1.5 text-black/40 transition-all hover:bg-black/[0.08] hover:text-black/80 dark:text-white/40 dark:hover:bg-white/[0.08] dark:hover:text-white/80">
                 <XIcon />
               </button>
             </div>
@@ -689,7 +690,7 @@ export default function TransactionsClient({
               {/* Emoji row */}
               <div className="mb-4 flex gap-3">
                 <div className="w-20">
-                  <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.categoryEmoji}</label>
+                  <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.categoryEmoji}</label>
                   <input
                     type="text"
                     name="emoji"
@@ -700,7 +701,7 @@ export default function TransactionsClient({
                 </div>
                 {/* English name */}
                 <div className="flex-1">
-                  <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.categoryNameEn}</label>
+                  <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.categoryNameEn}</label>
                   <input
                     type="text"
                     name="name_en"
@@ -714,7 +715,7 @@ export default function TransactionsClient({
 
               {/* Hebrew name */}
               <div className="mb-4">
-                <label className="mb-1.5 block text-[12px] font-medium text-white/40">{t.categoryNameHe}</label>
+                <label className="mb-1.5 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.categoryNameHe}</label>
                 <input
                   type="text"
                   name="name_he"
@@ -727,7 +728,7 @@ export default function TransactionsClient({
 
               {/* Color picker */}
               <div className="mb-6">
-                <label className="mb-2 block text-[12px] font-medium text-white/40">{t.categoryColor}</label>
+                <label className="mb-2 block text-[12px] font-medium text-black/40 dark:text-white/40">{t.categoryColor}</label>
                 <div className="flex flex-wrap gap-2">
                   {COLOR_PALETTE.map((c) => (
                     <button
@@ -773,9 +774,9 @@ export default function TransactionsClient({
 
 function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5 backdrop-blur-xl">
+    <div className="relative overflow-hidden rounded-2xl border border-black/[0.08] bg-black/[0.04] p-5 backdrop-blur-xl dark:border-white/[0.08] dark:bg-white/[0.04]">
       <div className="absolute -bottom-4 end-[-1rem] h-20 w-20 rounded-full opacity-20 blur-[30px]" style={{ background: color }} />
-      <p className="text-[11px] font-medium uppercase tracking-wider text-white/35">{label}</p>
+      <p className="text-[11px] font-medium uppercase tracking-wider text-black/35 dark:text-white/35">{label}</p>
       <p className="mt-2 text-[22px] font-semibold" style={{ color }}>{value}</p>
     </div>
   );
@@ -878,7 +879,7 @@ function CategoryDropdown({
         defaultValue={effectiveId ?? ""}
         onChange={handleChange}
         onBlur={handleBlur}
-        className="rounded-full border border-white/20 bg-[oklch(0.13_0.02_260)] px-2.5 py-1 text-[11px] text-white/80 outline-none"
+        className="rounded-full border border-black/20 bg-[oklch(0.95_0.005_260)] px-2.5 py-1 text-[11px] text-black/80 outline-none dark:border-white/20 dark:bg-[oklch(0.13_0.02_260)] dark:text-white/80"
         style={effectiveCat ? { borderColor: `${effectiveCat.color}50` } : {}}
       >
         <option value="">{noCategory}</option>
@@ -906,7 +907,7 @@ function CategoryDropdown({
           <ChevronDownIcon />
         </span>
       ) : (
-        <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[12px] text-white/25 transition-all group-hover:border-white/20 group-hover:text-white/50">
+        <span className="inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-black/[0.03] px-2.5 py-1 text-[12px] text-black/25 transition-all group-hover:border-black/20 group-hover:text-black/50 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white/25 dark:group-hover:border-white/20 dark:group-hover:text-white/50">
           {displayName}
           <ChevronDownIcon />
         </span>

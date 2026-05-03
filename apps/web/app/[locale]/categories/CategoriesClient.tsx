@@ -76,29 +76,29 @@ export default function CategoriesSection({
           editing === cat.id ? (
             <div
               key={cat.id}
-              className="rounded-xl border border-white/[0.10] bg-white/[0.06] p-4 space-y-3"
+              className="rounded-xl border border-black/[0.10] bg-black/[0.06] p-4 space-y-3 dark:border-white/[0.10] dark:bg-white/[0.06]"
             >
               {/* Emoji + color row */}
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] text-white/50">{t.emoji}</label>
+                  <label className="text-[11px] text-black/50 dark:text-white/50">{t.emoji}</label>
                   <input
                     value={draft.emoji ?? ""}
                     onChange={(e) => setDraft((d) => ({ ...d, emoji: e.target.value }))}
-                    className="w-16 rounded-lg border border-white/10 bg-white/10 px-2 py-1.5 text-center text-lg text-white focus:outline-none focus:ring-1 focus:ring-white/30"
+                    className="w-16 rounded-lg border border-black/10 bg-black/10 px-2 py-1.5 text-center text-lg text-black focus:outline-none focus:ring-1 focus:ring-black/30 dark:border-white/10 dark:bg-white/10 dark:text-white dark:focus:ring-white/30"
                     maxLength={4}
                     dir="auto"
                   />
                 </div>
                 <div className="flex flex-col gap-1 flex-1">
-                  <label className="text-[11px] text-white/50">{t.color}</label>
+                  <label className="text-[11px] text-black/50 dark:text-white/50">{t.color}</label>
                   <div className="flex flex-wrap gap-1.5">
                     {PRESET_COLORS.map((c) => (
                       <button
                         key={c}
                         onClick={() => setDraft((d) => ({ ...d, color: c }))}
                         className={`h-6 w-6 rounded-full transition-transform hover:scale-110 ${
-                          draft.color === c ? "ring-2 ring-white ring-offset-1 ring-offset-black/50" : ""
+                          draft.color === c ? "ring-2 ring-black/50 ring-offset-1 ring-offset-white/50 dark:ring-white dark:ring-offset-black/50" : ""
                         }`}
                         style={{ backgroundColor: c }}
                       />
@@ -117,20 +117,20 @@ export default function CategoriesSection({
               {/* Name fields */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] text-white/50">{t.nameEn}</label>
+                  <label className="text-[11px] text-black/50 dark:text-white/50">{t.nameEn}</label>
                   <input
                     value={draft.name_en ?? ""}
                     onChange={(e) => setDraft((d) => ({ ...d, name_en: e.target.value }))}
-                    className="rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/30"
+                    className="rounded-lg border border-black/10 bg-black/10 px-3 py-1.5 text-sm text-black placeholder-black/30 focus:outline-none focus:ring-1 focus:ring-black/30 dark:border-white/10 dark:bg-white/10 dark:text-white dark:placeholder-white/30 dark:focus:ring-white/30"
                     dir="ltr"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] text-white/50">{t.nameHe}</label>
+                  <label className="text-[11px] text-black/50 dark:text-white/50">{t.nameHe}</label>
                   <input
                     value={draft.name_he ?? ""}
                     onChange={(e) => setDraft((d) => ({ ...d, name_he: e.target.value }))}
-                    className="rounded-lg border border-white/10 bg-white/10 px-3 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-white/30"
+                    className="rounded-lg border border-black/10 bg-black/10 px-3 py-1.5 text-sm text-black placeholder-black/30 focus:outline-none focus:ring-1 focus:ring-black/30 dark:border-white/10 dark:bg-white/10 dark:text-white dark:placeholder-white/30 dark:focus:ring-white/30"
                     dir="rtl"
                   />
                 </div>
@@ -141,7 +141,7 @@ export default function CategoriesSection({
                 <button
                   onClick={cancel}
                   disabled={saving}
-                  className="rounded-lg border border-white/10 px-4 py-1.5 text-sm text-white/70 hover:bg-white/10 disabled:opacity-50"
+                  className="rounded-lg border border-black/10 px-4 py-1.5 text-sm text-black/70 hover:bg-black/10 disabled:opacity-50 dark:border-white/10 dark:text-white/70 dark:hover:bg-white/10"
                 >
                   {t.cancelButton}
                 </button>
@@ -157,7 +157,7 @@ export default function CategoriesSection({
           ) : (
             <div
               key={cat.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 hover:bg-white/[0.06] transition-colors"
+              className="flex items-center justify-between gap-3 rounded-xl border border-black/[0.06] bg-black/[0.03] px-4 py-3 hover:bg-black/[0.06] transition-colors dark:border-white/[0.06] dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span
@@ -167,13 +167,13 @@ export default function CategoriesSection({
                   {cat.emoji}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">{cat.name_en}</p>
-                  <p className="truncate text-xs text-white/50">{cat.name_he}</p>
+                  <p className="truncate text-sm font-medium text-black dark:text-white">{cat.name_en}</p>
+                  <p className="truncate text-xs text-black/50 dark:text-white/50">{cat.name_he}</p>
                 </div>
               </div>
               <button
                 onClick={() => startEdit(cat)}
-                className="flex-shrink-0 rounded-lg border border-white/10 px-3 py-1 text-xs text-white/60 hover:bg-white/10 hover:text-white transition-colors"
+                className="flex-shrink-0 rounded-lg border border-black/10 px-3 py-1 text-xs text-black/60 hover:bg-black/10 hover:text-black transition-colors dark:border-white/10 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 {t.editButton}
               </button>

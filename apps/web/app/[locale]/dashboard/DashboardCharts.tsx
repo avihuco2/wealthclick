@@ -58,7 +58,7 @@ function CashFlowChart({ data, locale, t }: { data: MonthlyTotals[]; locale: Loc
 
   if (!hasData) {
     return (
-      <div className="flex h-[155px] items-center justify-center text-center text-[12px] leading-relaxed text-white/25 px-6">
+      <div className="flex h-[155px] items-center justify-center text-center text-[12px] leading-relaxed text-black/25 px-6 dark:text-white/25">
         {t.chartNoData}
       </div>
     );
@@ -173,7 +173,7 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
 
   if (!data.length) {
     return (
-      <div className="flex h-[155px] items-center justify-center text-[12px] text-white/25">
+      <div className="flex h-[155px] items-center justify-center text-[12px] text-black/25 dark:text-white/25">
         {t.chartNoExpenses}
       </div>
     );
@@ -257,14 +257,14 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
               <span className="text-[13px] leading-none shrink-0">{arc.category_emoji ?? "🏷️"}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-1 mb-1">
-                  <span className="text-[11px] text-white/55 truncate">
+                  <span className="text-[11px] text-black/55 truncate dark:text-white/55">
                     {name ?? (isHe ? "ללא קטגוריה" : t.chartUncategorized)}
                   </span>
-                  <span className="text-[10px] text-white/35 shrink-0">
+                  <span className="text-[10px] text-black/35 shrink-0 dark:text-white/35">
                     {arc.pct.toFixed(0)}%
                   </span>
                 </div>
-                <div className="h-[3px] w-full overflow-hidden rounded-full bg-white/[0.07]">
+                <div className="h-[3px] w-full overflow-hidden rounded-full bg-black/[0.07] dark:bg-white/[0.07]">
                   <div
                     className="h-full rounded-full"
                     style={{ width: `${arc.pct}%`, backgroundColor: arc.color }}
@@ -284,7 +284,7 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
 function AccountBars({ data, t }: { data: AccountBreakdown[]; t: ChartT }) {
   if (!data.length) {
     return (
-      <div className="flex h-[155px] items-center justify-center text-[12px] text-white/25">
+      <div className="flex h-[155px] items-center justify-center text-[12px] text-black/25 dark:text-white/25">
         {t.chartNoAccounts}
       </div>
     );
@@ -302,17 +302,17 @@ function AccountBars({ data, t }: { data: AccountBreakdown[]; t: ChartT }) {
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline justify-between gap-2 mb-1">
-              <span className="text-[12px] text-white/60 truncate">{row.account}</span>
-              <span className="text-[11px] text-white/40 shrink-0">{fmtILS(row.total)}</span>
+              <span className="text-[12px] text-black/60 truncate dark:text-white/60">{row.account}</span>
+              <span className="text-[11px] text-black/40 shrink-0 dark:text-white/40">{fmtILS(row.total)}</span>
             </div>
-            <div className="h-[4px] w-full overflow-hidden rounded-full bg-white/[0.07]">
+            <div className="h-[4px] w-full overflow-hidden rounded-full bg-black/[0.07] dark:bg-white/[0.07]">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{ width: `${row.pct}%`, backgroundColor: ACCOUNT_PALETTE[i % ACCOUNT_PALETTE.length] }}
               />
             </div>
           </div>
-          <span className="text-[10px] text-white/30 w-7 text-end shrink-0">{row.pct.toFixed(0)}%</span>
+          <span className="text-[10px] text-black/30 w-7 text-end shrink-0 dark:text-white/30">{row.pct.toFixed(0)}%</span>
         </div>
       ))}
     </div>
@@ -327,13 +327,13 @@ function SlideHeader({ title, legend }: {
 }) {
   return (
     <div className="mb-4 flex items-center">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-white/35">{title}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-black/35 dark:text-white/35">{title}</p>
       {legend && (
         <div className="ms-auto flex items-center gap-4">
           {legend.map((l) => (
             <div key={l.label} className="flex items-center gap-1.5">
               <div className="h-2 w-2 rounded-full" style={{ backgroundColor: l.color }} />
-              <span className="text-[10px] text-white/30">{l.label}</span>
+              <span className="text-[10px] text-black/30 dark:text-white/30">{l.label}</span>
             </div>
           ))}
         </div>
@@ -363,7 +363,7 @@ export default function DashboardCharts({ monthlyTotals, categoryBreakdown, acco
   };
 
   return (
-    <div dir="ltr" className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl">
+    <div dir="ltr" className="relative overflow-hidden rounded-3xl border border-black/[0.08] bg-black/[0.04] backdrop-blur-xl dark:border-white/[0.08] dark:bg-white/[0.04]">
       {/* Slide strip */}
       <div
         className="flex transition-transform duration-300 ease-out"
@@ -401,7 +401,7 @@ export default function DashboardCharts({ monthlyTotals, categoryBreakdown, acco
         <button
           onClick={prev}
           aria-label="Previous chart"
-          className="absolute left-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07] text-white/40 transition-all hover:bg-white/[0.14] hover:text-white"
+          className="absolute left-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.07] text-black/40 transition-all hover:bg-black/[0.14] hover:text-black dark:bg-white/[0.07] dark:text-white/40 dark:hover:bg-white/[0.14] dark:hover:text-white"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" />
@@ -414,7 +414,7 @@ export default function DashboardCharts({ monthlyTotals, categoryBreakdown, acco
         <button
           onClick={next}
           aria-label="Next chart"
-          className="absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.07] text-white/40 transition-all hover:bg-white/[0.14] hover:text-white"
+          className="absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.07] text-black/40 transition-all hover:bg-black/[0.14] hover:text-black dark:bg-white/[0.07] dark:text-white/40 dark:hover:bg-white/[0.14] dark:hover:text-white"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M9 18l6-6-6-6" />
@@ -430,7 +430,7 @@ export default function DashboardCharts({ monthlyTotals, categoryBreakdown, acco
             onClick={() => setSlide(i)}
             aria-label={`Chart ${i + 1}`}
             className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === slide ? "w-5 bg-white/60" : "w-1.5 bg-white/18"
+              i === slide ? "w-5 bg-black/60 dark:bg-white/60" : "w-1.5 bg-black/18 dark:bg-white/18"
             }`}
           />
         ))}

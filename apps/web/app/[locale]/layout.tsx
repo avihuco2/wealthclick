@@ -4,6 +4,7 @@ import { Heebo } from "next/font/google";
 import { notFound } from "next/navigation";
 import "../globals.css";
 import { locales, getDirection, isValidLocale, type Locale } from "@/lib/i18n";
+import { ThemeScript } from "@/components/ThemeScript";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -48,8 +49,11 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${geist.variable} ${heebo.variable} h-full antialiased`}
+      className={`${geist.variable} ${heebo.variable} dark h-full antialiased`}
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="h-full bg-background">{children}</body>
     </html>
   );

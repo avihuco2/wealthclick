@@ -71,17 +71,17 @@ export default function ApiKeysClient({ initialKeys, locale, t }: Props) {
   }
 
   return (
-    <div className="rounded-3xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-xl">
+    <div className="rounded-3xl border border-black/[0.08] bg-black/[0.03] p-6 backdrop-blur-xl dark:border-white/[0.08] dark:bg-white/[0.03]">
       <div className="mb-1 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-[17px] font-semibold text-white">{t.apiKeysTitle}</h2>
-          <p className="mt-1 text-[13px] text-white/40">{t.apiKeysDesc}</p>
+          <h2 className="text-[17px] font-semibold text-black dark:text-white">{t.apiKeysTitle}</h2>
+          <p className="mt-1 text-[13px] text-black/40 dark:text-white/40">{t.apiKeysDesc}</p>
         </div>
         <a
           href="/api/v1/docs"
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[12px] text-white/50 transition-all hover:bg-white/[0.10] hover:text-white/80"
+          className="shrink-0 rounded-xl border border-black/10 bg-black/[0.06] px-3 py-1.5 text-[12px] text-black/50 transition-all hover:bg-black/[0.10] hover:text-black/80 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/50 dark:hover:bg-white/[0.10] dark:hover:text-white/80"
         >
           {t.docsLink} ↗
         </a>
@@ -91,14 +91,14 @@ export default function ApiKeysClient({ initialKeys, locale, t }: Props) {
       {newToken && (
         <div className="mt-5 rounded-2xl border border-[oklch(0.72_0.17_142)/0.3] bg-[oklch(0.72_0.17_142)/0.07] p-4">
           <p className="mb-1 text-[13px] font-semibold text-[oklch(0.80_0.14_142)]">{t.tokenTitle}</p>
-          <p className="mb-3 text-[12px] text-white/50">{t.tokenWarning}</p>
+          <p className="mb-3 text-[12px] text-black/50 dark:text-white/50">{t.tokenWarning}</p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 overflow-x-auto rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[12px] text-white/80 font-mono select-all">
+            <code className="flex-1 overflow-x-auto rounded-xl border border-black/10 bg-black/[0.06] px-3 py-2 text-[12px] text-black/80 font-mono select-all dark:border-white/10 dark:bg-black/40 dark:text-white/80">
               {newToken.token}
             </code>
             <button
               onClick={() => copyToken(newToken.token)}
-              className="shrink-0 rounded-xl border border-white/10 bg-white/[0.08] px-3 py-2 text-[12px] text-white/60 transition-all hover:bg-white/[0.14] hover:text-white"
+              className="shrink-0 rounded-xl border border-black/10 bg-black/[0.08] px-3 py-2 text-[12px] text-black/60 transition-all hover:bg-black/[0.14] hover:text-black dark:border-white/10 dark:bg-white/[0.08] dark:text-white/60 dark:hover:bg-white/[0.14] dark:hover:text-white"
             >
               {copied ? t.copied : t.copy}
             </button>
@@ -116,12 +116,12 @@ export default function ApiKeysClient({ initialKeys, locale, t }: Props) {
           placeholder={t.keyNamePlaceholder}
           maxLength={64}
           dir="auto"
-          className="flex-1 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-[13px] text-white placeholder:text-white/25 outline-none focus:border-white/20 focus:bg-white/[0.09]"
+          className="flex-1 rounded-xl border border-black/10 bg-black/[0.06] px-3 py-2 text-[13px] text-black placeholder:text-black/25 outline-none focus:border-black/20 focus:bg-black/[0.09] dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-white/25 dark:focus:border-white/20 dark:focus:bg-white/[0.09]"
         />
         <button
           onClick={createKey}
           disabled={creating || !name.trim()}
-          className="shrink-0 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2 text-[13px] text-white/70 transition-all hover:bg-white/[0.12] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0 rounded-xl border border-black/10 bg-black/[0.06] px-4 py-2 text-[13px] text-black/70 transition-all hover:bg-black/[0.12] hover:text-black disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/70 dark:hover:bg-white/[0.12] dark:hover:text-white"
         >
           {creating ? "…" : t.createKey}
         </button>
@@ -132,16 +132,16 @@ export default function ApiKeysClient({ initialKeys, locale, t }: Props) {
       {/* Keys list */}
       <div className="mt-5 space-y-2">
         {keys.length === 0 ? (
-          <p className="py-4 text-center text-[13px] text-white/30">{t.noKeys}</p>
+          <p className="py-4 text-center text-[13px] text-black/30 dark:text-white/30">{t.noKeys}</p>
         ) : (
           keys.map((key) => (
             <div
               key={key.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3"
+              className="flex items-center justify-between gap-3 rounded-2xl border border-black/[0.07] bg-black/[0.03] px-4 py-3 dark:border-white/[0.07] dark:bg-white/[0.03]"
             >
               <div className="min-w-0">
-                <p className="truncate text-[13px] font-medium text-white/80">{key.name}</p>
-                <p className="mt-0.5 text-[11px] text-white/35">
+                <p className="truncate text-[13px] font-medium text-black/80 dark:text-white/80">{key.name}</p>
+                <p className="mt-0.5 text-[11px] text-black/35 dark:text-white/35">
                   {t.created}: {fmtDate(key.created_at)}
                   {" · "}
                   {key.last_used_at ? `${t.lastUsed}: ${fmtDate(key.last_used_at)}` : t.never}

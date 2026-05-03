@@ -73,7 +73,7 @@ function ProgressBar({ actual, budget, color }: { actual: number; budget: number
   const pct = Math.min((actual / budget) * 100, 100);
   const over = actual > budget;
   return (
-    <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+    <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.06]">
       <div
         className="h-full rounded-full transition-all duration-500"
         style={{ width: `${pct}%`, backgroundColor: over ? "oklch(0.78 0.16 27)" : color }}
@@ -194,32 +194,32 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
       {/* ── Header: title + month navigator ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
-          <p className="mt-1 text-[14px] text-white/45">{t.subtitle}</p>
+          <h1 className="text-[28px] font-semibold tracking-tight text-black dark:text-white">{t.title}</h1>
+          <p className="mt-1 text-[14px] text-black/45 dark:text-white/45">{t.subtitle}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={importFromLastMonth}
             disabled={importState !== "idle"}
-            className="rounded-xl border border-white/[0.10] bg-white/[0.04] px-4 py-2.5 text-[13px] text-white/60 transition hover:bg-white/[0.08] hover:text-white/90 disabled:opacity-40"
+            className="rounded-xl border border-black/[0.10] bg-black/[0.04] px-4 py-2.5 text-[13px] text-black/60 transition hover:bg-black/[0.08] hover:text-black/90 disabled:opacity-40 dark:border-white/[0.10] dark:bg-white/[0.04] dark:text-white/60 dark:hover:bg-white/[0.08] dark:hover:text-white/90"
           >
             {importState === "importing" ? t.importing : importState === "imported" ? t.imported : t.importFromLastMonth}
           </button>
-        <div className="flex items-center gap-2 rounded-2xl border border-white/[0.10] bg-white/[0.05] px-4 py-2.5">
+        <div className="flex items-center gap-2 rounded-2xl border border-black/[0.10] bg-black/[0.05] px-4 py-2.5 dark:border-white/[0.10] dark:bg-white/[0.05]">
           <button
             onClick={() => navigate(-1)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.08] hover:text-white/90"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-black/50 transition hover:bg-black/[0.08] hover:text-black/90 dark:text-white/50 dark:hover:bg-white/[0.08] dark:hover:text-white/90"
             aria-label="Previous month"
           >
             <ChevronIcon dir={locale === "he" ? "right" : "left"} />
           </button>
-          <span className="min-w-[120px] text-center text-[14px] font-medium text-white/90">
+          <span className="min-w-[120px] text-center text-[14px] font-medium text-black/90 dark:text-white/90">
             {monthLabel(month, locale)}
           </span>
           <button
             onClick={() => navigate(1)}
             disabled={isCurrentMonth}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.08] hover:text-white/90 disabled:opacity-25"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-black/50 transition hover:bg-black/[0.08] hover:text-black/90 disabled:opacity-25 dark:text-white/50 dark:hover:bg-white/[0.08] dark:hover:text-white/90"
             aria-label="Next month"
           >
             <ChevronIcon dir={locale === "he" ? "left" : "right"} />
@@ -229,16 +229,16 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
       </div>
 
       {/* ── Forecasted income card ── */}
-      <div className="rounded-2xl border border-white/[0.10] bg-white/[0.04] p-5">
+      <div className="rounded-2xl border border-black/[0.10] bg-black/[0.04] p-5 dark:border-white/[0.10] dark:bg-white/[0.04]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-0.5">
-            <p className="text-[12px] font-medium uppercase tracking-wider text-white/40">{t.forecastedIncome}</p>
-            <p className="text-[13px] text-white/50">
-              {t.actualIncome}: <span className="text-white/70">{fmt(income.actual_income)}</span>
+            <p className="text-[12px] font-medium uppercase tracking-wider text-black/40 dark:text-white/40">{t.forecastedIncome}</p>
+            <p className="text-[13px] text-black/50 dark:text-white/50">
+              {t.actualIncome}: <span className="text-black/70 dark:text-white/70">{fmt(income.actual_income)}</span>
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-white/40">₪</span>
+            <span className="text-black/40 dark:text-white/40">₪</span>
             <input
               type="number"
               min={0}
@@ -246,12 +246,12 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
               onChange={(e) => { setForecastedIncome(Math.max(0, parseInt(e.target.value) || 0)); setIncomeSaveState("idle"); }}
               onKeyDown={(e) => e.key === "Enter" && saveIncome(forecastedIncome)}
               placeholder="0"
-              className="w-32 rounded-xl bg-white/[0.06] px-3 py-2 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/25"
+              className="w-32 rounded-xl bg-black/[0.06] px-3 py-2 text-sm text-black outline-none ring-1 ring-black/10 focus:ring-black/25 dark:bg-white/[0.06] dark:text-white dark:ring-white/10 dark:focus:ring-white/25"
             />
             <button
               onClick={() => saveIncome(forecastedIncome)}
               disabled={incomeSaveState !== "idle"}
-              className="rounded-xl bg-[oklch(0.5706_0.2236_258.71)]/20 px-3 py-2 text-xs font-medium text-[oklch(0.72_0.18_258.71)] transition hover:bg-[oklch(0.5706_0.2236_258.71)]/30 disabled:opacity-40"
+              className="rounded-xl bg-[oklch(0.5706_0.2236_258.71)]/20 px-3 py-2 text-xs font-medium text-[oklch(0.55_0.22_258.71)] transition hover:bg-[oklch(0.5706_0.2236_258.71)]/30 disabled:opacity-40 dark:text-[oklch(0.72_0.18_258.71)]"
             >
               {incomeLabel}
             </button>
@@ -260,13 +260,13 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
         {/* Income allocation bar */}
         {forecastedIncome > 0 && (
           <div className="mt-4 space-y-1.5">
-            <div className="flex justify-between text-[11px] text-white/40">
+            <div className="flex justify-between text-[11px] text-black/40 dark:text-white/40">
               <span>{t.totalAllocated}: {fmt(totalAllocated)} ({Math.round((totalAllocated / forecastedIncome) * 100)}%)</span>
               <span style={{ color: unallocated >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.78 0.16 27)" }}>
                 {t.unallocated}: {fmt(Math.abs(unallocated))}
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.06]">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
@@ -286,19 +286,19 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
           { label: t.totalActual, value: fmt(totalActual), color: remaining >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.78 0.16 27)" },
           { label: t.remaining,   value: fmt(Math.abs(remaining)), color: remaining >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.78 0.16 27)" },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-white/40">{label}</p>
+          <div key={label} className="rounded-2xl border border-black/[0.08] bg-black/[0.04] p-5 dark:border-white/[0.08] dark:bg-white/[0.04]">
+            <p className="text-[11px] font-medium uppercase tracking-wider text-black/40 dark:text-white/40">{label}</p>
             <p className="mt-2 text-[24px] font-semibold" style={{ color }}>{value}</p>
           </div>
         ))}
       </div>
 
       {/* ── Category table ── */}
-      <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-md">
+      <div className="overflow-hidden rounded-3xl border border-black/[0.08] bg-black/[0.03] backdrop-blur-md dark:border-white/[0.08] dark:bg-white/[0.03]">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/[0.06] text-[11px] font-medium uppercase tracking-wider text-white/35">
+              <tr className="border-b border-black/[0.06] text-[11px] font-medium uppercase tracking-wider text-black/35 dark:border-white/[0.06] dark:text-white/35">
                 <th className="px-6 py-3 text-start">{t.category}</th>
                 <th className="px-4 py-3 text-end">{t.avg3m}</th>
                 <th className="px-4 py-3 text-end">{t.avg6m}</th>
@@ -306,9 +306,9 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
                 <th className="px-6 py-3 text-end">{t.monthlyBudget}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
               {rows.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-white/30">{t.noData}</td></tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-black/30 dark:text-white/30">{t.noData}</td></tr>
               )}
               {rows.map((r) => {
                 const budget = budgets[r.category_id] ?? 0;
@@ -316,20 +316,20 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
                 const over   = budget > 0 && actual > budget;
 
                 return (
-                  <tr key={r.category_id} className="group transition-colors hover:bg-white/[0.03]">
+                  <tr key={r.category_id} className="group transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.03]">
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-2.5">
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-base" style={{ backgroundColor: `${r.color}20` }}>
                           {r.emoji}
                         </span>
-                        <span className="font-medium text-white/80">{name(r)}</span>
+                        <span className="font-medium text-black/80 dark:text-white/80">{name(r)}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-end text-white/40">{fmt(r.avg_3m)}</td>
-                    <td className="px-4 py-3 text-end text-white/40">{fmt(r.avg_6m)}</td>
+                    <td className="px-4 py-3 text-end text-black/40 dark:text-white/40">{fmt(r.avg_3m)}</td>
+                    <td className="px-4 py-3 text-end text-black/40 dark:text-white/40">{fmt(r.avg_6m)}</td>
                     <td className="px-4 py-3 text-end">
                       <div>
-                        <span style={{ color: over ? "oklch(0.78 0.16 27)" : "rgba(255,255,255,0.75)" }}>
+                        <span className={over ? "text-[oklch(0.78_0.16_27)]" : "text-black/75 dark:text-white/75"}>
                           {fmt(actual)}
                         </span>
                         {budget > 0 && (
@@ -340,7 +340,7 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-2">
                         <IncomePctBadge budget={budget} income={forecastedIncome} />
-                        <span className="text-white/40">₪</span>
+                        <span className="text-black/40 dark:text-white/40">₪</span>
                         <input
                           type="number"
                           min={0}
@@ -350,7 +350,7 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
                             const v = Math.max(0, parseFloat(e.target.value) || 0);
                             setBudgets((prev) => ({ ...prev, [r.category_id]: v }));
                           }}
-                          className="w-24 rounded-lg bg-white/[0.06] px-2 py-1.5 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-white/25"
+                          className="w-24 rounded-lg bg-black/[0.06] px-2 py-1.5 text-sm text-black outline-none ring-1 ring-black/10 focus:ring-black/25 dark:bg-white/[0.06] dark:text-white dark:ring-white/10 dark:focus:ring-white/25"
                         />
                       </div>
                     </td>
@@ -367,7 +367,7 @@ export default function BudgetsClient({ rows, income, month, locale, t }: Props)
         <button
           onClick={saveAll}
           disabled={saveAllState !== "idle"}
-          className="rounded-xl bg-[oklch(0.5706_0.2236_258.71)]/20 px-6 py-2.5 text-sm font-medium text-[oklch(0.72_0.18_258.71)] transition hover:bg-[oklch(0.5706_0.2236_258.71)]/30 disabled:opacity-40"
+          className="rounded-xl bg-[oklch(0.5706_0.2236_258.71)]/20 px-6 py-2.5 text-sm font-medium text-[oklch(0.55_0.22_258.71)] transition hover:bg-[oklch(0.5706_0.2236_258.71)]/30 disabled:opacity-40 dark:text-[oklch(0.72_0.18_258.71)]"
         >
           {saveAllLabel}
         </button>

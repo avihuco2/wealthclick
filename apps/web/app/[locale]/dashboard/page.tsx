@@ -52,7 +52,7 @@ export default async function DashboardPage({
 
   const netVal = monthStats ? parseFloat(monthStats.net) : null;
   const balanceValue = monthStats ? fmt(monthStats.net, true) : "—";
-  const balanceColor = netVal === null ? "white" : netVal >= 0 ? "oklch(0.80 0.14 142)" : "oklch(0.78 0.16 27)";
+  const balanceColor = netVal === null ? undefined : netVal >= 0 ? "oklch(0.80 0.14 142)" : "oklch(0.78 0.16 27)";
   const spendingValue = monthStats ? fmt(monthStats.total_expenses) : "—";
   const savingsRate =
     monthStats && parseFloat(monthStats.total_income) > 0
@@ -63,7 +63,7 @@ export default async function DashboardPage({
     <div className="relative min-h-screen overflow-x-hidden">
 
       {/* ── Background glows ── */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-40 dark:opacity-100">
         <div className="absolute -top-24 -left-24 h-[600px] w-[600px] rounded-full bg-[oklch(0.5706_0.2236_258.71)] opacity-18 blur-[130px]" />
         <div className="absolute -top-10 right-0 h-[500px] w-[500px] rounded-full bg-[oklch(0.55_0.22_300)] opacity-12 blur-[120px]" />
         <div className="absolute -bottom-32 left-1/2 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-[oklch(0.60_0.18_200)] opacity-10 blur-[140px]" />
@@ -98,11 +98,11 @@ export default async function DashboardPage({
       <main className="mx-auto max-w-5xl px-6 py-12">
         {/* Greeting */}
         <div className="mb-10">
-          <h1 className="text-[32px] font-semibold tracking-tight text-white">
+          <h1 className="text-[32px] font-semibold tracking-tight text-black dark:text-white">
             {t.greeting(firstName)}
             <span className="ms-2">👋</span>
           </h1>
-          <p className="mt-2 text-[15px] text-white/45">{t.overviewSubtitle}</p>
+          <p className="mt-2 text-[15px] text-black/45 dark:text-white/45">{t.overviewSubtitle}</p>
         </div>
 
         {/* Month navigator */}
@@ -195,15 +195,15 @@ function MetricCard({ label, value, sub, accentColor, valueColor, icon }: {
   label: string; value: string; sub: string; accentColor: string; valueColor?: string; icon: React.ReactNode;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-white/[0.10] bg-white/[0.05] p-6 backdrop-blur-xl transition-all duration-300 hover:border-white/[0.18] hover:bg-white/[0.08]">
+    <div className="group relative overflow-hidden rounded-3xl border border-black/[0.10] bg-black/[0.05] p-6 backdrop-blur-xl transition-all duration-300 hover:border-black/[0.18] hover:bg-black/[0.08] dark:border-white/[0.10] dark:bg-white/[0.05] dark:hover:border-white/[0.18] dark:hover:bg-white/[0.08]">
       <div className="absolute -bottom-8 end-[-2rem] h-32 w-32 rounded-full opacity-20 blur-[40px] transition-opacity duration-300 group-hover:opacity-30" style={{ background: accentColor }} />
       <div className="relative">
         <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${accentColor}20`, boxShadow: `0 2px 12px ${accentColor}30` }}>
           <span style={{ color: accentColor }}>{icon}</span>
         </div>
-        <p className="text-[12px] font-medium uppercase tracking-wider text-white/40">{label}</p>
-        <p className="mt-2 text-[36px] font-semibold leading-none" style={{ color: valueColor ?? "white" }}>{value}</p>
-        <p className="mt-2 text-[12px] text-white/35">{sub}</p>
+        <p className="text-[12px] font-medium uppercase tracking-wider text-black/40 dark:text-white/40">{label}</p>
+        <p className="mt-2 text-[36px] font-semibold leading-none text-black dark:text-white" style={{ color: valueColor }}>{value}</p>
+        <p className="mt-2 text-[12px] text-black/35 dark:text-white/35">{sub}</p>
       </div>
     </div>
   );
@@ -215,20 +215,20 @@ function QuickAction({ icon, title, description, badge }: {
   icon: React.ReactNode; title: string; description: string; badge?: string;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-md transition-all duration-200 hover:border-white/[0.14] hover:bg-white/[0.06]">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.07] text-white/60">
+    <div className="flex items-center gap-4 rounded-2xl border border-black/[0.08] bg-black/[0.03] p-5 backdrop-blur-md transition-all duration-200 hover:border-black/[0.14] hover:bg-black/[0.06] dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:border-white/[0.14] dark:hover:bg-white/[0.06]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-black/10 bg-black/[0.07] text-black/60 dark:border-white/10 dark:bg-white/[0.07] dark:text-white/60">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-[14px] font-medium text-white/80">{title}</p>
+          <p className="text-[14px] font-medium text-black/80 dark:text-white/80">{title}</p>
           {badge && (
-            <span className="rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-white/35">
+            <span className="rounded-full border border-black/10 bg-black/[0.06] px-2 py-0.5 text-[10px] font-medium text-black/35 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/35">
               {badge}
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-[12px] text-white/35">{description}</p>
+        <p className="mt-0.5 text-[12px] text-black/35 dark:text-white/35">{description}</p>
       </div>
     </div>
   );

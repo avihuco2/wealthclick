@@ -21,7 +21,7 @@ export default async function LoginPage({
   return (
     <div className="relative min-h-full overflow-x-hidden">
       {/* ── Background glows ── */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-40 dark:opacity-100">
         <div className="absolute -top-40 left-1/2 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-[oklch(0.5706_0.2236_258.71)] opacity-15 blur-[140px]" />
         <div className="absolute -bottom-20 -left-20 h-[500px] w-[500px] rounded-full bg-[oklch(0.55_0.22_300)] opacity-12 blur-[120px]" />
         <div className="absolute top-1/4 -right-10 h-[400px] w-[400px] rounded-full bg-[oklch(0.60_0.18_200)] opacity-10 blur-[110px]" />
@@ -44,19 +44,19 @@ export default async function LoginPage({
               </div>
             </div>
             <div className="text-center">
-              <h1 className="text-[28px] font-semibold tracking-tight text-white">
-                Wealth<span className="text-[oklch(0.72_0.18_258.71)]">Click</span>
+              <h1 className="text-[28px] font-semibold tracking-tight text-black dark:text-white">
+                Wealth<span className="text-[oklch(0.48_0.22_258.71)] dark:text-[oklch(0.72_0.18_258.71)]">Click</span>
               </h1>
-              <p className="mt-1 text-[15px] text-white/45">{t.subtitle}</p>
+              <p className="mt-1 text-[15px] text-black/45 dark:text-white/45">{t.subtitle}</p>
             </div>
           </div>
 
           {/* Glass card */}
-          <div className="rounded-3xl border border-white/[0.10] bg-white/[0.06] px-8 py-8 shadow-[0_8px_40px_rgb(0,0,0,0.4)] backdrop-blur-2xl">
-            <h2 className="mb-1 text-center text-[17px] font-semibold text-white">
+          <div className="rounded-3xl border border-black/[0.10] bg-black/[0.06] px-8 py-8 shadow-[0_8px_40px_rgb(0,0,0,0.12)] backdrop-blur-2xl dark:border-white/[0.10] dark:bg-white/[0.06] dark:shadow-[0_8px_40px_rgb(0,0,0,0.4)]">
+            <h2 className="mb-1 text-center text-[17px] font-semibold text-black dark:text-white">
               {t.signInHeading}
             </h2>
-            <p className="mb-6 text-center text-[13px] leading-relaxed text-white/40">
+            <p className="mb-6 text-center text-[13px] leading-relaxed text-black/40 dark:text-white/40">
               {t.signInDescription}
             </p>
 
@@ -69,22 +69,22 @@ export default async function LoginPage({
             >
               <button
                 type="submit"
-                className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl border border-white/[0.12] bg-white/[0.08] px-4 py-3 text-[15px] font-medium text-white transition-all duration-200 hover:border-white/[0.22] hover:bg-white/[0.13]"
+                className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl border border-black/[0.12] bg-black/[0.08] px-4 py-3 text-[15px] font-medium text-black transition-all duration-200 hover:border-black/[0.22] hover:bg-black/[0.13] dark:border-white/[0.12] dark:bg-white/[0.08] dark:text-white dark:hover:border-white/[0.22] dark:hover:bg-white/[0.13]"
               >
                 {/* Shimmer on hover */}
-                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-black/[0.04] to-transparent transition-transform duration-500 group-hover:translate-x-full dark:via-white/[0.06]" />
                 <GoogleIcon />
                 {t.googleButton}
               </button>
             </form>
 
-            <p className="mt-5 text-center text-[12px] leading-relaxed text-white/25">
+            <p className="mt-5 text-center text-[12px] leading-relaxed text-black/25 dark:text-white/25">
               {t.termsPrefix}{" "}
-              <a href="/terms" className="text-white/45 underline underline-offset-2 transition-colors hover:text-white/70">
+              <a href="/terms" className="text-black/45 underline underline-offset-2 transition-colors hover:text-black/70 dark:text-white/45 dark:hover:text-white/70">
                 {t.terms}
               </a>{" "}
               {t.and}{" "}
-              <a href="/privacy" className="text-white/45 underline underline-offset-2 transition-colors hover:text-white/70">
+              <a href="/privacy" className="text-black/45 underline underline-offset-2 transition-colors hover:text-black/70 dark:text-white/45 dark:hover:text-white/70">
                 {t.privacy}
               </a>
               .
@@ -94,9 +94,9 @@ export default async function LoginPage({
           {/* Features strip */}
           <div className="mt-8 flex items-center justify-center gap-6">
             <Feature icon={<ShieldIcon />} label={t.featureSecure} />
-            <div className="h-6 w-px bg-white/10" />
+            <div className="h-6 w-px bg-black/10 dark:bg-white/10" />
             <Feature icon={<ChartIcon />} label={t.featureInsights} />
-            <div className="h-6 w-px bg-white/10" />
+            <div className="h-6 w-px bg-black/10 dark:bg-white/10" />
             <Feature icon={<BellIcon />} label={t.featureBudget} />
           </div>
         </div>
@@ -108,8 +108,8 @@ export default async function LoginPage({
 function Feature({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <div className="text-white/30">{icon}</div>
-      <span className="text-[11px] text-white/30">{label}</span>
+      <div className="text-black/30 dark:text-white/30">{icon}</div>
+      <span className="text-[11px] text-black/30 dark:text-white/30">{label}</span>
     </div>
   );
 }

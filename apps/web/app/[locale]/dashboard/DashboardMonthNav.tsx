@@ -26,20 +26,20 @@ export default function DashboardMonthNav({ month, locale }: { month: string; lo
       <button
         onClick={() => router.push(`?month=${shiftMonth(month, -1)}`)}
         aria-label="Previous month"
-        className="flex h-7 w-7 items-center justify-center rounded-full text-white/40 transition-all hover:bg-white/[0.08] hover:text-white/70"
+        className="flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-all hover:bg-black/[0.08] hover:text-black/70 dark:text-white/40 dark:hover:bg-white/[0.08] dark:hover:text-white/70"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" />
         </svg>
       </button>
-      <span className="min-w-[140px] text-center text-[14px] font-medium text-white/65">
+      <span className="min-w-[140px] text-center text-[14px] font-medium text-black/65 dark:text-white/65">
         {monthLabel(month, locale)}
       </span>
       <button
         onClick={() => router.push(`?month=${shiftMonth(month, 1)}`)}
         aria-label="Next month"
         disabled={month >= today}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-white/40 transition-all hover:bg-white/[0.08] hover:text-white/70 disabled:opacity-25 disabled:cursor-not-allowed"
+        className="flex h-7 w-7 items-center justify-center rounded-full text-black/40 transition-all hover:bg-black/[0.08] hover:text-black/70 disabled:opacity-25 disabled:cursor-not-allowed dark:text-white/40 dark:hover:bg-white/[0.08] dark:hover:text-white/70"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M9 18l6-6-6-6" />

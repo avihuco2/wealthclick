@@ -269,14 +269,14 @@ export default function TransactionsClient({
                   <span className="hidden sm:inline">Confirm clear</span>
                 </button>
                 <button onClick={() => setClearConfirm(false)}
-                  className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-[13px] text-white/50 transition-all hover:text-white/80">
+                  className="rounded-xl border border-black/10 bg-black/[0.06] px-3 py-2 text-[13px] text-black/50 transition-all hover:text-black/80 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/50 dark:hover:text-white/80">
                   <span className="hidden sm:inline">{t.cancel}</span>
                   <span className="sm:hidden"><XIcon /></span>
                 </button>
               </div>
             ) : (
               <button onClick={() => setClearConfirm(true)}
-                className="flex items-center gap-1.5 rounded-xl border border-[oklch(0.577_0.245_27.325/0.25)] bg-white/[0.04] p-2 text-[13px] text-white/30 transition-all hover:border-[oklch(0.577_0.245_27.325/0.5)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)] sm:px-3">
+                className="flex items-center gap-1.5 rounded-xl border border-[oklch(0.577_0.245_27.325/0.25)] bg-black/[0.04] p-2 text-[13px] text-black/30 transition-all hover:border-[oklch(0.577_0.245_27.325/0.5)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)] dark:bg-white/[0.04] dark:text-white/30 sm:px-3">
                 <TrashIcon />
                 <span className="hidden sm:inline">Clear all data</span>
               </button>

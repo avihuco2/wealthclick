@@ -21,6 +21,8 @@ type Props = {
   month: string;
   t: Dictionary["transactions"];
   isAdmin?: boolean;
+  initialCategory?: string;
+  initialAccount?: string;
   createAction: (formData: FormData) => Promise<void>;
   updateAction: (formData: FormData) => Promise<void>;
   deleteAction: (formData: FormData) => Promise<void>;
@@ -35,6 +37,8 @@ export default function TransactionsClient({
   month,
   t,
   isAdmin,
+  initialCategory,
+  initialAccount,
   createAction,
   updateAction,
   deleteAction,
@@ -102,10 +106,10 @@ export default function TransactionsClient({
     }));
   }
 
-  // Filters
+  // Filters — seeded from URL params when coming from dashboard charts
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all");
-  const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [filterAccount, setFilterAccount] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState<string>(initialCategory ?? "all");
+  const [filterAccount, setFilterAccount] = useState<string>(initialAccount ?? "all");
   const [search, setSearch] = useState("");
 
   // Derived filter options from transactions list
@@ -173,7 +177,10 @@ export default function TransactionsClient({
     const [y, m] = month.split("-").map(Number);
     const d = new Date(y, m - 1 + dir, 1);
     const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    router.push(`?month=${next}`);
+    const params = new URLSearchParams({ month: next });
+    if (filterCategory !== "all") params.set("category", filterCategory);
+    if (filterAccount !== "all") params.set("account", filterAccount);
+    router.push(`?${params.toString()}`);
   }
 
   const filtered = useMemo(() => {

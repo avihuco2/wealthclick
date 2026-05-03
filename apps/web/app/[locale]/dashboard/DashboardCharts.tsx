@@ -24,6 +24,7 @@ type Props = {
   categoryBreakdown: CategoryBreakdown[];
   accountBreakdown: AccountBreakdown[];
   locale: Locale;
+  month: string;
   t: ChartT;
 };
 
@@ -70,9 +71,9 @@ function CashFlowChart({ data, locale, t }: { data: MonthlyTotals[]; locale: Loc
   // SVG layout constants
   const VW = 500;
   const VH = 175;
-  const TOP = 22;    // top of bars (room for net label)
-  const BOTTOM = 143; // bottom of bars
-  const H = BOTTOM - TOP; // bar max height = 121
+  const TOP = 22;
+  const BOTTOM = 143;
+  const H = BOTTOM - TOP;
   const n = data.length || 1;
   const groupW = VW / n;
   const barW = Math.min(28, groupW * 0.30);
@@ -88,11 +89,11 @@ function CashFlowChart({ data, locale, t }: { data: MonthlyTotals[]; locale: Loc
           key={pct}
           x1={0} x2={VW}
           y1={BOTTOM - pct * H} y2={BOTTOM - pct * H}
-          stroke="rgba(255,255,255,0.05)" strokeWidth="1"
+          stroke="rgba(128,128,128,0.08)" strokeWidth="1"
         />
       ))}
       {/* Baseline */}
-      <line x1={0} x2={VW} y1={BOTTOM} y2={BOTTOM} stroke="rgba(255,255,255,0.10)" strokeWidth="1" />
+      <line x1={0} x2={VW} y1={BOTTOM} y2={BOTTOM} stroke="rgba(128,128,128,0.12)" strokeWidth="1" />
 
       {data.map((d, i) => {
         const cx = (i + 0.5) * groupW;
@@ -105,12 +106,14 @@ function CashFlowChart({ data, locale, t }: { data: MonthlyTotals[]; locale: Loc
         const year = d.month.slice(2, 4);
         const showYear = mIdx === 0 || i === 0;
 
-        // Net label positioned above the taller bar
         const netY = Math.min(yScale(inc), yScale(exp)) - 5;
         const netColor = net >= 0 ? "oklch(0.80 0.14 142)" : "oklch(0.75 0.18 27)";
+        const txUrl = `/${locale}/transactions?month=${d.month}`;
 
         return (
-          <g key={d.month}>
+          <a key={d.month} href={txUrl} style={{ cursor: "pointer" }}>
+            {/* Wide transparent hit area */}
+            <rect x={cx - groupW / 2} y={TOP} width={groupW} height={H + 32} fill="transparent" />
             {/* Income bar */}
             <rect
               x={cx - barW - gap / 2}
@@ -120,6 +123,7 @@ function CashFlowChart({ data, locale, t }: { data: MonthlyTotals[]; locale: Loc
               rx={5} ry={5}
               fill="oklch(0.72 0.17 142)"
               opacity={0.80}
+              className="transition-opacity hover:opacity-100"
             />
             {/* Expense bar */}
             <rect
@@ -130,6 +134,7 @@ function CashFlowChart({ data, locale, t }: { data: MonthlyTotals[]; locale: Loc
               rx={5} ry={5}
               fill="oklch(0.65 0.20 27)"
               opacity={0.80}
+              className="transition-opacity hover:opacity-100"
             />
             {/* Net label */}
             {(inc > 0 || exp > 0) && (
@@ -146,7 +151,7 @@ function CashFlowChart({ data, locale, t }: { data: MonthlyTotals[]; locale: Loc
             <text
               x={cx} y={VH - 14}
               textAnchor="middle" fontSize="10"
-              fill="rgba(255,255,255,0.35)"
+              fill="currentColor" opacity={0.35}
             >
               {MONTHS[mIdx]}
             </text>
@@ -154,12 +159,12 @@ function CashFlowChart({ data, locale, t }: { data: MonthlyTotals[]; locale: Loc
               <text
                 x={cx} y={VH - 3}
                 textAnchor="middle" fontSize="8.5"
-                fill="rgba(255,255,255,0.20)"
+                fill="currentColor" opacity={0.20}
               >
                 {`'${year}`}
               </text>
             )}
-          </g>
+          </a>
         );
       })}
     </svg>
@@ -168,7 +173,7 @@ function CashFlowChart({ data, locale, t }: { data: MonthlyTotals[]; locale: Loc
 
 // ─── Spending Donut ───────────────────────────────────────────────────────────
 
-function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale: Locale; t: ChartT }) {
+function SpendingDonut({ data, locale, t, month }: { data: CategoryBreakdown[]; locale: Locale; t: ChartT; month: string }) {
   const isHe = locale === "he";
 
   if (!data.length) {
@@ -181,7 +186,7 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
 
   // Merge beyond top 6 into "Other"
   const MAX = 6;
-  let segs = data.slice(0, MAX);
+  let segs = data.slice(0, MAX).map((s) => ({ ...s, isMerged: false }));
   if (data.length > MAX) {
     const otherTotal = data.slice(MAX).reduce((s, d) => s + parseFloat(d.total), 0);
     const otherPct   = data.slice(MAX).reduce((s, d) => s + d.pct, 0);
@@ -193,6 +198,7 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
       category_emoji: "🏷️",
       total: String(otherTotal),
       pct: otherPct,
+      isMerged: true,
     }];
   }
 
@@ -202,7 +208,7 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
   // SVG donut geometry
   const R = 52, CX = 78, CY = 78;
   const C = 2 * Math.PI * R;
-  const SW = 20; // stroke width = ring thickness
+  const SW = 20;
 
   let cumPct = 0;
   const arcs = segs.map((seg, i) => {
@@ -212,6 +218,12 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
     return { ...seg, dashLen, dashOffset, color: colors[i] };
   });
 
+  function txUrl(arc: typeof arcs[number]) {
+    if (arc.isMerged) return `/${locale}/transactions?month=${month}`;
+    if (arc.category_id) return `/${locale}/transactions?month=${month}&category=${arc.category_id}`;
+    return `/${locale}/transactions?month=${month}&category=__none__`;
+  }
+
   return (
     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
       {/* Donut SVG */}
@@ -220,27 +232,29 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
           <g transform={`rotate(-90 ${CX} ${CY})`}>
             {/* Background ring */}
             <circle cx={CX} cy={CY} r={R} fill="none"
-              stroke="rgba(255,255,255,0.05)" strokeWidth={SW} />
-            {/* Segment arcs */}
+              stroke="rgba(128,128,128,0.07)" strokeWidth={SW} />
+            {/* Segment arcs — clickable */}
             {arcs.map((arc, i) => (
-              <circle
-                key={i}
-                cx={CX} cy={CY} r={R}
-                fill="none"
-                stroke={arc.color}
-                strokeWidth={SW}
-                strokeDasharray={`${arc.dashLen} ${C}`}
-                strokeDashoffset={arc.dashOffset}
-                strokeLinecap="butt"
-                opacity={0.88}
-              />
+              <a key={i} href={txUrl(arc)} style={{ cursor: "pointer" }}>
+                <circle
+                  cx={CX} cy={CY} r={R}
+                  fill="none"
+                  stroke={arc.color}
+                  strokeWidth={SW}
+                  strokeDasharray={`${arc.dashLen} ${C}`}
+                  strokeDashoffset={arc.dashOffset}
+                  strokeLinecap="butt"
+                  opacity={0.88}
+                  className="transition-opacity hover:opacity-100"
+                />
+              </a>
             ))}
           </g>
           {/* Center: total expenses */}
-          <text x={CX} y={CY - 7} textAnchor="middle" fontSize="12" fontWeight="700" fill="white">
+          <text x={CX} y={CY - 7} textAnchor="middle" fontSize="12" fontWeight="700" fill="currentColor">
             {fmtILS(grandTotal)}
           </text>
-          <text x={CX} y={CY + 10} textAnchor="middle" fontSize="9.5" fill="rgba(255,255,255,0.38)">
+          <text x={CX} y={CY + 10} textAnchor="middle" fontSize="9.5" fill="currentColor" opacity={0.38}>
             {t.chartExpenses}
           </text>
         </svg>
@@ -253,7 +267,11 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
             ? (arc.category_name_he || arc.category_name_en)
             : (arc.category_name_en || arc.category_name_he);
           return (
-            <div key={i} className="flex items-center gap-2 min-w-0">
+            <a
+              key={i}
+              href={txUrl(arc)}
+              className="group flex items-center gap-2 min-w-0 rounded-lg transition-opacity hover:opacity-75"
+            >
               <span className="text-[13px] leading-none shrink-0">{arc.category_emoji ?? "🏷️"}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline justify-between gap-1 mb-1">
@@ -271,7 +289,7 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
                   />
                 </div>
               </div>
-            </div>
+            </a>
           );
         })}
       </div>
@@ -281,7 +299,7 @@ function SpendingDonut({ data, locale, t }: { data: CategoryBreakdown[]; locale:
 
 // ─── Account Bars ─────────────────────────────────────────────────────────────
 
-function AccountBars({ data, t }: { data: AccountBreakdown[]; t: ChartT }) {
+function AccountBars({ data, t, locale, month }: { data: AccountBreakdown[]; t: ChartT; locale: Locale; month: string }) {
   if (!data.length) {
     return (
       <div className="flex h-[155px] items-center justify-center text-[12px] text-black/25 dark:text-white/25">
@@ -295,7 +313,11 @@ function AccountBars({ data, t }: { data: AccountBreakdown[]; t: ChartT }) {
   return (
     <div className="flex flex-col gap-3">
       {data.map((row, i) => (
-        <div key={row.account} className="flex items-center gap-3 min-w-0">
+        <a
+          key={row.account}
+          href={`/${locale}/transactions?month=${month}&account=${encodeURIComponent(row.account)}`}
+          className="group flex items-center gap-3 min-w-0 rounded-lg transition-opacity hover:opacity-75"
+        >
           <span
             className="h-2.5 w-2.5 shrink-0 rounded-full"
             style={{ backgroundColor: ACCOUNT_PALETTE[i % ACCOUNT_PALETTE.length] }}
@@ -313,7 +335,7 @@ function AccountBars({ data, t }: { data: AccountBreakdown[]; t: ChartT }) {
             </div>
           </div>
           <span className="text-[10px] text-black/30 w-7 text-end shrink-0 dark:text-white/30">{row.pct.toFixed(0)}%</span>
-        </div>
+        </a>
       ))}
     </div>
   );
@@ -344,7 +366,7 @@ function SlideHeader({ title, legend }: {
 
 // ─── Main Carousel ────────────────────────────────────────────────────────────
 
-export default function DashboardCharts({ monthlyTotals, categoryBreakdown, accountBreakdown, locale, t }: Props) {
+export default function DashboardCharts({ monthlyTotals, categoryBreakdown, accountBreakdown, locale, month, t }: Props) {
   const [slide, setSlide] = useState(0);
   const SLIDES = 3;
   const touchStartX = useRef<number | null>(null);
@@ -386,17 +408,17 @@ export default function DashboardCharts({ monthlyTotals, categoryBreakdown, acco
         {/* Slide 1 — Spending Donut */}
         <div className="min-w-full px-5 pt-5 pb-11">
           <SlideHeader title={t.chartSpending} />
-          <SpendingDonut data={categoryBreakdown} locale={locale} t={t} />
+          <SpendingDonut data={categoryBreakdown} locale={locale} t={t} month={month} />
         </div>
 
         {/* Slide 2 — Spending by Account */}
         <div className="min-w-full px-5 pt-5 pb-11">
           <SlideHeader title={t.chartByAccount} />
-          <AccountBars data={accountBreakdown} t={t} />
+          <AccountBars data={accountBreakdown} t={t} locale={locale} month={month} />
         </div>
       </div>
 
-      {/* Prev arrow (physical left — carousel direction is always LTR) */}
+      {/* Prev arrow */}
       {slide > 0 && (
         <button
           onClick={prev}

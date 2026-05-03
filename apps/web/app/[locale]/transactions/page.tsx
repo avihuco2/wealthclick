@@ -14,7 +14,7 @@ export default async function TransactionsPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ month?: string; category?: string; account?: string }>;
 }) {
   const { locale } = await params;
   if (!isValidLocale(locale)) notFound();
@@ -29,7 +29,7 @@ export default async function TransactionsPage({
   const userId = session.user.id;
   if (!userId) redirect(`/${locale}/login`);
 
-  const { month: monthParam } = await searchParams;
+  const { month: monthParam, category: categoryParam, account: accountParam } = await searchParams;
   const month = monthParam ?? new Date().toISOString().slice(0, 7);
 
   const [transactions, categories, stats] = await Promise.all([
@@ -209,6 +209,8 @@ export default async function TransactionsPage({
           month={month}
           t={t}
           isAdmin={session.user.role === "admin"}
+          initialCategory={categoryParam}
+          initialAccount={accountParam}
           createAction={createTransaction}
           updateAction={updateTransaction}
           deleteAction={deleteTransaction}

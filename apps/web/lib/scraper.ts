@@ -59,7 +59,7 @@ async function ensureHapoalimMonthlyPatch(): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const orig = fetchMod.fetchPostWithinPage as (page: any, url: string, ...rest: any[]) => Promise<any>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fetchMod.fetchPostWithinPage = async (page: any, url: string, ...rest: any[]) => {
+    fetchMod.fetchPostWithinPage = async (page: any, url: string, data: any, extraHeaders: any = {}, ...rest: any[]) => {
       if (hapoalimMonthlyPages.has(page) && url.includes("/current-account/transactions")) {
         try {
           const parsed = new URL(url);
@@ -68,12 +68,15 @@ async function ensureHapoalimMonthlyPatch(): Promise<void> {
           if (startStr && endStr) {
             const windows = buildHapoalimMonthlyWindows(startStr, endStr);
             console.log(`[scraper] hapoalim monthly split: ${windows.length} window(s) for ${startStr}–${endStr}`);
+            const { randomUUID } = await import("crypto");
             const allTxns: unknown[] = [];
             for (const [winStart, winEnd] of windows) {
               const winUrl = new URL(url);
               winUrl.searchParams.set("retrievalStartDate", winStart);
               winUrl.searchParams.set("retrievalEndDate", winEnd);
-              const result = await orig(page, winUrl.toString(), ...rest);
+              // Fresh uuid per request — bank deduplicates by this header
+              const winHeaders = { ...extraHeaders, uuid: randomUUID() };
+              const result = await orig(page, winUrl.toString(), data, winHeaders, ...rest);
               if (result?.transactions?.length) {
                 console.log(`[scraper] hapoalim window ${winStart}–${winEnd}: ${result.transactions.length} txn(s)`);
                 allTxns.push(...result.transactions);
@@ -85,7 +88,7 @@ async function ensureHapoalimMonthlyPatch(): Promise<void> {
           console.warn("[scraper] hapoalim monthly split error, falling back to single call:", e);
         }
       }
-      return orig(page, url, ...rest);
+      return orig(page, url, data, extraHeaders, ...rest);
     };
     console.log("[scraper] hapoalim monthly fetch patch applied");
   } catch (e) {

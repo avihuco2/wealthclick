@@ -49,7 +49,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${geist.variable} ${heebo.variable} dark h-full antialiased`}
+      className={`${geist.variable} ${heebo.variable} h-full antialiased`}
     >
       <head>
         <ThemeScript />

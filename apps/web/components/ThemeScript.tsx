@@ -6,7 +6,7 @@ export function ThemeScript() {
   try {
     var t = localStorage.getItem('theme');
     var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    var dark = t === 'dark' || (!t && prefersDark);
+    var dark = t === 'light' ? false : (t === 'dark' || !t || prefersDark);
     if (dark) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   } catch(e){}

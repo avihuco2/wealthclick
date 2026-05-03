@@ -133,7 +133,9 @@ function makeExternalId(
   accountNumber: string,
   txn: { date: string; description: string; chargedAmount: number; identifier?: string | number },
 ): string {
-  const key = txn.identifier
+  // Hapoalim referenceNumber repeats across months for recurring transactions (salary,
+  // standing orders). Including the date makes the key unique per occurrence.
+  const key = txn.identifier && companyId !== "hapoalim"
     ? `${companyId}:${accountNumber}:${txn.identifier}`
     : `${companyId}:${accountNumber}:${txn.date}:${txn.description}:${txn.chargedAmount}`;
   return Buffer.from(key).toString("base64url").slice(0, 128);

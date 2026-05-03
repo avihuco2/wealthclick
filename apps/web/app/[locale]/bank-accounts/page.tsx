@@ -61,6 +61,7 @@ export default async function BankAccountsPage({
           bankAccounts: t.bankAccounts.navLabel,
           insights: t.insights.navLabel,
           budgets: t.budgets.navLabel,
+          categories: t.categories.navLabel,
           settings: t.settings.navLabel,
           userManagement: t.dashboard.userManagement,
           signOut: t.dashboard.signOut,

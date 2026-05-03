@@ -71,9 +71,7 @@ export default function CategoriesSection({
   }
 
   return (
-    <section className="mb-8 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 backdrop-blur">
-      <h2 className="mb-4 text-lg font-semibold text-white">{t.title}</h2>
-      <div className="space-y-2">
+    <div className="space-y-2">
         {categories.map((cat) =>
           editing === cat.id ? (
             <div
@@ -182,7 +180,6 @@ export default function CategoriesSection({
             </div>
           ),
         )}
-      </div>
-    </section>
+    </div>
   );
 }

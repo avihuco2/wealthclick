@@ -52,6 +52,7 @@ export default async function BudgetsPage({
           bankAccounts: dict.bankAccounts.navLabel,
           insights: dict.insights.navLabel,
           budgets: t.navLabel,
+          categories: dict.categories.navLabel,
           settings: dict.settings.navLabel,
           userManagement: dict.dashboard.userManagement,
           signOut: dict.dashboard.signOut,

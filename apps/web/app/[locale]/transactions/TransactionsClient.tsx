@@ -400,7 +400,7 @@ export default function TransactionsClient({
                   <div key={tx.id} className="px-4 py-3.5">
                     {/* Row 1: date + amount */}
                     <div className="mb-1 flex items-center justify-between">
-                      <span className="text-[12px] text-white/40">{fmtDate(tx.date)}</span>
+                      <span className="text-[12px] text-black/40 dark:text-white/40">{fmtDate(tx.date)}</span>
                       <span className={cn("text-[15px] font-semibold tabular-nums", tx.type === "income" ? "text-[oklch(0.80_0.14_142)]" : "text-[oklch(0.78_0.16_27)]")}>
                         {tx.type === "income" ? "+" : "-"}{fmtCurrency(tx.amount)}
                       </span>
@@ -425,7 +425,7 @@ export default function TransactionsClient({
                           override={categoryOverrides[tx.id] ?? { categoryId: undefined, saving: false }}
                           onCategoryChange={handleCategoryChange}
                         />
-                        {tx.account && <span className="shrink-0 text-[11px] text-white/30">{tx.account}</span>}
+                        {tx.account && <span className="shrink-0 text-[11px] text-black/30 dark:text-white/30">{tx.account}</span>}
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
                         {isDeleting ? (
@@ -442,17 +442,17 @@ export default function TransactionsClient({
                                 {tx.installment_group_id ? t.deleteThisInstallment : t.delete}
                               </button>
                               <button onClick={() => { setDeletingId(null); setDeleteGroupId(null); }}
-                                className="rounded-lg border border-white/10 bg-white/[0.05] px-2 py-1 text-[10px] text-white/50">
+                                className="rounded-lg border border-black/10 bg-black/[0.05] px-2 py-1 text-[10px] text-black/50 dark:border-white/10 dark:bg-white/[0.05] dark:text-white/50">
                                 {t.cancel}
                               </button>
                             </div>
                           </div>
                         ) : (
                           <>
-                            <button onClick={() => openEdit(tx)} className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-white/40 transition-all hover:bg-white/[0.09] hover:text-white/80">
+                            <button onClick={() => openEdit(tx)} className="rounded-lg border border-black/10 bg-black/[0.05] p-1.5 text-black/40 transition-all hover:bg-black/[0.09] hover:text-black/80 dark:border-white/10 dark:bg-white/[0.05] dark:text-white/40 dark:hover:bg-white/[0.09] dark:hover:text-white/80">
                               <PencilIcon />
                             </button>
-                            <button onClick={() => { setDeletingId(tx.id); setDeleteGroupId(tx.installment_group_id); }} className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-white/40 transition-all hover:border-[oklch(0.577_0.245_27.325/0.3)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)]">
+                            <button onClick={() => { setDeletingId(tx.id); setDeleteGroupId(tx.installment_group_id); }} className="rounded-lg border border-black/10 bg-black/[0.05] p-1.5 text-black/40 transition-all hover:border-[oklch(0.577_0.245_27.325/0.3)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)] dark:border-white/10 dark:bg-white/[0.05] dark:text-white/40">
                               <TrashIcon />
                             </button>
                           </>
@@ -523,17 +523,17 @@ export default function TransactionsClient({
                                   {tx.installment_group_id ? t.deleteThisInstallment : t.delete}
                                 </button>
                                 <button onClick={() => { setDeletingId(null); setDeleteGroupId(null); }}
-                                  className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] text-white/50 transition-all hover:text-white/80">
+                                  className="rounded-lg border border-black/10 bg-black/[0.05] px-2.5 py-1 text-[11px] text-black/50 transition-all hover:text-black/80 dark:border-white/10 dark:bg-white/[0.05] dark:text-white/50 dark:hover:text-white/80">
                                   {t.cancel}
                                 </button>
                               </div>
                             </div>
                           ) : (
                             <>
-                              <button onClick={() => openEdit(tx)} className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-white/40 transition-all hover:bg-white/[0.09] hover:text-white/80">
+                              <button onClick={() => openEdit(tx)} className="rounded-lg border border-black/10 bg-black/[0.05] p-1.5 text-black/40 transition-all hover:bg-black/[0.09] hover:text-black/80 dark:border-white/10 dark:bg-white/[0.05] dark:text-white/40 dark:hover:bg-white/[0.09] dark:hover:text-white/80">
                                 <PencilIcon />
                               </button>
-                              <button onClick={() => { setDeletingId(tx.id); setDeleteGroupId(tx.installment_group_id); }} className="rounded-lg border border-white/10 bg-white/[0.05] p-1.5 text-white/40 transition-all hover:border-[oklch(0.577_0.245_27.325/0.3)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)]">
+                              <button onClick={() => { setDeletingId(tx.id); setDeleteGroupId(tx.installment_group_id); }} className="rounded-lg border border-black/10 bg-black/[0.05] p-1.5 text-black/40 transition-all hover:border-[oklch(0.577_0.245_27.325/0.3)] hover:bg-[oklch(0.577_0.245_27.325/0.08)] hover:text-[oklch(0.78_0.16_27)] dark:border-white/10 dark:bg-white/[0.05] dark:text-white/40">
                                 <TrashIcon />
                               </button>
                             </>
@@ -872,7 +872,7 @@ function CategoryDropdown({
   // Spinner while saving
   if (override.saving) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[12px] text-white/30">
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-black/[0.05] px-2.5 py-1 text-[12px] text-black/30 dark:border-white/10 dark:bg-white/[0.05] dark:text-white/30">
         <SpinnerIcon />
       </span>
     );

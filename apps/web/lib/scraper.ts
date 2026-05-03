@@ -331,6 +331,20 @@ async function runScrape(
       seenReversed.set(key, row.description);
     }
 
+    // CAL duplicate fix: within this scrape run, track which (date:amount:desc:account) combos
+    // already have an identifier-based row. Fallback-keyed rows for the same combo are skipped.
+    const calIdentifierSeen = new Set<string>();
+    for (const account of result.accounts ?? []) {
+      for (const txn of account.txns) {
+        if (txn.identifier) {
+          const amount = Math.abs(txn.chargedAmount);
+          if (amount === 0) continue;
+          const date = extractLocalDate(txn.date);
+          calIdentifierSeen.add(`${account.accountNumber}:${date}:${amount}:${txn.description.trim()}`);
+        }
+      }
+    }
+
     for (const account of result.accounts ?? []) {
       for (const txn of account.txns) {
         const externalId = makeExternalId(companyId, account.accountNumber, txn);
@@ -340,6 +354,15 @@ async function runScrape(
         const type = txn.chargedAmount < 0 ? "expense" : "income";
         const date = extractLocalDate(txn.date); // Fix timezone offset bug in library
         const description = txn.description.trim();
+
+        // CAL duplicate fix: skip fallback-keyed row when identifier-keyed twin exists in this run.
+        if (!txn.identifier) {
+          const comboKey = `${account.accountNumber}:${date}:${amount}:${description}`;
+          if (calIdentifierSeen.has(comboKey)) {
+            console.log(`[scraper] job ${jobId} — skipping CAL fallback-keyed duplicate: ${description}`);
+            continue;
+          }
+        }
 
         // Max scraper duplicate bug: returns both "FREEBAY ISRAEL" and "LERASI YABEERF"
         // (reversed Hebrew RTL). Check if reversed version already in DB or this run.

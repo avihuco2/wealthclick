@@ -18,7 +18,7 @@ export type DbScrapeJob = {
   id: string;
   user_id: string;
   bank_account_id: string;
-  status: "running" | "done" | "failed" | "awaiting_otp";
+  status: "queued" | "running" | "done" | "failed" | "awaiting_otp";
   otp_code: string | null;
   otp_requested_at: Date | null;
   imported_count: number | null;
@@ -95,11 +95,12 @@ export async function setBankAccountStatus(
 export async function createScrapeJob(
   userId: string,
   bankAccountId: string,
+  status: "running" | "queued" = "running",
 ): Promise<DbScrapeJob> {
   const sql = getDb();
   const [row] = await sql<DbScrapeJob[]>`
     INSERT INTO scrape_jobs (user_id, bank_account_id, status)
-    VALUES (${userId}, ${bankAccountId}, 'running')
+    VALUES (${userId}, ${bankAccountId}, ${status})
     RETURNING *
   `;
   return row;
@@ -165,6 +166,13 @@ export async function getLatestScrapeJob(
     LIMIT 1
   `;
   return rows[0] ?? null;
+}
+
+export async function setJobRunning(jobId: string): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE scrape_jobs SET status = 'running' WHERE id = ${jobId} AND status = 'queued'
+  `;
 }
 
 export async function setJobAwaitingOtp(jobId: string): Promise<void> {

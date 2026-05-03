@@ -4,6 +4,7 @@ import { decrypt } from "./crypto";
 import {
   setBankAccountStatus,
   finishScrapeJob,
+  setJobRunning,
   setJobAwaitingOtp,
   pollJobOtp,
 } from "./bankAccounts";
@@ -256,6 +257,7 @@ async function runScrape(
   credentialsEncrypted: string,
 ): Promise<void> {
   console.log(`[scraper] job ${jobId} started`);
+  await setJobRunning(jobId);
   await setBankAccountStatus(bankAccountId, "scraping");
 
   try {

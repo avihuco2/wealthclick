@@ -15,7 +15,7 @@ export async function POST() {
   const jobQueue: { jobId: string; userId: string; bankAccountId: string; companyId: string; credentialsEncrypted: string }[] = [];
 
   for (const account of eligible) {
-    const job = await createScrapeJob(session.user.id, account.id);
+    const job = await createScrapeJob(session.user.id, account.id, "queued");
     jobs.push({ accountId: account.id, jobId: job.id });
     jobQueue.push({
       jobId: job.id,

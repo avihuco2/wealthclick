@@ -91,13 +91,15 @@ export default function BankAccountsClient({
     if (res.ok) setAccounts(await res.json());
   }, []);
 
-  // Poll running scrape jobs
+  // Poll running/queued scrape jobs
   useEffect(() => {
-    const running = Object.entries(scrapeState).filter(([, s]) => s.status === "running");
-    if (running.length === 0) return;
+    const active = Object.entries(scrapeState).filter(
+      ([, s]) => s.status === "running" || s.status === "queued",
+    );
+    if (active.length === 0) return;
 
     const interval = setInterval(async () => {
-      for (const [accountId, state] of running) {
+      for (const [accountId, state] of active) {
         const res = await fetch(`/api/scrape-jobs/${state.jobId}`);
         if (!res.ok) continue;
         const job = await res.json();
@@ -110,7 +112,7 @@ export default function BankAccountsClient({
             error: job.error,
           },
         }));
-        if (job.status !== "running") refreshAccounts();
+        if (job.status !== "running" && job.status !== "queued") refreshAccounts();
       }
     }, 3000);
 
@@ -168,7 +170,7 @@ export default function BankAccountsClient({
       const { jobs } = await res.json();
       const updates: ScrapeState = {};
       for (const { accountId, jobId } of jobs) {
-        updates[accountId] = { jobId, status: "running", importedCount: null, error: null };
+        updates[accountId] = { jobId, status: "queued", importedCount: null, error: null };
       }
       setScrapeState((prev) => ({ ...prev, ...updates }));
     }
@@ -322,7 +324,7 @@ export default function BankAccountsClient({
           {accounts.map((account) => {
             const config = bankConfigs.find((c) => c.companyId === account.company_id);
             const scrape = scrapeState[account.id];
-            const isRunning = scrape?.status === "running" || account.status === "scraping";
+            const isRunning = scrape?.status === "running" || scrape?.status === "queued" || account.status === "scraping";
             const hasFailed = scrape?.status === "failed" || account.status === "error";
             const isDisabled = !account.scrape_enabled;
             const nextSync = fmtNextSync(account.next_scrape_at, account.scrape_enabled);
@@ -368,7 +370,7 @@ export default function BankAccountsClient({
                   </div>
 
                   {/* Job feedback */}
-                  {scrape && scrape.status !== "running" && (
+                  {scrape && scrape.status !== "running" && scrape.status !== "queued" && (
                     <p className={`mt-1 text-[12px] ${scrape.status === "done" ? "text-[oklch(0.72_0.17_142)]" : "text-[oklch(0.65_0.22_25)]"}`}>
                       {scrape.status === "done"
                         ? `${scrape.importedCount ?? 0} ${t.importDone}`

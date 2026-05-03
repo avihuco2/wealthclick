@@ -7,6 +7,7 @@ import { getAutoSyncEnabled } from "@/lib/settings";
 import ApiKeysClient from "./ApiKeysClient";
 import WhatsAppSection from "./WhatsAppSection";
 import ScraperSettingsSection from "./ScraperSettingsSection";
+import CategoriesSection from "./CategoriesSection";
 
 export default async function SettingsPage({
   params,
@@ -24,7 +25,7 @@ export default async function SettingsPage({
   if (!session?.user?.id) redirect(`/${locale}/login`);
 
   const sql = getDb();
-  const [keys, autoSyncEnabled] = await Promise.all([
+  const [keys, autoSyncEnabled, categories] = await Promise.all([
     sql<{ id: string; name: string; created_at: string; last_used_at: string | null }[]>`
       SELECT id, name, created_at::text, last_used_at::text
       FROM api_keys
@@ -32,6 +33,12 @@ export default async function SettingsPage({
       ORDER BY created_at DESC
     `,
     getAutoSyncEnabled(),
+    sql<{ id: string; name_en: string; name_he: string; emoji: string; color: string }[]>`
+      SELECT id, name_en, name_he, emoji, color
+      FROM categories
+      WHERE user_id = ${session.user.id}
+      ORDER BY name_en ASC
+    `,
   ]);
 
   return (
@@ -68,6 +75,7 @@ export default async function SettingsPage({
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="mb-8 text-[28px] font-semibold tracking-tight text-white">{t.title}</h1>
         <ScraperSettingsSection initialEnabled={autoSyncEnabled} t={t.scraper} />
+        <CategoriesSection initialCategories={categories} t={t.categories} />
         <ApiKeysClient initialKeys={keys} locale={typedLocale} t={t} />
         <WhatsAppSection t={t.whatsapp} />
       </main>

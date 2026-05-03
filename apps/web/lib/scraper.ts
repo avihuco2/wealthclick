@@ -237,6 +237,17 @@ export function startScrapeJob(
   );
 }
 
+export async function startScrapeJobSequential(
+  jobs: { jobId: string; userId: string; bankAccountId: string; companyId: string; credentialsEncrypted: string }[],
+): Promise<void> {
+  for (const j of jobs) {
+    console.log(`[scraper] job ${j.jobId} queued (sequential) — account=${j.bankAccountId} company=${j.companyId}`);
+    await runScrape(j.jobId, j.userId, j.bankAccountId, j.companyId, j.credentialsEncrypted).catch(
+      (err) => console.error(`[scraper] job ${j.jobId} unhandled error:`, err),
+    );
+  }
+}
+
 async function runScrape(
   jobId: string,
   userId: string,

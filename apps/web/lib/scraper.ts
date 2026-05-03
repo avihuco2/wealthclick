@@ -319,9 +319,17 @@ async function runScrape(
     // Preload category rules so each insert can be auto-categorized inline
     const categoryRules = await loadCategoryRules(userId);
 
-    // Dedup map for Max scraper bug: same txn with reversed merchant name (RTL rendering)
-    // Key: `date:amount:description` — if reversed string already seen, skip this one.
+    // Preload existing (date, amount, description) tuples from DB so we can detect cross-run
+    // reversed-merchant duplicates. seenDescriptions is the persistent source of truth;
+    // the in-loop seenReversed extends it with txns added during this run.
+    const existingRows = await sql<{ date: string; amount: string; description: string }[]>`
+      SELECT date::text, amount::text, description FROM transactions WHERE user_id = ${userId}
+    `;
     const seenReversed = new Map<string, string>();
+    for (const row of existingRows) {
+      const key = `${row.date.slice(0, 10)}:${Math.abs(parseFloat(row.amount))}:${row.description}`;
+      seenReversed.set(key, row.description);
+    }
 
     for (const account of result.accounts ?? []) {
       for (const txn of account.txns) {
@@ -334,7 +342,7 @@ async function runScrape(
         const description = txn.description.trim();
 
         // Max scraper duplicate bug: returns both "FREEBAY ISRAEL" and "LERASI YABEERF"
-        // (reversed Hebrew RTL). Check if reversed version already inserted; skip the wrong one.
+        // (reversed Hebrew RTL). Check if reversed version already in DB or this run.
         const reversed = reverseString(description);
         const dupKey = `${date}:${amount}:${reversed}`;
         if (seenReversed.has(dupKey)) {

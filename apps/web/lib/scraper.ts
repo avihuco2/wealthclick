@@ -77,10 +77,13 @@ async function ensureHapoalimMonthlyPatch(): Promise<void> {
               // Fresh uuid per request — bank deduplicates by this header
               const winHeaders = { ...extraHeaders, uuid: randomUUID() };
               const result = await orig(page, winUrl.toString(), data, winHeaders, ...rest);
-              if (result?.transactions?.length) {
-                console.log(`[scraper] hapoalim window ${winStart}–${winEnd}: ${result.transactions.length} txn(s)`);
+              const count = result?.transactions?.length ?? 0;
+              console.log(`[scraper] hapoalim window ${winStart}–${winEnd}: ${count} txn(s), raw result keys: ${result ? Object.keys(result).join(',') : 'null'}`);
+              if (count > 0) {
                 allTxns.push(...result.transactions);
               }
+              // Brief pause to avoid bank rate-limiting between monthly requests
+              await new Promise((r) => setTimeout(r, 1500));
             }
             return { transactions: allTxns };
           }

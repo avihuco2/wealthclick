@@ -11,6 +11,88 @@ import { getScrapeHistoryMonths } from "./settings";
 import { loadCategoryRules, applyRulesToUncategorized } from "./categoryRules";
 import { sendTextMessage } from "./evolutionApi";
 
+// Pages registered here get month-by-month Hapoalim transaction fetching.
+// WeakSet is page-scoped so concurrent jobs (different accounts/users) don't interfere.
+const hapoalimMonthlyPages = new WeakSet<object>();
+let hapoalimFetchPatched = false;
+
+/** Parse YYYYMMDD string to Date (local time) */
+function parseHapoalimDate(s: string): Date {
+  return new Date(parseInt(s.slice(0, 4)), parseInt(s.slice(4, 6)) - 1, parseInt(s.slice(6, 8)));
+}
+/** Format Date to YYYYMMDD string */
+function formatHapoalimDate(d: Date): string {
+  return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Split a [startStr, endStr] range (YYYYMMDD) into per-month windows */
+function buildHapoalimMonthlyWindows(startStr: string, endStr: string): [string, string][] {
+  const start = parseHapoalimDate(startStr);
+  const end = parseHapoalimDate(endStr);
+  const windows: [string, string][] = [];
+  let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cur <= end) {
+    const winStart = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    const winEnd = new Date(cur.getFullYear(), cur.getMonth() + 1, 0); // last day of month
+    const clampedStart = winStart < start ? start : winStart;
+    const clampedEnd = winEnd > end ? end : winEnd;
+    windows.push([formatHapoalimDate(clampedStart), formatHapoalimDate(clampedEnd)]);
+    cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+  }
+  return windows;
+}
+
+/**
+ * Patch `fetchPostWithinPage` in the israeli-bank-scrapers fetch helpers once per process.
+ * For pages in hapoalimMonthlyPages, intercepts /current-account/transactions calls and
+ * splits the date range into monthly windows, merging all results. This bypasses the
+ * hard cap of 1000 items per API response that causes missing transactions for active accounts.
+ */
+async function ensureHapoalimMonthlyPatch(): Promise<void> {
+  if (hapoalimFetchPatched) return;
+  hapoalimFetchPatched = true;
+  try {
+    const { createRequire } = await import("module");
+    const req = createRequire(import.meta.url);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fetchMod = req("israeli-bank-scrapers/lib/helpers/fetch") as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orig = fetchMod.fetchPostWithinPage as (page: any, url: string, ...rest: any[]) => Promise<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fetchMod.fetchPostWithinPage = async (page: any, url: string, ...rest: any[]) => {
+      if (hapoalimMonthlyPages.has(page) && url.includes("/current-account/transactions")) {
+        try {
+          const parsed = new URL(url);
+          const startStr = parsed.searchParams.get("retrievalStartDate");
+          const endStr = parsed.searchParams.get("retrievalEndDate");
+          if (startStr && endStr) {
+            const windows = buildHapoalimMonthlyWindows(startStr, endStr);
+            console.log(`[scraper] hapoalim monthly split: ${windows.length} window(s) for ${startStr}–${endStr}`);
+            const allTxns: unknown[] = [];
+            for (const [winStart, winEnd] of windows) {
+              const winUrl = new URL(url);
+              winUrl.searchParams.set("retrievalStartDate", winStart);
+              winUrl.searchParams.set("retrievalEndDate", winEnd);
+              const result = await orig(page, winUrl.toString(), ...rest);
+              if (result?.transactions?.length) {
+                console.log(`[scraper] hapoalim window ${winStart}–${winEnd}: ${result.transactions.length} txn(s)`);
+                allTxns.push(...result.transactions);
+              }
+            }
+            return { transactions: allTxns };
+          }
+        } catch (e) {
+          console.warn("[scraper] hapoalim monthly split error, falling back to single call:", e);
+        }
+      }
+      return orig(page, url, ...rest);
+    };
+    console.log("[scraper] hapoalim monthly fetch patch applied");
+  } catch (e) {
+    console.warn("[scraper] hapoalim monthly fetch patch failed:", e);
+  }
+}
+
 const BASE_PUPPETEER_ARGS = [
   "--no-sandbox",
   "--disable-setuid-sandbox",
@@ -161,6 +243,9 @@ async function runScrape(
     // Dynamic import keeps Puppeteer/Chromium out of the Next.js client bundle
     const { createScraper, CompanyTypes } = await import("israeli-bank-scrapers");
 
+    // Apply Hapoalim monthly-fetch patch once per process
+    await ensureHapoalimMonthlyPatch();
+
     // Patch waitForRedirect once per process: extend its default 20s timeout to 180s.
     // The Hapoalim scraper calls waitForRedirect with no timeout arg, so default matters.
     // We do this by mutating the CommonJS exports object that all scrapers share.
@@ -208,6 +293,11 @@ async function runScrape(
           : {}),
       },
       preparePage: async (page) => {
+        // Register page for month-by-month fetch splitting (Hapoalim only)
+        if (companyId === "hapoalim") {
+          hapoalimMonthlyPages.add(page);
+        }
+
         // Set a realistic user-agent matching the real Chrome binary version
         await page.setUserAgent(
           "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"

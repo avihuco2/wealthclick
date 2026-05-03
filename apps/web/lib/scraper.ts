@@ -352,6 +352,10 @@ async function runScrape(
           // without OTP and we can stop watching.
           const loginUrl = page.url();
           const deadline = Date.now() + 170_000;
+          // Only trigger OTP if we've actually seen a password field first — prevents false
+          // positives during post-login SPA transitions where the URL hasn't changed yet
+          // but the password field is already gone and dashboard inputs are rendering.
+          let hasSeenPasswordField = false;
           while (Date.now() < deadline && !otpHandled) {
             try {
               // URL changed → login succeeded without OTP (navigated to banking dashboard)
@@ -365,8 +369,9 @@ async function runScrape(
                 );
                 return { hasPassword, visibleCount: visibleInputs.length };
               });
-              // OTP page: password field gone, at least one visible input remains
-              if (!state.hasPassword && state.visibleCount > 0 && !otpHandled) {
+              if (state.hasPassword) hasSeenPasswordField = true;
+              // OTP page: password field gone after we saw it, at least one visible input remains
+              if (hasSeenPasswordField && !state.hasPassword && state.visibleCount > 0 && !otpHandled) {
                 otpHandled = true;
                 console.log(`[scraper] job ${jobId} — OTP screen detected (no password field, ${state.visibleCount} input(s))`);
                 await notifyOtpViaWhatsApp(userId, jobId, companyId);

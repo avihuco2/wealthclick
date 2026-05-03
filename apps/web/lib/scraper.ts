@@ -188,8 +188,11 @@ async function runScrape(
     const credentials = JSON.parse(decrypt(credentialsEncrypted));
 
     const historyMonths = await getScrapeHistoryMonths();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - historyMonths);
+    const now = new Date();
+    // Snap to the 1st of the month N months ago — avoids partial first-month when
+    // today's day > 1 (e.g. running on May 3rd with 3 months would give Feb 3rd,
+    // skipping Feb 1-2 entirely).
+    const startDate = new Date(now.getFullYear(), now.getMonth() - historyMonths, 1);
     console.log(`[scraper] job ${jobId} — scraping ${companyId} from ${startDate.toISOString().slice(0, 10)} (${historyMonths} months)`);
 
     const scraper = createScraper({

@@ -363,7 +363,7 @@ export default function BankAccountsClient({
                       {t.lastScraped}: {fmtDate(account.last_scraped_at)}
                     </p>
                     {nextSync && (
-                      <p className={`text-[12px] ${nextSync === t.overdue ? "text-amber-400/70" : "text-white/35"}`}>
+                      <p className={`text-[12px] ${nextSync === t.overdue ? "text-amber-400/70" : "text-black/35 dark:text-white/35"}`}>
                         {t.nextSync}: {nextSync}
                       </p>
                     )}

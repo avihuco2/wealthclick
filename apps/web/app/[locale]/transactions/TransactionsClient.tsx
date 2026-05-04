@@ -213,6 +213,16 @@ export default function TransactionsClient({
     });
   }, [transactions, filterType, filterCategory, filterAccount, search, locale]);
 
+  const filteredStats = useMemo(() => {
+    let income = 0, expenses = 0;
+    for (const tx of filtered) {
+      const amt = parseFloat(String(tx.amount));
+      if (tx.type === "income") income += amt;
+      else expenses += amt;
+    }
+    return { income, expenses, net: income - expenses };
+  }, [filtered]);
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   function fmtCurrency(val: string | number) {
@@ -325,13 +335,6 @@ export default function TransactionsClient({
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label={t.totalIncome} value={fmtCurrency(stats.total_income)} color="oklch(0.72 0.17 142)" />
-        <StatCard label={t.totalExpenses} value={fmtCurrency(stats.total_expenses)} color="oklch(0.72 0.18 27)" />
-        <StatCard label={t.net} value={fmtCurrency(stats.net)} color={Number(stats.net) >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.72 0.18 27)"} />
-      </div>
-
       {/* Filter + Search */}
       <div className="mb-4 flex flex-col gap-2">
         {/* Row 1: type toggle + search */}
@@ -378,6 +381,13 @@ export default function TransactionsClient({
             </select>
           )}
         </div>
+      </div>
+
+      {/* Stats — reflects current filters */}
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard label={t.totalIncome} value={fmtCurrency(filteredStats.income)} color="oklch(0.72 0.17 142)" />
+        <StatCard label={t.totalExpenses} value={fmtCurrency(filteredStats.expenses)} color="oklch(0.72 0.18 27)" />
+        <StatCard label={t.net} value={fmtCurrency(filteredStats.net)} color={filteredStats.net >= 0 ? "oklch(0.72 0.17 142)" : "oklch(0.72 0.18 27)"} />
       </div>
 
       {/* Transaction list */}

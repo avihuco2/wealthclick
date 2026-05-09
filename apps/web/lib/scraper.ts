@@ -145,6 +145,9 @@ function makeExternalId(
 /**
  * Deterministic UUID for an installment group.
  * Stable across re-scrapes: same series → same group_id every time.
+ * Max RTL bug: canonicalize by picking the alphabetically-smaller of {desc, reverse(desc)}
+ * so "FREEBAY ISAREL" and "LERASI YABEERF" share the same group_id and dedupe via
+ * (installment_group_id, installment_current) unique constraint.
  */
 function makeInstallmentGroupId(
   companyId: string,
@@ -153,7 +156,9 @@ function makeInstallmentGroupId(
   amount: number,
   total: number,
 ): string {
-  const seed = `installment:${companyId}:${accountNumber}:${description}:${amount}:${total}`;
+  const reversed = description.split("").reverse().join("");
+  const canonicalDesc = description <= reversed ? description : reversed;
+  const seed = `installment:${companyId}:${accountNumber}:${canonicalDesc}:${amount}:${total}`;
   const h = createHash("sha256").update(seed).digest("hex");
   return `${h.slice(0,8)}-${h.slice(8,12)}-4${h.slice(13,16)}-${h.slice(16,20)}-${h.slice(20,32)}`;
 }
@@ -502,7 +507,7 @@ async function runScrape(
         try {
           if (inst && inst.total > 1) {
             const groupId = makeInstallmentGroupId(
-              companyId, account.accountNumber, txn.description, amount, inst.total,
+              companyId, account.accountNumber, description, amount, inst.total,
             );
 
             // Upsert the actual scraped row, replacing any synthetic future row for this slot
@@ -511,7 +516,7 @@ async function runScrape(
                 (user_id, date, amount, description, type, account, external_id, category_id,
                  installment_group_id, installment_current, installment_total)
               VALUES
-                (${userId}, ${date}, ${amount}, ${txn.description}, ${type},
+                (${userId}, ${date}, ${amount}, ${description}, ${type},
                  ${account.accountNumber}, ${externalId}, ${categoryId},
                  ${groupId}::uuid, ${inst.number}, ${inst.total})
               ON CONFLICT (user_id, installment_group_id, installment_current)
@@ -533,7 +538,7 @@ async function runScrape(
                   (user_id, date, amount, description, type, account, category_id,
                    installment_group_id, installment_current, installment_total)
                 VALUES
-                  (${userId}, ${futureDate}, ${amount}, ${txn.description}, ${type},
+                  (${userId}, ${futureDate}, ${amount}, ${description}, ${type},
                    ${account.accountNumber}, ${categoryId},
                    ${groupId}::uuid, ${i}, ${inst.total})
                 ON CONFLICT (user_id, installment_group_id, installment_current)
@@ -547,7 +552,7 @@ async function runScrape(
               INSERT INTO transactions
                 (user_id, date, amount, description, type, account, external_id, category_id)
               VALUES
-                (${userId}, ${date}, ${amount}, ${txn.description}, ${type},
+                (${userId}, ${date}, ${amount}, ${description}, ${type},
                  ${account.accountNumber}, ${externalId}, ${categoryId})
               ON CONFLICT (user_id, external_id) WHERE external_id IS NOT NULL
               DO NOTHING

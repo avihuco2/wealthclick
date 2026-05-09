@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { deleteBankAccount, toggleBankAccountEnabled } from "@/lib/bankAccounts";
+import { deleteBankAccount, toggleBankAccountEnabled, updateIgnoredDescriptions } from "@/lib/bankAccounts";
 
 export async function PATCH(
   req: Request,
@@ -12,11 +12,22 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
-  if (typeof body.scrape_enabled !== "boolean")
-    return NextResponse.json({ error: "Missing scrape_enabled boolean" }, { status: 400 });
 
-  await toggleBankAccountEnabled(session.user.id, id, body.scrape_enabled);
-  return NextResponse.json({ ok: true });
+  if (typeof body.scrape_enabled === "boolean") {
+    await toggleBankAccountEnabled(session.user.id, id, body.scrape_enabled);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (Array.isArray(body.ignored_descriptions)) {
+    const list = body.ignored_descriptions
+      .filter((s: unknown): s is string => typeof s === "string")
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 0);
+    await updateIgnoredDescriptions(session.user.id, id, list);
+    return NextResponse.json({ ok: true, ignored_descriptions: list });
+  }
+
+  return NextResponse.json({ error: "Missing scrape_enabled or ignored_descriptions" }, { status: 400 });
 }
 
 export async function DELETE(

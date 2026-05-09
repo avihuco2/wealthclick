@@ -46,6 +46,10 @@ type T = {
   disable: string;
   importPeriod: string;
   months: string;
+  ignoredDescriptionsTitle: string;
+  ignoredDescriptionsHint: string;
+  ignoredDescriptionsPlaceholder: string;
+  ignoredDescriptionsSaved: string;
 };
 
 type Props = {
@@ -85,6 +89,8 @@ export default function BankAccountsClient({
   const [savingHistory, setSavingHistory] = useState(false);
   const [autoSync, setAutoSync] = useState(initialAutoSync);
   const [savingAutoSync, setSavingAutoSync] = useState(false);
+  const [ignoredDrafts, setIgnoredDrafts] = useState<Record<string, string>>({});
+  const [ignoredSaved, setIgnoredSaved] = useState<Record<string, boolean>>({});
 
   const refreshAccounts = useCallback(async () => {
     const res = await fetch("/api/bank-accounts");
@@ -194,6 +200,31 @@ export default function BankAccountsClient({
         prev.map((a) => (a.id === account.id ? { ...a, scrape_enabled: !newVal } : a)),
       );
     }
+  }
+
+  async function handleSaveIgnored(account: SafeBankAccount) {
+    const draft = ignoredDrafts[account.id];
+    if (draft === undefined) return;
+    const list = draft.split("\n").map((s) => s.trim()).filter(Boolean);
+    const res = await fetch(`/api/bank-accounts/${account.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ignored_descriptions: list }),
+    });
+    if (!res.ok) return;
+    setAccounts((prev) =>
+      prev.map((a) => (a.id === account.id ? { ...a, ignored_descriptions: list } : a)),
+    );
+    setIgnoredDrafts((prev) => {
+      const next = { ...prev };
+      delete next[account.id];
+      return next;
+    });
+    setIgnoredSaved((prev) => ({ ...prev, [account.id]: true }));
+    setTimeout(
+      () => setIgnoredSaved((prev) => ({ ...prev, [account.id]: false })),
+      2000,
+    );
   }
 
   async function handleRemove(account: SafeBankAccount) {
@@ -332,12 +363,13 @@ export default function BankAccountsClient({
             return (
               <div
                 key={account.id}
-                className={`flex items-start gap-4 rounded-2xl border p-5 backdrop-blur-md transition-all duration-200 ${
+                className={`rounded-2xl border p-5 backdrop-blur-md transition-all duration-200 ${
                   isDisabled
                     ? "border-black/[0.05] bg-black/[0.02] opacity-60 dark:border-white/[0.05] dark:bg-white/[0.02]"
                     : "border-black/[0.08] bg-black/[0.03] hover:border-black/[0.12] hover:bg-black/[0.05] dark:border-white/[0.08] dark:bg-white/[0.03] dark:hover:border-white/[0.12] dark:hover:bg-white/[0.05]"
                 }`}
               >
+              <div className="flex items-start gap-4">
                 {/* Bank icon */}
                 <div className="shrink-0">
                   <BankLogo companyId={account.company_id} size={48} />
@@ -415,6 +447,37 @@ export default function BankAccountsClient({
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Ignored descriptions — collapsible */}
+              <details className="mt-3 group">
+                <summary className="cursor-pointer text-[12px] text-black/50 transition-colors hover:text-black/80 dark:text-white/50 dark:hover:text-white/80 list-none flex items-center gap-1.5 select-none">
+                  <ChevronIcon />
+                  {t.ignoredDescriptionsTitle}
+                  {account.ignored_descriptions.length > 0 && (
+                    <span className="rounded-full bg-black/[0.06] px-1.5 py-0.5 text-[10px] text-black/60 dark:bg-white/[0.06] dark:text-white/60">
+                      {account.ignored_descriptions.length}
+                    </span>
+                  )}
+                  {ignoredSaved[account.id] && (
+                    <span className="text-[11px] text-[oklch(0.72_0.17_142)]">✓ {t.ignoredDescriptionsSaved}</span>
+                  )}
+                </summary>
+                <div className="mt-2 space-y-1.5">
+                  <p className="text-[11px] text-black/35 dark:text-white/35">{t.ignoredDescriptionsHint}</p>
+                  <textarea
+                    dir="auto"
+                    rows={4}
+                    placeholder={t.ignoredDescriptionsPlaceholder}
+                    value={ignoredDrafts[account.id] ?? account.ignored_descriptions.join("\n")}
+                    onChange={(e) =>
+                      setIgnoredDrafts((prev) => ({ ...prev, [account.id]: e.target.value }))
+                    }
+                    onBlur={() => handleSaveIgnored(account)}
+                    className="w-full rounded-xl border border-black/[0.10] bg-black/[0.04] px-3 py-2 text-[12px] text-black placeholder-black/25 outline-none transition-all focus:border-[oklch(0.5706_0.2236_258.71/0.6)] focus:ring-1 focus:ring-[oklch(0.5706_0.2236_258.71/0.3)] dark:border-white/[0.10] dark:bg-white/[0.04] dark:text-white dark:placeholder-white/25"
+                  />
+                </div>
+              </details>
               </div>
             );
           })}
@@ -739,4 +802,7 @@ function ClockIcon() {
 }
 function CalendarIcon() {
   return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black/30 dark:text-white/30" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+}
+function ChevronIcon() {
+  return <svg className="transition-transform group-open:rotate-90 rtl:-scale-x-100" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>;
 }

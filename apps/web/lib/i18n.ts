@@ -181,6 +181,10 @@ const dictionaries = {
       statusDisabled: "Disabled",
       importPeriod: "Import period",
       months: "mo",
+      ignoredDescriptionsTitle: "Ignored descriptions",
+      ignoredDescriptionsHint: "One description per line. Matching transactions are skipped on import.",
+      ignoredDescriptionsPlaceholder: "e.g. מקס איט פיננסי",
+      ignoredDescriptionsSaved: "Saved",
     },
     insights: {
       navLabel: "Insights",
@@ -475,6 +479,10 @@ const dictionaries = {
       statusDisabled: "מושבת",
       importPeriod: "תקופת ייבוא",
       months: "ח׳",
+      ignoredDescriptionsTitle: "תיאורים להתעלם",
+      ignoredDescriptionsHint: "תיאור אחד בכל שורה. עסקאות תואמות ידולגו בעת הייבוא.",
+      ignoredDescriptionsPlaceholder: "לדוגמה: מקס איט פיננסי",
+      ignoredDescriptionsSaved: "נשמר",
     },
     insights: {
       navLabel: "תובנות",

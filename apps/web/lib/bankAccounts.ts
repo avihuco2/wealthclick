@@ -11,6 +11,7 @@ export type DbBankAccount = {
   status: "active" | "error" | "scraping";
   scrape_enabled: boolean;
   next_scrape_at: Date | null;
+  ignored_descriptions: string[];
   created_at: Date;
 };
 
@@ -143,6 +144,19 @@ export async function toggleBankAccountEnabled(
     UPDATE bank_accounts
     SET scrape_enabled = ${enabled},
         next_scrape_at = ${nextScrape}
+    WHERE id = ${accountId} AND user_id = ${userId}
+  `;
+}
+
+export async function updateIgnoredDescriptions(
+  userId: string,
+  accountId: string,
+  descriptions: string[],
+): Promise<void> {
+  const sql = getDb();
+  await sql`
+    UPDATE bank_accounts
+    SET ignored_descriptions = ${descriptions}
     WHERE id = ${accountId} AND user_id = ${userId}
   `;
 }

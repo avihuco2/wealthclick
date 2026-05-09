@@ -455,6 +455,13 @@ async function runScrape(
       seenReversed.set(key, row.description);
     }
 
+    // Per-account ignored descriptions (e.g. Hapoalim credit-card aggregation rows
+    // that duplicate charges already imported by Max/Isracard/CAL scrapers).
+    const [ignoredRow] = await sql<{ ignored_descriptions: string[] | null }[]>`
+      SELECT ignored_descriptions FROM bank_accounts WHERE id = ${bankAccountId}
+    `;
+    const ignoredSet = new Set<string>(ignoredRow?.ignored_descriptions ?? []);
+
     // CAL duplicate fix: within this scrape run, track which (date:amount:desc:account) combos
     // already have an identifier-based row. Fallback-keyed rows for the same combo are skipped.
     const calIdentifierSeen = new Set<string>();
@@ -478,6 +485,11 @@ async function runScrape(
         const type = txn.chargedAmount < 0 ? "expense" : "income";
         const date = extractLocalDate(txn.date); // Fix timezone offset bug in library
         const description = txn.description.trim();
+
+        if (ignoredSet.has(description)) {
+          console.log(`[scraper] job ${jobId} — skipping ignored description: ${description}`);
+          continue;
+        }
 
         // CAL duplicate fix: skip fallback-keyed row when identifier-keyed twin exists in this run.
         if (!txn.identifier) {
